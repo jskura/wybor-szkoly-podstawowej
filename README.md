@@ -13,8 +13,8 @@ a plot's asking price can be judged against what comparable land actually costs.
 
 The full design — 26 epics, roughly **150–200 focused days** — is documented and
 retained, but the **plan of record is [`docs/18-v0-scope.md`](docs/18-v0-scope.md)**:
-a ~13-day version covering both 25 km anchor rings, both price types, and
-off-portal supply. Build it, learn from it, then decide what else earns its place.
+a ~22–25 day version covering both 25 km anchor rings, both price types,
+off-portal supply and the feasibility layer. Build it, learn from it, then decide what else earns its place.
 
 Why the change: [`docs/17-assumption-audit.md`](docs/17-assumption-audit.md) is a
 self-review that found seven internal contradictions and a long list of choices
@@ -36,12 +36,15 @@ or a registry-only one.
 | Sales prices | GUS BDL, powiat level — free and guaranteed available |
 | Output | A notebook, plus one simple map |
 | Hosting | Your machine. No VPS, no routing engine, no geocoder |
-| Effort | ~13 days (gmina BIP deferred) |
-| Not included | Zoning, nature, routing, regression, alerts, API, frontend |
+| Effort | ~22–25 days — everything at once (D55) |
+| Includes | Gmina BIP, the WZ good-neighbour test, and the purchasability badge |
+| Not included | Zoning plans, nature, routing, hedonic model, alerts, API, frontend |
+| Headline number | **Flow** (recently listed), with stock alongside |
+| Acceptance | Leave-one-out cross-validation, not human pre-registration |
 
-**v0.5 (~8 days) follows immediately** with what actually decides a purchase: the
-WZ good-neighbour test, and whether you may legally buy the plot at all — see
-[`docs/19-legal-and-feasibility.md`](docs/19-legal-and-feasibility.md).
+The feasibility layer — the WZ good-neighbour test and whether you may legally buy
+the plot at all — is folded in rather than staged after
+([`docs/19-legal-and-feasibility.md`](docs/19-legal-and-feasibility.md)).
 
 v0 cuts **features, not foundations**. Three things cannot be retrofitted, so all
 three are there from day one: raw payload storage (every parser is eventually
@@ -69,10 +72,10 @@ Start with `18` (what we're building), then `17` (why it shrank).
 
 | Doc | What it is |
 |---|---|
-| [`docs/18-v0-scope.md`](docs/18-v0-scope.md) | **The plan of record** — the ~13-day version, its work plan, its checks, and what it will teach us |
+| [`docs/18-v0-scope.md`](docs/18-v0-scope.md) | **The plan of record** — the ~22–25 day version, its work plan, its checks, and what it will teach us |
 | [`docs/17-assumption-audit.md`](docs/17-assumption-audit.md) | **Self-review** — contradictions, unasked questions, unverified facts |
 | [`CLAUDE.md`](CLAUDE.md) | Binding project rules: PRD first, ask don't assume, TDD, validation method per feature, two price types, provenance |
-| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — 54 decisions, 19 open items |
+| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — 58 decisions, 21 open items |
 | [`docs/01-user-journeys.md`](docs/01-user-journeys.md) | 12 journeys (J1–J8 buying, J9–J12 analytical) and the capability map |
 | [`docs/02-prd.md`](docs/02-prd.md) | Requirements FR-1..60, data model, architecture, milestones, risks |
 | [`docs/03-data-sources.md`](docs/03-data-sources.md) | Polish data sources, the `robots.txt` gate, scraping ground rules |

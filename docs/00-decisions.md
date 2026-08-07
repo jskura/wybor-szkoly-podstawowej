@@ -148,6 +148,17 @@ effort and the most heterogeneous of the three — then add parcels, the
 good-neighbour test and purchasability as **v0.5** (~8 days). Gmina BIP follows
 only if coverage turns out thin.
 
+## Batch 12 — verification (2026-08-07)
+
+From [`20-verification-strategy.md`](./20-verification-strategy.md).
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D55 | v0/v0.5 split? | **Everything at once** — the full ~22–25 days | No staged delivery. Closes O15. Trade-off recorded in [`18`](./18-v0-scope.md) §3: nothing usable until week 4–5, and no mid-point evidence to redirect the remaining work |
+| D56 | Stock or flow as headline? | **Flow is the headline**, stock alongside, neither ever unlabelled | Closes O20. Every aggregate specified before this was a stock measure |
+| D57 | Pre-register estimates for the known-plot check? | **No** | Closes O22. Replaced by **leave-one-out cross-validation** (V51) — automatic, repeatable, and tier A/B rather than tier C. Plus a zero-effort collapsed-verdict spot check (V51b) |
+| D58 | Which verification techniques? | **Metamorphic, differential, mutation.** Golden-corpus regression **not** selected | Closes O21. Leaves a drift-detection gap recorded as O26 |
+
 ## Open — not yet decided
 
 | # | Question | Blocks |
@@ -169,5 +180,7 @@ only if coverage turns out thin.
 | **O15** | **v0 no longer fits ten days** (D49 + D47 + D50 ⇒ ~22–25 days). Recommended split: v0 ≈ 10–13 days dropping gmina BIP; v0.5 adds parcels, good-neighbour and purchasability. **Needs ratifying** | v0 start |
 | **O16** | Which auction sources specifically — e-licytacje.komornik.pl, individual bailiff sites, Monitor Sądowy i Gospodarczy for bankruptcy estates? Each has a different access model | Auction connector |
 | **O17** | The good-neighbour test needs **building** geometry, not just parcels. County EGiB WFS coverage for buildings is uneven; where absent, fall back to OSM buildings with lower confidence, or decline to answer? | v0.5 |
+| **O25** | LOOCV thresholds (hit rate, error, tail) cannot be set honestly before the first run. Set from actuals, then treat regressions as failures | After first run |
+| **O26** | **Drift-detection gap** left by dropping golden-corpus regression (D58). Nothing in the selected suite notices aggregate output changing quietly over time. Adopt the golden corpus after all, or accept and rely on LOOCV metrics as the alarm | Before aggregation ships |
 | **O19** | **Price-kind taxonomy.** Auction starting prices, KOWR tender prices and portal asking prices are three different kinds of number. Rule 5 forbids mixing offering and sales; this needs a third category or explicit sub-types, settled **before** the auction connector is written | Auction connector |
 | **O18** | D45 (buying within 6 months) undercuts the value of the whole build. If the tool is not usable in time to inform the actual purchase, is it still worth building — as a market-learning exercise, or for a later purchase? Worth answering explicitly rather than discovering in month five | Whole project |

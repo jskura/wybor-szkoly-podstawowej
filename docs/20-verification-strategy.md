@@ -169,31 +169,67 @@ specified so far is a stock measure.
 This also partially rehabilitates snapshots after D45: even on a six-month horizon,
 distinguishing flow from stock needs *some* history — a few weeks, not years.
 
-## 6. The known-plot check, made rigorous (D54)
+## 6. Acceptance without pre-registration (D54, D57)
 
-You said a number you know is wrong would destroy your trust. That makes human
-judgement the primary acceptance test — so it must be run in a way that cannot
-retroactively rationalise itself.
+D54 says a number you know is wrong would destroy your trust, which made human
+judgement the natural primary acceptance test. I proposed pre-registering your own
+estimates for 8–10 plots before seeing any output — the standard fix for hindsight
+bias. **You declined (D57), so it is off the table**, and asking for a weaker
+version of the same homework would be worse than useless.
 
-**Protocol:**
+The better answer turns out not to need you at all.
 
-1. **Pre-register.** Before seeing any tool output, you write down, for 8–10 plots
-   you know well: your own estimate of fair zł/m², and a range you would not be
-   surprised by. Committed to the repo, timestamped, before the run.
-2. **Run blind.** The tool produces its estimate and range for the same plots.
-3. **Compare.** Record for each: did the ranges overlap? Was the tool inside your
-   range, outside, or wildly off?
-4. **Adjudicate disagreements one by one.** For each mismatch, inspect the
-   comparable set by hand and record the verdict: **tool wrong** (a defect — fix
-   it), **prior wrong** (your intuition was off — the tool taught you something),
-   or **undecidable**.
-5. **Pass criteria** (provisional, needs ratifying): the tool's range overlaps
-   yours for at least 7 of 10, **and** there is no plot where the tool is off by
-   more than 2×, **and** every mismatch has been adjudicated rather than waved
-   away.
+### 6.1 Leave-one-out cross-validation — the primary acceptance test
 
-Pre-registration is what makes this a test rather than a vibe. Without it, whatever
-the tool outputs becomes "roughly what I expected".
+The estimator's job is: *given everything except this plot, predict this plot's
+price.* That is directly testable against data we already hold, with no human
+input and no pre-registration:
+
+1. For every listing in the corpus, remove it.
+2. Build its comparable set from the remaining listings.
+3. Produce the estimate range.
+4. Compare to the listing's **actual asking price**.
+
+This yields real, repeatable numbers:
+
+| Measure | Meaning | Healthy |
+|---|---|---|
+| **Coverage** | Share of listings we can estimate at all | High and rising; low means comparables are too scarce |
+| **Hit rate** | Share whose actual price falls inside the predicted range | Near the range's nominal coverage — a p25–p75 range should contain roughly half |
+| **Median absolute % error** | Typical miss of the range's midpoint | Tracked as a trend, not against an absolute target |
+| **Tail** | Share missed by more than 2× | Near zero; each one is a bug lead |
+
+It runs in CI, it re-runs on every change to the comparable logic, and it is
+**tier A/B rather than tier C** — a genuine upgrade over what I originally
+proposed, not a fallback.
+
+**Its limitation, stated plainly:** LOOCV proves the estimator predicts *asking
+prices* consistently. It does **not** prove asking prices are fair — a corpus of
+uniformly overpriced plots would score perfectly. Level is constrained separately
+by the GUS sales cross-check (V16); LOOCV constrains internal consistency. Neither
+alone is sufficient, and together they are still not tier D.
+
+### 6.2 Zero-effort human check
+
+Your judgement still matters, but it should cost you nothing beyond looking:
+
+- The notebook shows a plot's data — area, location, attributes, comparables —
+  **with the verdict collapsed**. You form an impression, then expand it.
+- One click records *agree* / *disagree* / *unsure*. No numbers to write, no
+  homework, no commitment beforehand.
+- Any **disagree** is a bug lead: inspect the comparable set and record whether the
+  tool was wrong, your impression was wrong, or it is undecidable.
+
+Because the verdict is hidden until after you have looked, this keeps most of the
+blindness pre-registration would have given, at roughly zero cost. It is weaker
+evidence, and it is not the primary test any more — LOOCV is.
+
+### 6.3 A slower signal worth collecting
+
+Plots we flag as **above range** should, on average, sit unsold longer than those
+in range. Our own snapshots can test this after a few weeks with no extra input.
+It is noisy and slow, but it is the only signal available before real sales data,
+and it costs nothing to record.
 
 ## 7. What v0 cannot verify
 
@@ -221,10 +257,28 @@ this operationalises rules 3 and 4:
 
 ## 9. Open questions this raises
 
-| # | Question |
-|---|---|
-| **O20** | Should **flow** or **stock** be the headline aggregate (§5)? Flow is closer to the market; stock is what you can actually buy. My recommendation: show both, headline flow, and never show one unlabelled |
-| **O21** | Is **mutation testing** (§4.8) worth the setup time for a ~13-day v0, or deferred to v0.5? |
-| **O22** | Will you **pre-register** estimates for the known-plot check (§6)? It is the difference between a test and a rationalisation, and it costs you an hour |
-| **O23** | Pass criteria in §6 — 7 of 10 overlapping, nothing off by more than 2× — are mine, not yours. Ratify or replace |
-| **O24** | Which gmina should the **golden-file corpus** (§4.5) come from? It should be one with enough listings to be meaningful and stable enough to re-record |
+| # | Status | Question |
+|---|---|---|
+| O20 | **Closed (D56)** | Flow is the headline, stock shown alongside, neither ever unlabelled |
+| O21 | **Closed (D58)** | Mutation testing is in scope for v0 |
+| O22 | **Closed (D57)** | No pre-registration. Replaced by LOOCV (§6.1) plus a zero-effort check (§6.2) |
+| O23 | **Superseded** | The 7-of-10 pass criteria died with pre-registration. LOOCV thresholds are set from the first run's actuals rather than guessed — see O25 |
+| O24 | **Superseded** | Golden-corpus regression was not selected (D58) — see the gap below |
+| **O25** | Open | LOOCV thresholds (hit rate, error, tail) cannot be set honestly before the first run. Set them from actuals, then treat regressions against them as failures |
+| **O26** | Open | **Drift detection gap.** Golden-corpus regression was the main defence against slow, unnoticed change in normalization/dedup/aggregation output. Mutation testing proves the suite has teeth; metamorphic tests prove relations hold; **neither notices output quietly changing over time.** Options: adopt the golden corpus after all, or accept the gap and rely on LOOCV metrics moving as the alarm |
+
+### The gap left by dropping golden-file regression
+
+Worth stating rather than leaving implicit. The three selected techniques cover
+different things:
+
+- **Differential** — our percentiles match a reference. Catches definition errors.
+- **Metamorphic** — output changes correctly when input changes. Catches filters
+  that silently ignore their arguments.
+- **Mutation** — the suite fails when the code is broken. Catches worthless tests.
+
+None of them catches *"the aggregate for gmina X was 118 last month and is 131 now,
+and no one changed the market"*. That was golden-file regression's job. The
+partial substitute is watching the LOOCV metrics (§6.1) as a trend — a change in
+normalization that shifts outputs will usually move hit rate or error too. Partial,
+not equivalent.

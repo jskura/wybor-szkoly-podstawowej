@@ -33,6 +33,8 @@ repeated throughout the whole documentation set.
 | **Output** | A notebook, plus one simple map |
 | **Hosting** | Your machine. No VPS (D44) |
 | **How built** | I implement, you review each step (D53), TDD per rule 3 |
+| **Headline aggregate** | **Flow** — recently listed — with stock alongside, both labelled (D56) |
+| **Acceptance** | Leave-one-out cross-validation (V51), not pre-registered estimates (D57) |
 
 ## 3. Effort — v0 no longer fits ten days (O15)
 
@@ -48,17 +50,20 @@ Stated plainly rather than absorbed silently:
 | + farmland purchasability badge (D51) | +1 |
 | **Everything you asked for** | **~22–25 days** |
 
-**Recommended split — needs your ratification (O15):**
+**Decided: everything at once (D55).** No v0/v0.5 split. The full ~22–25 days,
+including gmina BIP and the feasibility layer, delivered as one scope.
 
-- **v0 (~10–13 days)** — both rings; portals + KOWR + auctions; price comparison;
-  snapshots as insurance. **Drops gmina BIP**, which is the highest-effort and most
-  heterogeneous of the three sources.
-- **v0.5 (~8 days)** — parcels, the good-neighbour test, the purchasability badge.
-  Given D46 and D52 this is where the product gets genuinely decision-useful.
-- **Gmina BIP** — only if v0 shows portal and KOWR coverage is thin.
+I recommended the split and you chose otherwise, which is your call — recording the
+trade-off so it is a known cost rather than a surprise:
 
-If you would rather have everything at once, that is your call to make — it is
-~4–5 weeks rather than ~2, and I would rather say so than deliver it late.
+- **Nothing is usable until late.** With a six-month buying horizon (D45), the
+  first genuinely useful output arrives around week four or five.
+- **No mid-point evidence.** The split existed so that v0's findings — is portal
+  coverage adequate, do auctions add supply, does gmina BIP earn its 4–6 days —
+  could redirect the remaining work. Building it all commits those days in advance.
+- **Mitigation:** the work plan below is ordered so that value still arrives
+  incrementally, and each stage is reviewable on its own (D53). If the findings in
+  §8 arrive early and argue for stopping or redirecting, we still can.
 
 ## 4. What v0 still excludes
 
@@ -105,7 +110,11 @@ no longer a reason to prioritise anything.
 | 11 | Notebook: "price this plot" | 1 |
 | 12 | One map view | 1 |
 
-**≈ 13 days** with gmina BIP dropped and the good-neighbour work in v0.5.
+| 13 | Gmina BIP notices (~50 gminas, heterogeneous formats) | 4–6 |
+| 14 | Parcels + buildings; the WZ good-neighbour test (`19` §1) | 3–4 |
+| 15 | Farmland purchasability badge (`19` §2) | 1 |
+
+**≈ 22–25 days** — everything, per D55.
 
 ## 7. How we know v0 worked
 

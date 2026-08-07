@@ -668,7 +668,8 @@ techniques that work where no oracle exists. Tier references are to `20` §2.
 ### V45 — Stock and flow are computed and labelled separately (`20` §5)
 
 - **AC** Every aggregate is available as **stock** (all active listings) and
-  **flow** (first seen within the window), each labelled. Neither is ever rendered
+  **flow** (first seen within the window), each labelled. **Flow is the headline**
+  (D56); stock is shown alongside. Neither is ever rendered
   without saying which it is. The two are never averaged.
 - **How** (a) Unit test on a fixture where a long-standing overpriced listing sits
   alongside recent cheaper ones: assert stock median > flow median by the
@@ -717,7 +718,11 @@ techniques that work where no oracle exists. Tier references are to `20` §2.
 - **Falsified by** Any disagreement. Percentile conventions differ; adopting one
   silently produces slightly-wrong ranges forever.
 
-### V49 — Golden-corpus regression (`20` §4.5)
+### V49 — Golden-corpus regression (`20` §4.5) — **NOT SELECTED for v0 (D58)**
+
+> Retained as a specification. Dropping it leaves the drift-detection gap recorded
+> as O26: nothing else in the suite notices output changing quietly over time.
+
 
 - **AC** A frozen, scrubbed crawl of one gmina produces byte-stable aggregate
   outputs. Any change to normalization, dedup or aggregation that alters them fails
@@ -737,22 +742,41 @@ techniques that work where no oracle exists. Tier references are to `20` §2.
 - **Against** The live quarantine table.
 - **Falsified by** A segment disappearing from the corpus without an alarm.
 
-### V51 — Known-plot acceptance check (D54, `20` §6)
+### V51 — Leave-one-out cross-validation (D54, D57, `20` §6.1)
 
-- **AC** Against **pre-registered** owner estimates for 8–10 known plots, committed
-  before any tool output is seen: the tool's range overlaps the owner's for at
-  least 7 of 10; no plot is off by more than 2×; every mismatch is adjudicated and
-  recorded as *tool wrong*, *prior wrong*, or *undecidable*. Thresholds are
-  provisional (O23).
-- **How** A written protocol run once before v0 is accepted, and re-run after any
-  change to the comparable logic.
-- **Against** The owner's pre-registered judgement — the only oracle available at
-  tier C.
-- **Falsified by** Failing the thresholds, or — more insidiously — running the
-  check *without* pre-registration, which turns it into a rationalisation of
-  whatever the tool produced.
+> Replaces the pre-registered known-plot check, which the owner declined (D57).
+> This is stronger, not a fallback: it is tier A/B rather than tier C, automatic,
+> and re-runnable on every change.
 
-### V52 — Mutation testing of the numeric core (`20` §4.8, scope open — O21)
+- **AC** For every listing in the corpus: remove it, build its comparable set from
+  the remainder, produce an estimate, and compare to its actual asking price.
+  Reports coverage, hit rate (share falling inside the predicted range), median
+  absolute percentage error, and tail (share missed by more than 2x). Hit rate
+  should approach the range's nominal coverage — a p25–p75 range containing ~90%
+  or ~15% of actual prices is broken in opposite directions.
+- **How** A CI job over the committed corpus, re-run on any change to comparable
+  selection, banding or aggregation. Thresholds are set from the first run's
+  actuals (O25), not guessed in advance; subsequent regressions against them fail.
+- **Against** The corpus itself, with each listing held out in turn.
+- **Falsified by** Hit rate far from nominal; a fat tail of >2x misses; coverage
+  collapsing when the comparable rules change.
+- **Limitation** Proves the estimator predicts *asking* prices consistently, not
+  that asking prices are fair. A uniformly overpriced corpus would score perfectly.
+  Price *level* is constrained separately by V16 (GUS cross-check); this constrains
+  internal consistency. Neither is tier D.
+
+### V51b — Zero-effort human spot check (`20` §6.2)
+
+- **AC** The notebook presents a plot's data with the verdict **collapsed**, so an
+  impression forms before the answer is seen; one click records agree / disagree /
+  unsure. Every *disagree* is triaged as tool wrong, impression wrong, or
+  undecidable, and the outcome recorded.
+- **How** Manual, ad hoc, whenever the owner is looking at plots anyway.
+- **Against** The owner's in-the-moment judgement (tier C).
+- **Falsified by** A pattern of disagreements traced to a defect. Not a gate — a
+  bug-lead generator.
+
+### V52 — Mutation testing of the numeric core (`20` §4.8, **in scope — D58**)
 
 - **AC** Deliberate faults injected into normalization, aggregation and estimation
   — swapping p25 and p75, dropping a filter clause, flipping a comparison — are
