@@ -224,24 +224,119 @@ the median it shows is not an artifact of a broken scraper.
 
 ---
 
+# Analytical journeys
+
+D26 reframed the analytical layer: the core question is not "show me charts" but
+**"what should this cost, and is this one over or under?"** J9–J12 are that layer.
+Method for all of them: [`05-analytics-methodology.md`](./05-analytics-methodology.md).
+
+## J9 — "What should a plot like this cost here?" *(valuation, no listing)* — **P1/P2, core**
+
+**Trigger:** User is calibrating — before viewing anything, or while deciding
+whether an area is worth searching at all. There is no listing involved.
+
+**Steps**
+1. Opens the what-if calculator. Enters features: area, buildability, utilities,
+   road access, and optionally nature attributes.
+2. Picks a place — a gmina, or a point with a radius.
+3. Gets a **range, never a point** (D32): *"oczekiwana cena ofertowa 95–140 zł/m²,
+   mediana 118, n=23, ta sama gmina"*, plus the sales-price range separately where
+   data exists, plus the gap between them.
+4. Sees the **comparable set the estimate rests on** and can strike out plots they
+   consider unrepresentative; the range recomputes.
+5. Sees the **widening step** — whether this rests on the same gmina or on a 25 km
+   radius. The estimate is a weaker claim in the second case and says so.
+6. Varies one input at a time to feel the shape of the market.
+
+**Success:** the user can state what a plot should cost *before* a seller anchors
+them with an asking price.
+
+**Falsification of the journey, not just the code:** if the range is so wide it
+admits any price, the journey has failed even when every test passes.
+
+## J10 — "What is each feature actually worth?" *(attribution)* — P2/P4
+
+**Steps**
+1. Picks an area and an asset class.
+2. Sees the **marginal value of each attribute** in zł/m² — buildability,
+   utilities, road access, forest proximity, water proximity, protected status,
+   road/rail noise — each with an uncertainty interval.
+3. Every figure is marked **"szacunek modelu"** (D33): these come from the
+   regression, not from comparables, and are never the basis of a verdict.
+4. Two specific sub-questions get their own treatment:
+   - **"What if this became buildable?"** — the observed market gap between
+     buildability classes in the same gmina, carrying an unavoidable caveat: this
+     is the price difference between classes, **not** a probability of obtaining
+     rezoning, and not a claim that rezoning is achievable.
+   - **"Same plot, somewhere else"** — features held constant, place varied,
+     answered by comparables rather than the model (`05` §6).
+
+**Success:** the user can say "the forest edge is worth roughly X here" and knows
+exactly how much confidence that deserves.
+
+## J11 — "Did the market move, or did the mix change?" *(trends done honestly)* — P2/P4
+
+**Trigger:** A price series appears to have moved and the user needs to know
+whether that is real.
+
+**Steps**
+1. Picks units and an asset class, split by buildability (D28 — never mixed).
+2. Sees the **mix-adjusted index as the headline** series, with the plain median
+   available alongside (D27, `05` §7).
+3. Where the two diverge, the divergence is explained — *"mediana spadła, ale
+   indeks jest płaski: w tym miesiącu ogłoszono więcej dużych działek rolnych"*.
+   The composition change is the finding, not an error to hide.
+4. Sales series carry the **incomplete-period marker** (`08` §4), so the spurious
+   drop at the right-hand edge of registry data is never read as a crash.
+5. Exports the series with its sample sizes.
+
+**Success:** the user never mistakes a composition shift for a price movement —
+which is the single most common way land-price charts mislead.
+
+## J12 — "Tell me what changed" *(generated digest)* — P1/P2
+
+**Trigger:** Nothing. This one arrives on a schedule (D25).
+
+**Steps**
+1. Receives a periodic digest covering the anchor rings: notable price movements
+   with their mix-adjustment caveat, new listings falling below their expected
+   range, plots whose asking price crossed into or out of the expected range, and
+   **data-quality events** — a connector down, coverage dropped, an assertion
+   failing.
+2. Each item carries its evidence and links into the plot page or trends view.
+
+Including data-quality events in the same digest is deliberate: a silent pipeline
+failure looks exactly like a quiet market, and the user must be able to tell the
+difference (J8).
+
+**Success:** the user can stop checking, and still not miss anything.
+
+**Open:** cadence and channel (O8).
+
+---
+
 ## Journey → capability map
 
-| Capability | J1 | J2 | J3 | J4 | J5 | J6 | J7 |
-|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| Land listing ingestion + dedup | ● | ● | ● | ● | ● | ○ | ● |
-| Normalization to PLN/m² | ● | ● | ● | ● | ● | ● | ● |
-| Gmina aggregates + choropleth | ● | ○ | | | | ● | ● |
-| Parcel resolution (ULDK/EGiB) | | ● | ● | | | | |
-| Zoning enrichment (plan ogólny/MPZP) | ○ | ● | ● | ○ | | | ○ |
-| Comparable-set engine | | ● | ● | | ● | | |
-| Sales prices — GUS BDL baseline | ○ | ● | | | ● | ○ | ● |
-| Sales prices — RCN parcel level | | ○ | | | ● | | ● |
-| Price-type labelling everywhere | ● | ● | ● | ● | ● | ● | ● |
-| Listing price history | | | ● | ● | ● | | ● |
-| Nature attributes (forest/water/protected/noise) | ○ | ● | ● | ○ | | | |
-| Travel time to configured anchors | ● | ○ | ● | ○ | | ● | |
-| Saved searches + alerts | | | | ● | | | |
-| Housing corpus | | | | | | ● | ○ |
+| Capability | J1 | J2 | J3 | J4 | J5 | J6 | J7 | J9 | J10 | J11 | J12 |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Land listing ingestion + dedup | ● | ● | ● | ● | ● | ○ | ● | ● | ● | ● | ● |
+| Normalization to PLN/m² | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| Gmina aggregates + choropleth | ● | ○ | | | | ● | ● | | | ○ | |
+| Parcel resolution (ULDK/EGiB) | | ● | ● | | | | | ○ | ● | | ○ |
+| Zoning enrichment (plan ogólny/MPZP) | ○ | ● | ● | ○ | | | ○ | ● | ● | ● | ○ |
+| **Comparable-set estimator** | | ● | ● | | ● | | | ● | ● | | ● |
+| **Hedonic regression (feature values only)** | | | | | | | | | ● | | |
+| **Mix-adjusted index** | | | | | | ○ | ● | | | ● | ● |
+| Sales prices — GUS BDL baseline | ○ | ● | | | ● | ○ | ● | ● | ○ | ● | ○ |
+| Sales prices — RCN parcel level | | ○ | | | ● | | ● | ○ | ○ | ● | ○ |
+| Price-type labelling everywhere | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| Listing price history | | | ● | ● | ● | | ● | | | ● | ● |
+| Nature attributes (forest/water/protected/noise) | ○ | ● | ● | ○ | | | | ● | ● | | |
+| Travel time to configured anchors | ● | ○ | ● | ○ | | ● | | ○ | | | |
+| **Prediction log + scoring** | | ○ | | | | | | ● | ○ | | ○ |
+| Saved searches + alerts | | | | ● | | | | | | | ● |
+| Scheduled digest generation | | | | ○ | | | | | | | ● |
+| Housing corpus | | | | | | ● | ○ | | | | |
 
 ● required ○ improves the journey but not blocking
 

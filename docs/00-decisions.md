@@ -61,6 +61,32 @@ before the affected work starts.
 | D23 | Next step | **Docs only — PRD + validation, then stop** | No code until this is reviewed |
 | D24 | Repo name | **Rename — suggestions requested** | Pending; see README |
 
+## Batch 7 — the analytical layer (2026-08-07)
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D25 | Who analyses, and where? | **All three** — UI screens, notebook against the database, and generated digests | Needs a stable documented query layer *and* screens *and* scheduled reports |
+| D26 | Which analytical questions matter? | **"Is this plot over- or under-priced?"** and **"What should a plot with these features cost in this place?"** | Reframes the analytical layer around **valuation**, not exploratory dashboards. Now the product's centre of gravity |
+| D27 | How to handle mix-shift in time series | **Mix-adjusted — stratify and reweight** | Plain medians are never the headline trend figure |
+| D28 | What must be held constant when comparing areas | **Always split by buildability** | No cross-area comparison ever mixes buildable and non-buildable land |
+
+## Batch 8 — valuation design (2026-08-07)
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D29 | Valuation target | **Both asking and sales, shown separately** | Two estimates per plot, never blended (rule 5) |
+| D30 | Estimator | **Comparable-set median, transparent** | Every estimate is traceable to the specific plots behind it |
+| D31 | What-if forms to support | **All four**: price a hypothetical plot; same plot in a different place; value of each feature; value if it became buildable | Valuation is a general function of (features × place), not just a listing lookup |
+| D32 | How uncertainty is expressed | **Always a range, never a point** | Consistent with rule 6. Range width *is* the confidence signal |
+
+## Batch 9 — model governance, documentation, evaluation (2026-08-07)
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D33 | Comparables can't isolate per-feature value — how to square with D30/D31 | **Comparables for the verdict, regression for feature values** | Two estimators with strictly separated roles; the regression never produces the headline number |
+| D34 | Which areas to document next | **All eight**: analytics methodology, taxonomy & extraction, UX, geocoding, temporal model, NFR & access, operations & backup, glossary | Docs 05–12 |
+| D35 | How to evaluate the valuation | **Log every prediction, score it later against realized outcomes** | `valuation_log` must exist from the first estimate ever made, or the evidence never accumulates |
+
 ## Open — not yet decided
 
 | # | Question | Blocks |
@@ -69,4 +95,8 @@ before the affected work starts.
 | O2 | Outcome of the RCN access research (D5) — which of the ~70 powiats publish freely | M1 sales-price connector |
 | O3 | Final repo name (D24) | Cosmetic only |
 | O4 | Simple access gate for "a few friends" (D1) — shared password, IP allowlist, or none | M2 deployment |
-| O5 | Does "as far as free data allows" (D8) include paying nothing for GUS historical series that may be behind bulk-download friction? | M1 baseline import |
+| O5 | Does "as far as free data allows" (D8) include GUS historical series behind bulk-download friction? | M1 baseline import |
+| O6 | **Size adjustment**: price per m² falls as plots get larger. D28 mandated only the buildability split. Do we also adjust for size, beyond the ±50% area band already in FR-26? Recommendation: yes — see [`05-analytics-methodology.md`](./05-analytics-methodology.md) §4 | Area comparison fairness |
+| O7 | **Standard-plot benchmark**: express each area's price as "what a fixed reference plot would cost here". Considered in batch 7 and not selected; would make cross-area comparison a single honest number | Area comparison UX |
+| O8 | Digest cadence and channel for the generated-report half of D25 | M5 |
+| O9 | Notebook access mechanism for D25 — read replica, read-only role, or direct access | M2 |

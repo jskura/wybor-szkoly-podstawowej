@@ -255,7 +255,94 @@ they disagree, both are shown, labelled by type, and the gap is the feature.
   comparison board (2–4 plots, differences highlighted, weighted ranking with
   visible reasoning, export), trends view, and a coverage/method page.
 
-### 8.8 Research spikes
+### 8.8 Valuation and analytics (D26–D33)
+
+Method is specified in [`05-analytics-methodology.md`](./05-analytics-methodology.md);
+these are the requirements it must satisfy.
+
+- **FR-32** **Estimator**: `estimate(features, place, price_type, as_of)` returns
+  `{low, median, high, n, basis, widening_step}`. It is **always a range** (D32).
+  A point estimate is never produced, including internally, so it cannot leak.
+- **FR-33** The estimator works with **no listing involved** — features may be
+  supplied directly, so the product answers "what should a plot like this cost
+  here" and not only "is this listing fair" (D26, D31).
+- **FR-34** **Comparable-set median is the only source of a verdict** (D30).
+  Comparable sets match buildability **exactly** and never widen across it (D28),
+  and never widen across price type or the `unknown` boundary.
+- **FR-35** The **widening step** reached is recorded and displayed. An estimate
+  built from a 25 km radius is a weaker claim than a same-gmina one and must be
+  legible as such.
+- **FR-36** The comparable set is fully **enumerable and editable** — every
+  contributing plot is listed, and excluding one recomputes the estimate.
+- **FR-37** Both `expected_offering` and `expected_sales` are produced and shown
+  **separately**, with the gap (rule 5, D29). A missing sales estimate renders as
+  absent, never filled from the offering estimate.
+- **FR-38** The verdict is expressed **relative to the range** — below / within /
+  above — not as a percentage deviation from the median.
+- **FR-39** **Hedonic regression is restricted to feature values** (D33). Its
+  output is always marked as a model estimate and is **never** the verdict.
+  Enforced structurally: the verdict code path has no access to model output.
+- **FR-40** **Rezoning uplift** ("value if it became buildable") is computed by
+  contrasting buildability strata, and is presented with an unavoidable caveat that
+  it is an observed market gap, **not** a probability of obtaining rezoning.
+- **FR-41** **Mix-adjusted index** (D27): stratify by asset class × buildability ×
+  area band, reweight to a fixed basket. The mix-adjusted series is the headline
+  trend figure; the plain median is secondary and labelled.
+- **FR-42** Strata with no observations in a period are carried with an explicit
+  gap marker, never dropped — dropping them silently reweights the basket.
+- **FR-43** Cross-area comparison is by like-for-like estimate or stratified
+  distribution only. A raw area average is **not** offered as a comparison tool.
+- **FR-44** **Every estimate ever produced is logged** to `valuation_log` with its
+  inputs, output, comparable count, widening step and `method_version` (D35). This
+  is a precondition of the first estimate, not a later addition — predictions
+  cannot be reconstructed afterwards.
+- **FR-45** **Scoring**: calibration, bias, MAPE, coverage and widening profile,
+  computed per `method_version` against realized outcomes. RCN transactions are
+  the real test; final asking price before delisting is a weak signal, labelled.
+- **FR-46** A method change **increments `method_version`**; historical predictions
+  keep the version that produced them and are scored within it.
+- **FR-47** **Analytical surfaces** (D25): in-app screens, a documented read-only
+  query layer for notebooks, and scheduled digests. The digest includes
+  data-quality events alongside market events, because a silent pipeline failure
+  and a quiet market look identical otherwise.
+
+### 8.9 Pipeline correctness (docs 06–08)
+
+- **FR-48** `zoning_claim` (what the advert says) and `buildability` (what planning
+  data says) are **separate columns, never reconciled**. Disagreement is displayed
+  as a risk flag (`06` §1).
+- **FR-49** Portal category maps are explicit and exhaustive; an unmapped category
+  alarms rather than defaulting to a class.
+- **FR-50** Attribute extraction handles Polish inflection, **negation** and
+  proximity qualifiers, and emits a confidence per attribute. `unknown` is never
+  coerced to `absent` (`06` §3).
+- **FR-51** Area unit normalisation (ar, hektar, decimal comma) with an
+  authority order: parcel register → structured field → body → title, source
+  recorded (`06` §3.2).
+- **FR-52** Extraction quality is measured against a **200-advert hand-labelled
+  set**, scored per attribute, with a negation subset (`06` §4).
+- **FR-53** **`location_precision`** is recorded per listing and **gates use**:
+  nature attributes and parcel enrichment require `address` or better; a fuzzed
+  pin never yields a distance-to-forest figure (`07` §3).
+- **FR-54** Gmina assignment is by TERYT code, never by name; boundary-proximate
+  listings are flagged (`07` §4).
+- **FR-55** Distances and areas are computed in EPSG:2180; storage is EPSG:4326;
+  every geometry carries an explicit SRID (`07` §5).
+- **FR-56** The four times — `observed_at`, validity interval, `transacted_at`,
+  `as_of` — are distinct fields. Series are plotted on **when the fact was true**,
+  never on when we saw it or when it was published (`08` §1).
+- **FR-57** Offering prices are **intervals**, so a listing contributes to every
+  month it was active, at the price in force. Crawl gaps are recorded as
+  uncertainty, never interpolated (`08` §2).
+- **FR-58** Delisting is **not** treated as sale. Time-on-market is reported as
+  time listed (`08` §3).
+- **FR-59** Sales aggregates carry a **completeness indicator**; periods still
+  filling are labelled incomplete, so late-arriving registry data does not read as
+  a price drop (`08` §4).
+- **FR-60** Recomputation is **versioned, never silent**; material revisions are
+  surfaced on the coverage page (`08` §4).
+
+### 8.10 Research spikes
 
 - **FR-31** **RCN access research** (D5), before any RCN connector is scheduled.
   Deliverable: a table of the ~70 in-scope powiats with, for each, whether RCN data
@@ -275,10 +362,17 @@ are **first-class from the start** (D3), so GUS BDL lands in M1, not M4.
 | **M1 — Both price types flowing** | Land connectors (daily) for all three units; **GUS BDL sales baseline**; snapshot pipeline; dedup; normalization; coverage page | data accrues |
 | **M2 — See** | Gmina aggregates for both price types, choropleth, filters, travel time to anchors | **J1** |
 | **M3 — Judge** | ULDK parcel resolution, zoning, nature and constraint enrichment, comparable engine, plot page, comparison board | **J2, J3**, J8 |
-| **M4 — Parcel-level sales** | RCN connector for whichever powiats FR-31 found free; asking-vs-sales spread; trends | **J5, J7** |
-| **M5 — Extend** | Saved searches and alerts; housing surfaced; buy-vs-build | **J4, J6** |
+| **M3.5 — Value** | Comparable-set estimator, what-if calculator, `valuation_log` from the first estimate | **J9** |
+| **M4 — Parcel-level sales** | RCN connector for whichever powiats FR-31 found free; asking-vs-sales spread; mix-adjusted index; trends | **J5, J7, J11** |
+| **M5 — Extend** | Hedonic feature values; scoring of logged predictions; digests; saved searches; housing surfaced | **J10, J12, J4, J6** |
 
-M2 is the first demoable milestone; M3 the first genuinely useful one.
+M2 is the first demoable milestone; M3 the first genuinely useful one; **M3.5 is
+where the product answers its central question** (D26).
+
+Two ordering constraints beyond the backfill rule: `valuation_log` (FR-44) must
+exist from the very first estimate, and the hedonic model (FR-39) cannot be fitted
+until enough enriched data has accumulated — which is why feature values land in
+M5 rather than alongside the estimator.
 
 ## 10. Data model
 
@@ -393,12 +487,34 @@ depth. None block M0.
 | Journey | Requirements |
 |---|---|
 | J1 Where can I afford | FR-1..6, 11..14, 21, 24, 25, 30 |
-| J2 Is it fairly priced | FR-7..17, 18..20, 26, 30 |
+| J2 Is it fairly priced | FR-7..20, 26, 30, 32..38, 48 |
 | J3 Side-by-side | FR-3, 15..21, 26, 30 |
 | J4 Alerts | FR-1, 3, 4, 13 (+M5) |
-| J5 Negotiation | FR-3, 7..10, 27, 30 |
+| J5 Negotiation | FR-3, 7..10, 27, 30, 58 |
 | J6 Buy vs build | FR-11, 24, 27 |
-| J7 Trends | FR-7..10, 24, 25, 27 |
-| J8 Trust | FR-6, 12, 25, 29, 30 |
-| Rule 5 (two price types) | FR-7, 8, 9, 10, 24, 27 |
-| Rule 6 (always show, always flag) | FR-25 |
+| J7 Trends | FR-7..10, 24, 25, 27, 41, 42, 59 |
+| J8 Trust | FR-6, 12, 25, 29, 30, 35, 60 |
+| **J9 What should it cost** | **FR-32..38, 44, 53** |
+| **J10 Feature values** | **FR-39, 40, 45** |
+| **J11 Real move or mix shift** | **FR-41, 42, 43, 56, 59** |
+| **J12 Digest** | **FR-47, 6** |
+| Rule 5 (two price types) | FR-7, 8, 9, 10, 24, 27, 37 |
+| Rule 6 (always show, always flag) | FR-25, 32, 35 |
+
+## Appendix — document map
+
+| Doc | Covers |
+|---|---|
+| [`00-decisions.md`](./00-decisions.md) | D1–D35, open items O1–O9 |
+| [`01-user-journeys.md`](./01-user-journeys.md) | J1–J12 |
+| `02-prd.md` | This document — FR-1..60 |
+| [`03-data-sources.md`](./03-data-sources.md) | Sources, licensing, scraping rules |
+| [`04-validation.md`](./04-validation.md) | V1–V42 |
+| [`05-analytics-methodology.md`](./05-analytics-methodology.md) | Valuation, comparables, mix adjustment, scoring |
+| [`06-taxonomy-and-extraction.md`](./06-taxonomy-and-extraction.md) | Asset classes, attribute extraction |
+| [`07-geocoding.md`](./07-geocoding.md) | Location resolution and precision gating |
+| [`08-temporal-model.md`](./08-temporal-model.md) | The four times, intervals, revisions |
+| [`09-ux-specification.md`](./09-ux-specification.md) | Screens, states, honesty rules |
+| [`10-nfr-and-access.md`](./10-nfr-and-access.md) | Scale, performance, retention, access |
+| [`11-operations.md`](./11-operations.md) | Pipeline, backup, monitoring, recovery |
+| [`12-glossary.md`](./12-glossary.md) | Polish ↔ code terminology |

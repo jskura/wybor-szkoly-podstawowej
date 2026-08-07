@@ -291,7 +291,343 @@ execution. A failure here blocks a release.
 
 ---
 
-## M2+ — deferred, method required before implementation
+## M3.5 — Valuation (docs 05)
+
+### V17 — The estimator never returns a point (FR-32, D32)
+
+- **AC** Every return from `estimate()` carries `low`, `median`, `high`, `n`,
+  `basis` and `widening_step`, all non-null. No internal code path produces a bare
+  scalar price. Where n < 5 the range is min–max; where n ≥ 5 it is p25–p75.
+- **How** (a) Property test over generated inputs asserting the return type always
+  carries all six fields; (b) a static check that no function in the valuation
+  module returns a bare numeric price; (c) unit tests at n = 1, 4, 5, 30 asserting
+  the correct range definition is used at each.
+- **Against** Generated feature bundles plus fixture comparable sets at controlled n.
+- **Falsified by** Any estimate serialized without a range; any point estimate
+  reachable from the API.
+
+### V18 — Comparable sets never widen across buildability (FR-34, D28)
+
+- **AC** No comparable set ever contains a plot whose buildability differs from the
+  subject's, at any widening step, including the most relaxed. `unknown` subjects
+  draw only on `unknown` comparables. Price type likewise never widens.
+- **How** (a) Unit test walking every widening step for a subject with deliberately
+  few local comparables, asserting buildability homogeneity at each step;
+  (b) a test that a subject with **zero** same-buildability comparables anywhere
+  returns "cannot estimate" rather than a set containing other classes; (c) `Δ`
+  assertion over `valuation_log` that no logged comparable set mixed classes.
+- **Against** A fixture area seeded with plots of every buildability class, where a
+  buggy widener would obviously pick up the wrong ones.
+- **Falsified by** A single mixed-buildability comparable set; an `unknown` subject
+  estimated from `buildable` comparables.
+
+### V19 — Widening step is recorded and displayed (FR-35)
+
+- **AC** Every estimate records which widening step produced it, and the UI shows
+  it. An estimate from a 25 km radius is visually distinguishable from a same-gmina
+  one without reading numbers.
+- **How** Unit test asserting the step matches the data available (seed a fixture
+  where same-gmina has 4 comparables and 10 km has 12; assert the step is `10km`
+  and not `gmina`); UI snapshot test asserting the step label renders.
+- **Against** Seeded fixtures at each rung of the ladder.
+- **Falsified by** An estimate whose recorded step does not match the data it used;
+  a rendered estimate with no visible basis.
+
+### V20 — Offering and sales estimates stay separate (FR-37, rule 5)
+
+- **AC** `expected_offering` and `expected_sales` are computed from disjoint inputs
+  and shown separately. Where sales comparables are absent, the sales estimate is
+  an explicit absence — never the offering estimate, never an interpolation.
+- **How** (a) Unit test with a fixture area having offering comparables and **zero**
+  sales comparables; assert the sales estimate is an absence marker and that the
+  offering value appears nowhere in the sales field; (b) the V2 divergent-value
+  fixture reused at the estimator level.
+- **Against** Fixture areas with each combination of present/absent by price type.
+- **Falsified by** A sales estimate numerically equal to the offering estimate; any
+  fallback path between the two.
+
+### V21 — The regression can never produce a verdict (FR-39, D33)
+
+- **AC** The verdict code path has **no access** to regression output — structurally,
+  not by convention. Feature values are always rendered with the model marker.
+- **How** (a) An architectural test asserting the verdict module does not import
+  the model module, and that no model output type appears in the verdict's return
+  type; (b) UI test asserting every feature-value figure carries *"szacunek
+  modelu"*; (c) a test that deleting the fitted model entirely leaves verdicts
+  working and only feature values unavailable — the strongest proof of separation.
+- **Against** The module dependency graph; rendered components.
+- **Falsified by** Any import path from verdict to model; a feature value rendered
+  without its marker; verdicts breaking when the model is removed.
+
+### V22 — Rezoning uplift carries its caveat (FR-40)
+
+- **AC** The uplift figure is computed from strata contrast within the same gmina
+  and period, and is never rendered without the caveat that it is an observed
+  market gap and not a probability of rezoning.
+- **How** Unit test on the contrast computation with known strata medians; UI test
+  asserting the caveat text is present in the same visual block as the number and
+  is not a tooltip.
+- **Against** A fixture gmina with known buildable and agricultural medians.
+- **Falsified by** The uplift rendered anywhere without the caveat; the uplift
+  computed across different gminas or periods.
+
+### V23 — Mix adjustment actually removes composition effects (FR-41, FR-42, D27)
+
+- **AC** Given a synthetic series where **no price changes** but composition shifts
+  hard (month 2 adds many large cheap agricultural plots), the plain median moves
+  and the **mix-adjusted index stays flat within tolerance**. Given a series where
+  prices move uniformly and composition is constant, both move together. Empty
+  strata are carried with a gap marker, not dropped.
+- **How** Two synthetic series constructed to isolate each effect, asserted
+  directly. Plus a test that removing a stratum's observations does not change the
+  basket weights.
+- **Against** Hand-constructed synthetic series with known ground truth — the only
+  way to test this, since real data confounds the two effects by definition.
+- **Falsified by** The index moving when only composition changed; the index failing
+  to move when prices changed; a dropped empty stratum shifting the weights.
+
+### V24 — Prediction logging and scoring (FR-44..46, D35)
+
+- **AC** Every estimate produced anywhere — UI, API, digest, notebook helper —
+  writes a `valuation_log` row with inputs, output range, comparable count,
+  widening step and `method_version`. Zero estimates go unlogged. Scoring computes
+  calibration, bias, MAPE, coverage and widening profile **per `method_version`**.
+  A method change increments the version and does not rewrite old rows.
+- **How** (a) A test harness that calls every public estimate entry point and
+  asserts a log row appears for each — this is the test that catches a new endpoint
+  added later without logging; (b) `Δ` assertion comparing estimate-serving counts
+  to log row counts; (c) scoring computed against a fixture of predictions with
+  known realized outcomes, verifying each measure arithmetically; (d) a test that
+  changing a comparable rule without incrementing `method_version` fails a check.
+- **Against** A fixture prediction set with known realized prices, including cases
+  inside and outside the predicted range.
+- **Falsified by** Any estimate path that does not log; scoring that pools versions;
+  a silent method change.
+
+**Falsification of the valuation itself** (`05` §10), evaluated quarterly once
+outcomes accumulate: a p25–p75 range containing ~90% or ~15% of realized prices
+rather than roughly half; persistent directional bias surviving a version change;
+regression feature values disagreeing in **sign** with comparable contrasts. Any of
+these means the methodology is wrong, not merely imprecise, and the affected
+figures come out of the UI until resolved.
+
+## M1/M3 — Pipeline correctness (docs 06–08)
+
+### V25 — `zoning_claim` is never reconciled into `buildability` (FR-48, `06` §1)
+
+- **AC** The two remain separate columns. A listing whose advert says *"budowlana"*
+  while planning data says agricultural retains both values and is displayed with
+  the disagreement flagged. No code path writes `zoning_claim` into `buildability`.
+- **How** (a) Unit test with a deliberately mislabelled fixture advert, asserting
+  both values survive and the disagreement flag is set; (b) a static check that
+  `buildability` is only ever assigned from planning-data sources; (c) `Δ` assertion
+  counting rows where `buildability` was sourced from advert text — must be 0.
+- **Against** Fixture adverts with known-false zoning claims.
+- **Falsified by** A single `buildability` value traceable to advert text.
+
+### V26 — Category maps are exhaustive (FR-49)
+
+- **AC** Every source category encountered maps explicitly to a class or raises an
+  alarm. No default assignment exists.
+- **How** Unit test feeding an unmapped category and asserting an alarm plus no
+  class assignment; a test that the map contains no wildcard or fallback entry.
+- **Against** Recorded category lists per portal, plus a synthetic unknown category.
+- **Falsified by** An unmapped category silently receiving a class.
+
+### V27 — Extraction handles negation and proximity (FR-50, `06` §3)
+
+- **AC** "brak prądu" → `absent`, never `present`. "prąd w drodze" → `at_boundary`,
+  never `present`. "media w planach" → not `present`. Unmentioned attributes →
+  `unknown`, never `absent`. Precision on `present` claims ≥ 0.95 on the labelled
+  set, reported **per attribute**, not averaged.
+- **How** (a) A dedicated negation test suite over the ≥30 negation/proximity
+  adverts in the labelled set; (b) per-attribute precision/recall scoring against
+  the 200-advert labelled set, failing if any attribute falls below threshold;
+  (c) a test asserting no extractor can emit `absent` from absence of mention.
+- **Against** The 200-advert hand-labelled set (`06` §4), personal fields scrubbed.
+- **Falsified by** Any negated phrase extracted as positive; an unmentioned
+  attribute stored as `absent`; per-attribute precision below threshold hidden by a
+  good average.
+
+### V28 — Area unit normalisation (FR-51, `06` §3.2)
+
+- **AC** "12 arów" → 1200 m², "0,12 ha" → 1200 m², "1 200 m²" → 1200 m². Where
+  advert and register disagree, the register wins and the source is recorded.
+- **How** Unit tests per unit form including decimal comma and thousands space;
+  a conflict test where the advert says 1200 m² and the register says 1450 m²,
+  asserting 1450 is used and `area_source = 'register'`.
+- **Against** Fixture adverts in each unit form; a parcel with a known register area.
+- **Falsified by** A hectare listing priced as if in m² (a 100× error); the advert
+  overriding the register.
+
+### V29 — `location_precision` gates downstream use (FR-53, `07` §3)
+
+- **AC** Nature attributes and parcel enrichment are computed **only** for
+  `address` precision or better. A `pin`-precision listing has no
+  distance-to-forest value at all — not zero, not null-rendered-as-zero, but
+  absent, with the UI showing *"brak dokładnej lokalizacji"*.
+- **How** (a) Unit test per precision level asserting exactly which attributes are
+  populated; (b) `Δ` assertion that zero rows have a nature distance where
+  precision is below `address`; (c) UI test for the absent state.
+- **Against** Fixture listings at each precision level.
+- **Falsified by** Any nature distance on a `pin` or coarser listing.
+
+### V30 — Gmina assignment by TERYT, and the Skierniewice trap (FR-54, `07` §4)
+
+- **AC** Assignment uses TERYT codes throughout; no code path resolves a gmina by
+  name. Gmina Skierniewice (rural) and the city of Skierniewice resolve to
+  different units. Budy Grabskie resolves to the rural gmina.
+- **How** (a) Static check for gmina lookups by name string; (b) a known-answer
+  test asserting Budy Grabskie → gmina Skierniewice (rural), and a listing in the
+  city → the city unit, with different TERYT codes; (c) boundary-proximity flag
+  test at 400 m and 600 m from a boundary.
+- **Against** PRG boundaries; the confirmed location of Budy Grabskie.
+- **Falsified by** The two Skierniewice units merging; any name-based lookup.
+
+### V31 — Projections (FR-55, `07` §5)
+
+- **AC** Distances and areas are computed in EPSG:2180, storage is EPSG:4326, every
+  geometry column has a declared SRID.
+- **How** Known-answer test: the distance between two points of known separation
+  computed to within 1 m; a schema test asserting no geometry column lacks an SRID;
+  a test that a distance computed in degrees would fail the known-answer check.
+- **Against** Two points with an independently known separation.
+- **Falsified by** A distance off by the ~111 km/degree factor; an SRID-less column.
+
+### V32 — The four times stay distinct (FR-56, `08` §1)
+
+- **AC** `observed_at`, validity interval, `transacted_at` and `as_of` are separate
+  fields, never conflated. Sales series plot on `transacted_at`; offering series on
+  the validity interval. No series plots on `observed_at` or `as_of`.
+- **How** (a) A fixture where `transacted_at` and `as_of` differ by 14 months;
+  assert the transaction lands in the correct period and not the publication one;
+  (b) a static check that charting queries never group by `observed_at`/`as_of`.
+- **Against** RCN-shaped fixtures with a deliberately long publication lag.
+- **Falsified by** A transaction appearing in the quarter it was published rather
+  than signed.
+
+### V33 — Offering prices behave as intervals (FR-57, `08` §2)
+
+- **AC** A listing active January–June contributes to all six monthly medians, at
+  the price in force in each. A crawl gap produces recorded uncertainty, never
+  interpolation.
+- **How** Simulated six-month snapshot fixture with a price cut in March and a
+  three-day crawl outage in April; assert monthly contributions, the price used in
+  each month, and that the April interval carries `boundary_uncertainty` rather
+  than an invented change date.
+- **Against** The synthetic six-month crawl fixture.
+- **Falsified by** A listing counted only in its first month; an interpolated price
+  across a crawl gap.
+
+### V34 — Delisting is not sale, and incomplete periods are labelled (FR-58, FR-59)
+
+- **AC** No metric labels a delisting as a sale; time-on-market is labelled time
+  listed. Sales aggregates for periods still accumulating carry an incomplete
+  marker, and the UI shows it.
+- **How** (a) A static/textual check that no user-facing string pairs delisting
+  with "sprzedane"; (b) a fixture where a recent quarter holds 30% of its eventual
+  deeds, asserting the incomplete marker is set and rendered; (c) a regression test
+  that the most recent quarter is never presented as final.
+- **Against** A backdated RCN fixture simulating late arrival.
+- **Falsified by** A chart showing a recent-quarter decline with no incompleteness
+  marker — the specific trap `08` §4 describes.
+
+## M2+ — Platform (docs 09–11)
+
+### V35 — No bare numbers, anywhere (`09` §1, rule 6)
+
+- **AC** Every aggregate rendered anywhere in the UI is accompanied by its sample
+  size and range at equal prominence — not in a tooltip, not on hover.
+- **How** An automated sweep over rendered component snapshots asserting that each
+  element matching a numeric-aggregate pattern has sibling elements for `n` and
+  range; a test that no such element's `n`/range sits inside a hover-only container.
+- **Against** Snapshots of every data-bearing component in every state.
+- **Falsified by** One aggregate rendered bare; one range reachable only on hover.
+
+### V36 — All five component states exist (`09` §3)
+
+- **AC** Every data-bearing component defines loading, empty, thin, stale and error
+  states. Empty distinguishes "not yet crawled" from "no listings" from "out of
+  scope". A failed sales query does not blank offering figures.
+- **How** Snapshot tests per component per state; a test enumerating components and
+  failing when any lacks a defined state; a partial-failure test asserting
+  independent degradation.
+- **Against** Component inventory.
+- **Falsified by** A component with an undefined state; a loading dash readable as
+  a value; one failed query blanking unrelated data.
+
+### V37 — Polish formatting and terminology (`09` §4, `12`)
+
+- **AC** Numbers use space thousands separators and comma decimals; dates
+  `DD.MM.YYYY`; the terms in the glossary are used consistently, and protected
+  terms are never loosely translated.
+- **How** Formatting unit tests; a terminology lint over UI strings checking against
+  the glossary's protected-term list.
+- **Against** [`12-glossary.md`](./12-glossary.md).
+- **Falsified by** `1,234.56` formatting; *cena ofertowa* rendered as "market price".
+
+### V38 — Performance targets (`10` §2)
+
+- **AC** Map < 1.5 s, gmina panel < 500 ms, plot page < 2 s, what-if < 1 s, daily
+  pipeline < 4 h, aggregate recomputation < 30 min, measured on production-shaped
+  data volumes (`10` §1).
+- **How** A benchmark suite run against a seeded database at projected volume
+  (40k listings, 15M snapshot rows), asserting each target; plus a test that the
+  map path issues no query against the listing table.
+- **Against** A synthetic database seeded to projected scale.
+- **Falsified by** Any target missed at projected volume; a map query touching
+  listings.
+
+### V39 — Access control (`10` §5, O4)
+
+- **AC** No endpoint, including the API, is reachable without passing the proxy
+  gate. Postgres is not reachable from outside the host. The read role cannot
+  write; the pipeline role is separate.
+- **How** An integration test issuing unauthenticated requests to every route and
+  asserting rejection; a connection test asserting Postgres refuses external
+  connections; a permissions test asserting the read role's writes fail.
+- **Against** The running deployment.
+- **Falsified by** One reachable unauthenticated route; a successful external
+  database connection; a successful write by the read role.
+
+### V40 — Backups exist and are restorable (`11` §2, §3)
+
+- **AC** A nightly encrypted dump lands off-VPS. The **quarterly restore drill**
+  succeeds: a clean container restored from the latest dump passes all V1–V5
+  invariants, row counts are within expected bounds, and `listing_snapshot`'s
+  maximum `observed_at` is within 24 h of the dump. Restore completes within 2 h.
+- **How** Automated: nightly backup presence and size-anomaly check; quarterly the
+  full restore drill run as a scripted job that fails loudly.
+- **Against** The actual production backup, restored — never a synthetic one.
+- **Falsified by** A drill that fails, exceeds 2 h, or has never been run. **An
+  untested backup counts as no backup.**
+
+### V41 — The pipeline is fail-safe, not fail-open (`11` §4, `10` §3)
+
+- **AC** A connector failure leaves the previous day's data intact and alarms; it
+  never publishes partial results as complete. A failed Δ assertion **blocks** the
+  coverage-page refresh. Steps 02–06 resume rather than restart after a crash.
+- **How** (a) Fault-injection test failing a connector mid-run, asserting prior
+  data intact, an alarm raised, and no aggregate published; (b) a test that a
+  failing assertion prevents the coverage refresh; (c) a kill-and-resume test
+  asserting no reprocessing from zero and no duplicate snapshot rows.
+- **Against** A fault-injection harness over the real pipeline.
+- **Falsified by** Partial data published as complete; a coverage page refreshed
+  despite a failed assertion; a crash losing a day's collection.
+
+### V42 — Recovery from a bad parse (`11` §6)
+
+- **AC** After a parser fix, affected listings can be re-parsed from
+  `raw_document` and aggregates recomputed for the window, **without** mutating
+  `listing_snapshot`, producing a new metric generation and a coverage-page note.
+- **How** A full drill: introduce a deliberately wrong parser on a fixture window,
+  detect via V16, fix, re-parse, recompute, and assert the corrected values,
+  unchanged snapshots, a new generation, and the visible note.
+- **Against** A fixture window with known-correct expected values.
+- **Falsified by** Re-parsing being impossible because raw payloads were not
+  retained; a recomputation that mutates snapshots or silently overwrites history.
+
+## Deferred — method required before implementation
 
 These have no validation method yet. Per rule 4, one must be written here before
 any of them is implemented — they are listed so the gap is explicit rather than
@@ -299,15 +635,20 @@ discovered later.
 
 | Feature | PRD | Note for the method |
 |---|---|---|
-| Travel time to anchors | FR-21 | Needs a known-answer test: hand-checked drive times for ~10 plots against an independent routing source |
-| Choropleth and filters | FR-30 | Must include a test that thin-data gminas render with visible spread (V4 at the UI layer) |
+| Travel time to anchors | FR-21 | Known-answer test: hand-checked drive times for ~10 plots against an independent routing source |
+| Choropleth and filters | FR-30 | Must test that thin-data gminas render hatched with visible spread, and that "no supply" is visually distinct from "thin supply" |
 | Parcel resolution via ULDK | FR-14 | Known-answer test against parcels with published identifiers |
-| Zoning and `unknown` as terminal | FR-16, FR-17 | Must prove `unknown` is never inferred: a plot surrounded by buildable neighbours and no plan data must still read `unknown` |
-| Nature attributes | FR-19, FR-20 | Distances hand-checked against a map for a sample; protected-area status must render as both amenity and constraint |
-| Comparable-set engine | FR-26 | Needs a hand-picked "correct comparables" set for ~5 subject plots as ground truth |
+| Zoning and `unknown` as terminal | FR-16, FR-17 | Must prove `unknown` is never inferred: a plot surrounded by buildable neighbours with no plan data must still read `unknown` |
+| Nature attributes | FR-19, FR-20 | Distances hand-checked against a map; protected status must render as both amenity and constraint |
+| Comparable-set engine | FR-26, FR-36 | Needs a hand-picked "correct comparables" set for ~5 subject plots as ground truth, plus a test that exclusion recomputes |
 | Asking-vs-sales spread | FR-10 | Must show both sample sizes and both as-of dates; test that differing periods are not presented as simultaneous |
 | RCN connector | FR-31 → M4 | Method depends on V9's outcome |
-| Hedonic model | FR-28 | Must beat the gmina-median baseline on held-out data, or it does not ship |
+| Size adjustment | O6 | Blocked on the O6 decision. If adopted, needs a test that adjusted comparables reproduce a known elasticity |
+| Standard-plot benchmark | O7 | Blocked on the O7 decision |
+| Notebook query layer | FR-47, O9 | Needs a stability contract: which views are guaranteed, and what changing them requires |
+| Digest generation | FR-47, O8 | Must test that data-quality events appear alongside market events — a silent pipeline failure must not read as a quiet market |
+| Saved searches and alerts | J4 | Needs stable listing identity across relistings |
+| Housing extraction | `06` §5 | Attribute list must be written before any housing extractor exists |
 
 ---
 
@@ -315,8 +656,34 @@ discovered later.
 
 | When | What runs |
 |---|---|
-| Every commit | V1–V4 constraint and unit tests, V6–V8, V10–V14 unit and integration tests |
-| Every pipeline run | All `Δ` assertions: V1, V2, V5, V8, V10, V11, V12, V15, V16 |
-| Daily | `⏱` V8 connector freshness, V15 coverage, V16 cross-source agreement |
-| Quarterly | Fixture re-recording; V11 hand-labelled sample refresh; V10 manual 200-record audit |
+| Every commit | V1–V4, V6–V8, V10–V14 unit and integration tests; V17–V37 unit, architectural and snapshot tests |
+| Every pipeline run | All `Δ` assertions: V1, V2, V5, V8, V10, V11, V12, V15, V16, V18, V24, V25, V29 |
+| Every deploy | V1–V5 against the live database; V39 access control |
+| Daily | `⏱` V8 connector freshness, V15 coverage, V16 cross-source agreement, V40 backup presence |
+| Quarterly | Fixture re-recording; V11 and V27 labelled-set refresh; V10 manual 200-record audit; **V40 restore drill**; V24 valuation scoring; `05` §10 methodology falsification review |
+| Before a benchmark-affecting change | V38 performance suite at projected volume |
 | Once, before its milestone | V9 (RCN research) |
+| After any parser incident | V42 recovery drill |
+
+## Coverage of requirements
+
+Every FR in [`02-prd.md`](./02-prd.md) §8 maps to at least one validation method.
+The mapping is the gate: an FR with no V entry cannot be implemented (rule 4).
+
+| FR range | Validation |
+|---|---|
+| FR-1..6 ingestion | V8, V12, V14, V41 |
+| FR-7..10 price types | V1, V2, V3, V20 |
+| FR-11..14 normalization | V10, V11, V28 |
+| FR-15..21 enrichment | V6, V29, V30, V31, deferred table |
+| FR-22..23 config & privacy | V7 |
+| FR-24..28 analytics | V4, V5, V23 |
+| FR-29..30 presentation | V35, V36, V37 |
+| FR-31 research | V9 |
+| FR-32..38 estimator | V17, V18, V19, V20 |
+| FR-39..40 model separation | V21, V22 |
+| FR-41..43 mix adjustment | V23 |
+| FR-44..47 logging & scoring | V24 |
+| FR-48..52 taxonomy & extraction | V25, V26, V27, V28 |
+| FR-53..55 geocoding | V29, V30, V31 |
+| FR-56..60 temporal | V32, V33, V34 |
