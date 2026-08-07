@@ -31,6 +31,10 @@ methods come first; implementation starts only after this is reviewed.
 | [`docs/10-nfr-and-access.md`](docs/10-nfr-and-access.md) | Scale, performance, retention, access control, cost |
 | [`docs/11-operations.md`](docs/11-operations.md) | Daily pipeline, backup, monitoring, recovery drills |
 | [`docs/12-glossary.md`](docs/12-glossary.md) | Polish ↔ code terminology |
+| [`docs/13-scope.md`](docs/13-scope.md) | **Complete work breakdown** — 26 epics, work items, sizes, critical path, what's explicitly out of scope |
+| [`docs/14-api-contract.md`](docs/14-api-contract.md) | Endpoints and types; the boundary where the price-type and sample-size rules are enforced |
+| [`docs/15-database-schema.md`](docs/15-database-schema.md) | Full DDL — the product rules encoded as constraints |
+| [`docs/16-repository-layout.md`](docs/16-repository-layout.md) | Module layout, connector contract, enforced boundaries, definition of done |
 
 ## The idea
 
@@ -91,7 +95,35 @@ Three constraints drive sequencing:
 `cena-ziemi` is the safest and `ile-za-dzialke` the most descriptive of what it
 does. Tell me which and I'll update every reference.
 
+## Scope at a glance
+
+26 epics across 7 milestones — see [`docs/13-scope.md`](docs/13-scope.md) for the
+full breakdown with sizes and dependencies.
+
+```
+E1  Foundation
+ └─ E2  Reference data ──┬─ E3  Official sales data
+                         ├─ E4  Listing ingestion ─ E5 Normalization ─ E6 Dedup
+                         │                                     │
+                         │                            E7 Geospatial resolution
+                         │              ┌──────────────────────┼───────────────┐
+                         │           E8 Zoning        E9 Constraints/nature  E10 Access
+                         │              └──────────────────────┼───────────────┘
+                         └──────────────────────────── E11 Aggregation ─ E12 Valuation
+                                                              │              │
+                                                    E13 Feature model    E14 Scoring
+                                                              │
+                                                          E15 API ─ E16..E21 Frontend
+                                                                       │
+                                                                   E22 Alerts/digests
+E24 Operations · E25 Quality harness · E26 Access control   (cross-cutting)
+```
+
+**Critical path:** E1 → E2 → E4 → E5 → E7 → E11 → E15 → E16.
+
 ## Next step
 
 Review this planning set. Implementation begins with M0 only after that, following
 the rule-3 cycle: validation method → failing test → implementation → passing test.
+The definition of done is in
+[`docs/16-repository-layout.md`](docs/16-repository-layout.md) §6.

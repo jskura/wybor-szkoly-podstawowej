@@ -518,3 +518,7 @@ depth. None block M0.
 | [`10-nfr-and-access.md`](./10-nfr-and-access.md) | Scale, performance, retention, access |
 | [`11-operations.md`](./11-operations.md) | Pipeline, backup, monitoring, recovery |
 | [`12-glossary.md`](./12-glossary.md) | Polish ↔ code terminology |
+| [`13-scope.md`](./13-scope.md) | **Complete work breakdown** — epics E1–E26, work items, sizes, critical path, out-of-scope register |
+| [`14-api-contract.md`](./14-api-contract.md) | Endpoints, shared types, boundary enforcement |
+| [`15-database-schema.md`](./15-database-schema.md) | Full DDL; the rules encoded as constraints |
+| [`16-repository-layout.md`](./16-repository-layout.md) | Module layout, connector contract, enforced boundaries, definition of done |
