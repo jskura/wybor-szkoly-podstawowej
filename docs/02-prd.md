@@ -1,14 +1,29 @@
 # PRD — Land & Housing Price Comparison
 
-Status: **draft v0.2** · Owner: jskura · Date: 2026-08-07
-Inputs: [`00-decisions.md`](./00-decisions.md) (D1–D24) · [`01-user-journeys.md`](./01-user-journeys.md)
+Status: **draft v0.3** · Owner: jskura · Date: 2026-08-07
+Inputs: [`00-decisions.md`](./00-decisions.md) (D1–D44) · [`01-user-journeys.md`](./01-user-journeys.md)
 Validation methods: [`04-validation.md`](./04-validation.md) — required before any implementation ([`CLAUDE.md`](../CLAUDE.md) rule 4)
 
-Changes from v0.1: sales prices promoted to first-class alongside asking prices
-(D3); Elbląg area added to scope (D9); two named anchor areas with 25 km priority
-rings (D7, D11); suppression replaced by always-show-with-spread (D13, D17, D18);
-nature attributes added (D12, D22); routing anchors are specific addresses in
-gitignored config (D19, D21).
+> ## ⚠ Read this first — scope changed after the audit
+>
+> [`17-assumption-audit.md`](./17-assumption-audit.md) found seven internal
+> contradictions and a long list of choices I made without asking. The scope
+> decision that followed (D38) is:
+>
+> **The plan of record is [`18-v0-scope.md`](./18-v0-scope.md) — a ~10-day version
+> covering the two 25 km anchor rings only.** This PRD describes the *full* system,
+> which is now a possible future rather than the current plan. Requirements below
+> are still the reference for anything we build, but they are not a commitment to
+> build all of it.
+>
+> Corrections applied in v0.3: mix adjustment restricted to powiat level and above
+> (D41); the "never a point estimate" rule restated (D42); the crawl budget made
+> arithmetically possible (D40); fabricated personas and the impossible five-user
+> testing programme removed (D43); infrastructure sizing corrected (D44).
+
+Changes from v0.1→v0.2: sales prices promoted to first-class (D3); Elbląg area
+added (D9); anchor rings (D7, D11); always-show-with-spread (D13, D17, D18);
+nature attributes (D12, D22); anchors in gitignored config (D19, D21).
 
 ---
 
@@ -82,31 +97,55 @@ first-class feature (J5) rather than a discrepancy to reconcile away.
 
 ## 4. Users
 
-P1 self-builder (primary) → P2 patient investor → P3 relocator → P4 us.
-See [journeys §Personas](./01-user-journeys.md#personas). Audience is the owner
-plus a few known people (D1).
+**The owner, buying land to build on** (D37). Audience is the owner plus a few
+known people (D1).
+
+The earlier persona — "Marek & Ania", a couple in their 30s with a 150–350k plot
+budget — was **fabricated by me and has been removed** (audit B2). Nothing in this
+document should be justified by reference to an invented user. Where a requirement
+needs a user motivation, it cites a journey in
+[`01-user-journeys.md`](./01-user-journeys.md), which is written against the real
+decision: find and buy a buildable plot in one of the two anchor areas.
+
+Secondary interest: land as an investment (the buildable-vs-agricultural gap).
+Out: valuing land already owned (D36 — Budy Grabskie 53 is a place visited, not
+owned).
 
 ## 5. Success metrics
 
-Every metric below has a validation method in [`04-validation.md`](./04-validation.md).
+> **Corrected (D43).** The previous table targeted *"≤10 min to shortlist
+> (moderated test, 5 users)"* and *"≥3 of 5 users say the verdict changed their
+> view"*. There is no pool of five test users for a private tool — these were
+> leftovers from imagining a broader product (audit A6). They are replaced with
+> checks the owner can actually run alone.
 
-| | Metric | Target at v1 |
-|---|---|---|
-| Coverage (offers) | Gminas in anchor rings with ≥10 active land listings | ≥ 70% |
-| Coverage (offers) | All in-scope gminas with ≥1 land listing per quarter | ≥ 70% |
-| **Coverage (sales)** | In-scope powiats with GUS BDL land transaction series | 100% |
-| **Coverage (sales)** | In-scope powiats with parcel-level RCN data | ≥ 40% *(pending D5 research)* |
-| Coverage | Land listings resolved to a parcel geometry | ≥ 40% |
-| Coverage | Listings with a zoning designation (not `unknown`) | ≥ 50% in anchor rings |
-| Quality | Duplicate rate after dedup, audited sample of 200 | ≤ 3% |
-| Quality | PLN/m² outliers surviving validation, manual audit | ≤ 1% |
-| Quality | Aggregates displayed without sample size **and** spread | **0** (hard invariant) |
-| Quality | Prices displayed without a price-type label | **0** (hard invariant) |
-| Freshness | Anchor-ring gminas crawled within the last 48 h | ≥ 95% |
-| Value | Landing → 3-gmina shortlist (J1, moderated, 5 users) | ≤ 10 min |
-| Value | Users saying the J2 verdict changed their view of a plot | ≥ 3 of 5 |
+**Hard invariants** — these are not targets, they are conditions of shipping:
 
-Not metrics in v1: traffic, sign-ups, revenue.
+| Metric | Required |
+|---|---|
+| Aggregates displayed without sample size **and** spread | **0** |
+| Prices displayed without a price-type label | **0** |
+| Buildability values sourced from advert text | **0** |
+| Personal addresses in git or fixtures | **0** |
+
+**Coverage and quality**, measured and reported rather than targeted — the honest
+position is that we do not yet know what is achievable, and pretending otherwise
+produced the invented numbers the audit found:
+
+| Metric | Status |
+|---|---|
+| Gminas in anchor rings with ≥5 listings | **Measure in v0**, then set a target |
+| In-scope powiats with a GUS sales series | 100% expected — free and guaranteed |
+| Powiats with parcel-level RCN | Unknown until the O2 research |
+| Listings resolved to a parcel | Unknown until parcel work exists |
+| Duplicate rate, outlier rate, extraction precision | Provisional targets in `04`, all unratified (O11) |
+
+**Product value** — the v0 checks in [`18-v0-scope.md`](./18-v0-scope.md) §6:
+does the tool's verdict match the owner's own judgement on plots they have
+actually seen, and does our offering median sit plausibly above the GUS sales
+figure? Those are falsifiable and runnable by one person.
+
+Not metrics: traffic, sign-ups, revenue.
 
 ## 6. Scope
 
@@ -170,7 +209,11 @@ they disagree, both are shown, labelled by type, and the gap is the feature.
   never bypass authentication or anti-bot measures. See §12.
 - **FR-3** **Snapshot semantics** — every crawl records observed state per listing.
   Price changes, delisting and relisting are derived from the snapshot series.
-- **FR-4** Daily crawl cadence (D14), off-peak, with backoff.
+- **FR-4** Daily crawl cadence (D14), off-peak, with backoff, using the
+  **list-page-first strategy** (D40): list pages give price and active status for
+  the whole corpus, detail pages are fetched only for new or changed listings.
+  Without this the politeness policy and daily refresh are incompatible by ~18×
+  (audit A1, `10` §2.1).
 - **FR-5** Prefer official APIs over scraping wherever both answer the same question.
 - **FR-6** Source health record per connector: last success, item count, schema-drift
   alarm. A connector silently returning zero items must alarm, not flatten a median.
@@ -261,8 +304,10 @@ Method is specified in [`05-analytics-methodology.md`](./05-analytics-methodolog
 these are the requirements it must satisfy.
 
 - **FR-32** **Estimator**: `estimate(features, place, price_type, as_of)` returns
-  `{low, median, high, n, basis, widening_step}`. It is **always a range** (D32).
-  A point estimate is never produced, including internally, so it cannot leak.
+  `{low, median, high, n, basis, widening_step}`. **A median is never returned,
+  stored or displayed without its range and sample size** (D32, restated by D42).
+  The earlier phrasing — "no point estimate, ever, including internally" —
+  contradicted the `median` field it also mandated (audit A4).
 - **FR-33** The estimator works with **no listing involved** — features may be
   supplied directly, so the product answers "what should a plot like this cost
   here" and not only "is this listing fair" (D26, D31).
@@ -285,9 +330,12 @@ these are the requirements it must satisfy.
 - **FR-40** **Rezoning uplift** ("value if it became buildable") is computed by
   contrasting buildability strata, and is presented with an unavoidable caveat that
   it is an observed market gap, **not** a probability of obtaining rezoning.
-- **FR-41** **Mix-adjusted index** (D27): stratify by asset class × buildability ×
-  area band, reweight to a fixed basket. The mix-adjusted series is the headline
-  trend figure; the plain median is secondary and labelled.
+- **FR-41** **Mix-adjusted index** (D27, **narrowed by D41**): stratify by asset
+  class × buildability × area band, reweight to a fixed basket. Computed at
+  **powiat level and above only** — 80 strata over a gmina's few dozen listings is
+  noise, not a measurement (audit A2). Gmina-level series are plain medians,
+  explicitly labelled *unadjusted*. Where computable, the mix-adjusted series is
+  the headline; the plain median is secondary and labelled.
 - **FR-42** Strata with no observations in a period are carried with an explicit
   gap marker, never dropped — dropping them silently reweights the basket.
 - **FR-43** Cross-area comparison is by like-for-like estimate or stratified

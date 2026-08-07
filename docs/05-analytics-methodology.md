@@ -4,7 +4,19 @@ How every number in the product is computed. This is the document that makes the
 product's central claim testable: *"a plot with these features, in this place,
 should cost roughly this."*
 
-Decisions: D26–D33. Validation: [`04-validation.md`](./04-validation.md) §V17–V24.
+Decisions: D26–D33, corrected by D40–D42. Validation:
+[`04-validation.md`](./04-validation.md) §V17–V24.
+
+> **Status after the audit.** This document describes the **full** method, which
+> is deferred: [`18-v0-scope.md`](./18-v0-scope.md) is the plan of record and uses
+> only a simple banded median (§3 hard filters, no widening ladder, no size
+> adjustment). Two corrections have been applied below — mix adjustment is no
+> longer specified at gmina level (D41, audit A2), and the "never a point estimate"
+> rule is restated (D42, audit A4).
+>
+> **Every numeric parameter in this document is provisional and unratified (O11).**
+> They were chosen by me, not agreed with you, and the whole output depends on
+> them. They are marked `‡` throughout.
 
 ---
 
@@ -27,8 +39,17 @@ estimate(features, place, price_type, as_of) → { low, median, high, n, basis }
 `features` = area, buildability, utilities, road access, nature attributes.
 `place` = a gmina, or a point with a radius.
 `price_type` ∈ {offering, sales} — **never blended** (rule 5, D29).
-The return is **always a range** (D32); a point estimate is never produced, not
-even internally, so it cannot leak into the UI by accident.
+
+The return is **always a range** (D32). Precisely — and this is the D42 correction,
+because the earlier wording contradicted itself — the rule is:
+
+> **A median may never be produced, returned, stored or displayed without its range
+> and its sample size travelling with it.**
+
+The estimate carries a `median`; that is useful and stays. What is forbidden is a
+median *alone*. The earlier phrasing ("no point estimate, not even internally")
+was self-contradictory, since `median` is exactly a point value, and V17 asserted a
+property the spec itself violated.
 
 ## 2. Two estimators with strictly separated roles (D30, D33)
 
@@ -56,11 +77,11 @@ Given a subject (real plot or hypothetical feature bundle):
 | Buildability | **Exact match** (D28) | The dominant price determinant. A buildable plot is never compared to farmland |
 | Asset class | Exact match | budowlana ≠ rekreacyjna ≠ rolna |
 | Price type | Exact match | Rule 5 |
-| Area | Within ±50% of subject | Price per m² varies systematically with size (§4) |
-| Recency | Observed within 12 months | Older observations are a different market |
-| Geography | Same gmina; widen by 10 km rings if under the minimum count | Local markets are local |
+| Area | Within **±50%** ‡ of subject | Price per m² varies systematically with size (§4) |
+| Recency | Observed within **12 months** ‡ | Older observations are a different market |
+| Geography | Same gmina; widen by **10 km** ‡ rings if under the minimum count | Local markets are local |
 
-**Widening ladder.** If the same-gmina set yields fewer than 5 comparables, widen
+**Widening ladder.** If the same-gmina set yields fewer than **5** ‡ comparables, widen
 in this fixed order, stopping at the first step that reaches 5: same gmina → 10 km
 radius → 25 km radius → same powiat → same powiat, area band relaxed to ±100%.
 The step reached is recorded and **displayed** — an estimate built from a 25 km
@@ -144,9 +165,34 @@ most misleading thing this product could do.
 A plain median moves when composition changes. If three large cheap farm plots get
 listed in a small gmina, the median drops without any price changing.
 
+### 7.1 The level at which this is computable (D41 — audit A2)
+
+Strata are `asset_class × buildability × area_band` = **4 × 4 × 5 = 80 strata**.
+A gmina holding ~50 land listings spread over 80 strata has a typical non-empty
+stratum of n=1. **A fixed-basket index over mostly-empty strata is noise, not a
+measurement**, so the original instruction to make it the headline figure *at gmina
+level* was wrong.
+
+Corrected rule:
+
+| Level | Units | Typical listings per unit | Mix adjustment |
+|---|---|---|---|
+| Voivodeship | 3 | thousands | **Yes** |
+| Powiat | ~66 | hundreds | **Yes** — the finest level where it is meaningful |
+| Gmina | ~500 | tens | **No.** Plain median with spread, labelled *unadjusted* |
+| Obręb | thousands | single digits | No |
+
+A gmina-level series therefore carries an explicit note that it is **not**
+mix-adjusted and may move because composition changed. That is honest; computing an
+index there and calling it adjusted would not be.
+
+Before publishing an index at any level, assert that a minimum share of strata are
+non-empty; below that threshold ‡ the index is not produced and the plain median is
+shown instead.
+
 **Method — stratify and reweight:**
 
-1. Define strata: `asset_class × buildability × area_band`, where area bands are
+1. Define strata: `asset_class × buildability × area_band`, where area bands ‡ are
    `<800`, `800–1500`, `1500–3000`, `3000–10000`, `>10000` m².
 2. Compute the median price per m² **within each stratum** per unit per month.
 3. Reweight to a **fixed basket** — the stratum composition of the base period,
@@ -162,7 +208,9 @@ the mix-adjusted index (what actually moved), with the difference explained. Whe
 they diverge sharply, that divergence is itself informative — it means the *kind*
 of land being offered changed.
 
-The headline trend figure is always the mix-adjusted one (D27).
+The headline trend figure is the mix-adjusted one **wherever it is computable**
+(D27, narrowed by D41 §7.1). At gmina level the headline is the plain median,
+labelled as unadjusted.
 
 ## 8. Area comparison
 

@@ -1,8 +1,24 @@
 # Complete scope
 
+> ## ⚠ Not the current plan
+>
+> This is the **full** build: 26 epics, roughly **150–200 focused days** — three
+> years at a day a week, or 18–24 months at two. I documented it without ever
+> stating that total, which the audit ([`17`](./17-assumption-audit.md) §D) called
+> out.
+>
+> **The plan of record is [`18-v0-scope.md`](./18-v0-scope.md)** — about ten days,
+> two anchor rings, offering and sales prices, no zoning (D38). This document is
+> retained as the menu to draw from *after* v0 shows which gaps are real.
+>
+> Enter it deliberately, one epic at a time, and only where v0 produced evidence
+> that the epic is needed. In particular: **E8 (zoning) is the most likely first
+> addition**, because price without buildability is close to meaningless — and
+> **E15–E21 (API + frontend) are roughly half the total effort** for an audience
+> of one to five, which is where the cost is least justified.
+
 The full work breakdown for the application: every epic, its work items, what
-validates it, what it depends on, and a size estimate. This is the document to
-argue with before any code is written.
+validates it, what it depends on, and a size estimate.
 
 Sizes are **days of focused work** for one person, and are estimates rather than
 commitments: `XS` <1, `S` 1–2, `M` 3–5, `L` 6–10, `XL` >10.
@@ -382,6 +398,23 @@ accumulating at E4; backups must exist by then.
 | E26.4 | Secret handling off-repo | `11` §7 |
 
 ---
+
+## 3a. Which epics v0 touches
+
+v0 ([`18`](./18-v0-scope.md)) takes thin slices of five epics and skips the other
+twenty-one entirely:
+
+| Epic | v0 takes | v0 skips |
+|---|---|---|
+| E1 Foundation | Repo, Docker, Postgres+PostGIS, migrations, config | CI depth, alarm routing, full test harness |
+| E2 Reference data | PRG + TERYT **for the two rings only**; the Skierniewice known-answer test | The other ~440 gminas |
+| E3 Official sales | GUS BDL import for the rings' powiats | RCN entirely (research still worth starting) |
+| E4 Ingestion | robots gate, rate limiting, list-page-first fetch, raw store, snapshots | Second portal, health/drift alarms, resumability |
+| E5 Normalization | Area units, zł/m², validity bands, quarantine | Attribute extraction, category maps, labelled sets |
+| E6 Dedup | Exact/near-exact only | Labelled scoring, image hashing, cluster monitoring |
+| E11 Metrics | Gmina + area-band medians with spread | Strata, mix adjustment, generations, coverage suite |
+
+Not touched at all in v0: E7–E10, E12–E14, E15–E26.
 
 ## 4. Milestone composition
 

@@ -1,8 +1,14 @@
 # Non-functional requirements & access
 
-Decision: D34. Validation: [`04-validation.md`](./04-validation.md) §V38–V39.
+Decision: D34, corrected by D40 and D44. Validation:
+[`04-validation.md`](./04-validation.md) §V38–V39.
 
----
+> **Status after the audit.** This document sizes the **full** system, which is
+> deferred. [`18-v0-scope.md`](./18-v0-scope.md) is the plan of record and needs
+> **no VPS, no OSRM and no Nominatim** — it runs on your machine (D44).
+>
+> Two corrections applied: the crawl budget was arithmetically impossible (§2.1,
+> audit A1), and the VPS was sized before its components were chosen (§6, audit A7).
 
 ## 1. Scale — what we are actually building for
 
@@ -35,8 +41,35 @@ targets, not SLAs.
 | Gmina side panel | < 500 ms | Precomputed |
 | Plot page including comparable set | < 2 s | Comparable set computed live; this is the expensive one |
 | What-if recompute | < 1 s | Must feel interactive to be usable |
-| Full daily pipeline | < 4 h | Runs overnight; failure leaves yesterday's data intact |
+| Full daily pipeline | see §2.1 | Runs overnight; failure leaves yesterday's data intact |
 | Nightly aggregate recomputation | < 30 min | |
+
+### 2.1 The crawl budget (D40 — corrects audit A1)
+
+The original "<4 h full daily pipeline" target was incompatible with the politeness
+policy by roughly a factor of 18: at 9 requests/minute, four hours buys **2,160
+requests**, while observing 40,000 listings one-by-one needs 40,000.
+
+**Corrected strategy — list-page first:**
+
+| Fetch | Volume | Cost at 9 req/min | Yields |
+|---|---|---|---|
+| List/search pages | ~1 per 40 listings → ~1,000/day at full scale | ~1.9 h | Price, area, active status for the **whole** corpus |
+| Detail pages | Only **new or changed** listings, 500–2,000/day | 0.9–3.7 h | Description, attributes, contact — needed for extraction |
+
+Snapshot semantics (FR-3) are satisfied by the list-page pass: every active listing
+is observed daily for price and status. Detail pages are fetched once on first
+sight and again only when the list page shows a change.
+
+Even so, at full scale one portal lands at **3–6 hours** and a second portal doubles
+it. The honest conclusions:
+
+- The "<4 h" figure is **withdrawn** as a global target.
+- The budget is per-scope. **v0's two 25 km rings are a small fraction of the full
+  corpus**, so v0 runs comfortably inside an hour.
+- If the full geography is ever built, either the cadence drops below daily for
+  non-priority gminas, or the politeness limit has to be revisited — which is a
+  decision to take deliberately, not by drifting.
 
 The architectural rule that makes these achievable: **aggregates are precomputed,
 verdicts are computed live**. Nothing in the map path touches the listing table.
@@ -87,18 +120,33 @@ things it would need to revisit.
 
 ## 6. Cost envelope
 
-Zero for data (D2). Hosting only:
+Zero for data (D2).
+
+**v0: zero hosting cost.** It runs locally (D44) — no VPS, no routing engine, no
+geocoder.
+
+**If the full system is ever hosted** (audit A7 — sizing corrected):
 
 | Item | Estimate |
 |---|---|
-| VPS (4 vCPU, 8 GB RAM, 160 GB SSD) | ~40–60 PLN/month |
+| VPS for PostGIS + app only | ~40–60 PLN/month (4 vCPU, 8 GB, 160 GB) |
 | Off-site backup storage | ~5–10 PLN/month |
-| Domain, optional | ~50 PLN/year |
 
-8 GB is sized for PostGIS plus a self-hosted OSRM and Nominatim over a
-Poland-region extract, which are the memory-hungry components. Running routing and
-geocoding offline in batch rather than as live services keeps this within a small
-VPS.
+The earlier claim that 8 GB also covers **self-hosted Nominatim and OSRM** was
+wrong — I sized the box before choosing the components. A country-extract Nominatim
+import is heavy in both RAM and import time, and OSRM needs several GB more. Three
+honest options, to be decided if and when hosting is needed:
+
+1. **Build the geocoding and routing artefacts offline** on a larger machine, then
+   ship only the resulting lookup tables to the small VPS. Travel times and
+   geocodes are batch-computed anyway, so nothing needs to run live.
+2. **Rent a bigger box** for the import, then downsize.
+3. **Drop self-hosting** and accept a rate-limited public geocoder, which
+   reintroduces reproducibility problems (`07` §6).
+
+Option 1 is the recommendation; it preserves reproducibility and keeps the running
+cost small. Storage retention (§4) also needs revisiting against the real disk once
+list-page volumes are known.
 
 ## 7. Portability
 

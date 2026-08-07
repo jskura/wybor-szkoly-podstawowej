@@ -293,15 +293,21 @@ execution. A failure here blocks a release.
 
 ## M3.5 — Valuation (docs 05)
 
-### V17 — The estimator never returns a point (FR-32, D32)
+### V17 — A median never travels without its range and n (FR-32, D32, **corrected by D42**)
+
+> Corrected after audit A4. The previous wording — "no internal code path produces
+> a bare scalar price" — contradicted the `Estimate` type, which carries a `median`
+> field. The rule is not "no point value exists"; it is "a median is never
+> returned, stored or displayed *alone*".
 
 - **AC** Every return from `estimate()` carries `low`, `median`, `high`, `n`,
-  `basis` and `widening_step`, all non-null. No internal code path produces a bare
-  scalar price. Where n < 5 the range is min–max; where n ≥ 5 it is p25–p75.
+  `basis` and `widening_step`, all non-null. No function returns a median without
+  its range and sample size in the same value. Where n < 5 ‡ the range is min–max;
+  where n ≥ 5 ‡ it is p25–p75.
 - **How** (a) Property test over generated inputs asserting the return type always
-  carries all six fields; (b) a static check that no function in the valuation
-  module returns a bare numeric price; (c) unit tests at n = 1, 4, 5, 30 asserting
-  the correct range definition is used at each.
+  carries all six fields; (b) a static check that no valuation function returns a
+  bare numeric price *outside* an estimate object; (c) unit tests at n = 1, 4, 5, 30
+  asserting the correct range definition is used at each.
 - **Against** Generated feature bundles plus fixture comparable sets at controlled n.
 - **Falsified by** Any estimate serialized without a range; any point estimate
   reachable from the API.

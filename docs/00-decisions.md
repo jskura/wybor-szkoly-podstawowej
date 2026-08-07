@@ -87,6 +87,28 @@ before the affected work starts.
 | D34 | Which areas to document next | **All eight**: analytics methodology, taxonomy & extraction, UX, geocoding, temporal model, NFR & access, operations & backup, glossary | Docs 05–12 |
 | D35 | How to evaluate the valuation | **Log every prediction, score it later against realized outcomes** | `valuation_log` must exist from the first estimate ever made, or the evidence never accumulates |
 
+## Batch 10 — post-audit corrections (2026-08-07)
+
+Prompted by [`17-assumption-audit.md`](./17-assumption-audit.md). These supersede
+earlier decisions where they conflict.
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D36 | What is Budy Grabskie 53? | **A place visited/stayed at**, not owned | Stays a travel anchor and an area of interest. The product remains search-shaped, not "value my asset" |
+| D37 | What decision is being made? | **Buy land to build on** | P1 self-builder is the only primary persona. The investor persona drops to a secondary interest; "value land I own" is out |
+| D38 | What scale? | **Two-week version first, then decide** | **Supersedes the 26-epic plan as the active scope.** `13` is retained as a possible future, not the plan of record |
+| D39 | Schools and amenities? | **Not relevant** | No amenity attributes. B4 in the audit is closed as a non-issue |
+
+### Audit resolutions (technical corrections, no preference involved)
+
+| # | Finding | Resolution |
+|---|---|---|
+| D40 | A1 crawl budget impossible | **List-page-first strategy**: list pages give price and active status for the whole corpus; detail pages fetched only for new or changed listings. The "<4 h daily" target is withdrawn and replaced with a per-scope budget |
+| D41 | A2 mix adjustment at gmina level is noise | **Mix adjustment computed at powiat level and above only.** Gmina-level series are plain medians with their spread, explicitly labelled as unadjusted |
+| D42 | A4 "never a point" contradicts `median` | Rule restated: **never a median without its range and n**. V17 is corrected; the `median` field stays |
+| D43 | A6 five-user testing programme | Replaced with checks the owner can actually run alone — see [`18-v0-scope.md`](./18-v0-scope.md) §6 |
+| D44 | A7 infrastructure does not fit | v0 needs **no VPS, no OSRM, no Nominatim**. Sizing is deferred until something needs hosting |
+
 ## Open — not yet decided
 
 | # | Question | Blocks |
@@ -96,7 +118,12 @@ before the affected work starts.
 | O3 | Final repo name (D24) | Cosmetic only |
 | O4 | Simple access gate for "a few friends" (D1) — shared password, IP allowlist, or none | M2 deployment |
 | O5 | Does "as far as free data allows" (D8) include GUS historical series behind bulk-download friction? | M1 baseline import |
-| O6 | **Size adjustment**: price per m² falls as plots get larger. D28 mandated only the buildability split. Do we also adjust for size, beyond the ±50% area band already in FR-26? Recommendation: yes — see [`05-analytics-methodology.md`](./05-analytics-methodology.md) §4 | Area comparison fairness |
-| O7 | **Standard-plot benchmark**: express each area's price as "what a fixed reference plot would cost here". Considered in batch 7 and not selected; would make cross-area comparison a single honest number | Area comparison UX |
-| O8 | Digest cadence and channel for the generated-report half of D25 | M5 |
-| O9 | Notebook access mechanism for D25 — read replica, read-only role, or direct access | M2 |
+| O6 | **Size adjustment**: price per m² falls as plots get larger. D28 mandated only the buildability split. Do we also adjust for size, beyond the ±50% area band? Recommendation: yes — see [`05-analytics-methodology.md`](./05-analytics-methodology.md) §4 | Post-v0 valuation |
+| O7 | **Standard-plot benchmark**: express each area's price as "what a fixed reference plot would cost here" | Post-v0 |
+| O8 | Digest cadence and channel | Post-v0 |
+| O9 | Notebook access mechanism | Post-v0 |
+| **O10** | **Do the target portals' `robots.txt` permit crawling listing pages?** Unverifiable from this environment (audit C1). **Gates all offering-price work, including v0** | **v0 day 1** |
+| **O11** | **All valuation parameters are unratified** — comparable area band, recency window, minimum comparables, widening rungs, the IQR/min–max switch at n=5, strata bands, validity bands, quality targets, labelled sample sizes (audit B1). Provisional values are in use and marked as such | Post-v0 valuation |
+| **O12** | The **50 ha area cap** probably excludes legitimate agricultural parcels. Provisional; revisit if agricultural land matters (D37 suggests it may not) | Post-v0 |
+| **O13** | **A3 — thin-data map rendering.** Rule 6 says always show; a choropleth where most tiles rest on 1–3 listings may mislead in aggregate even when each tile is honestly labelled. Not resolved | When a map exists |
+| **O14** | Housing: the original request said "housing and land". Land is priority (D6, D37), but housing is currently deferred to the last milestone. Is that acceptable, or should housing be collected in v0? | v0 scope |

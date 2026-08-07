@@ -1,6 +1,12 @@
 # User Journeys — Land & Housing Price Comparison (łódzkie / mazowieckie)
 
-Status: draft v0.2, revised against [`00-decisions.md`](./00-decisions.md)
+Status: draft v0.3, revised against [`00-decisions.md`](./00-decisions.md) and
+[`17-assumption-audit.md`](./17-assumption-audit.md)
+
+> **Scope note.** These journeys describe the full product. The plan of record is
+> [`18-v0-scope.md`](./18-v0-scope.md), which serves a reduced form of **J2/J9
+> only** — price compared to price, with no buildability. J1, J3–J8 and J10–J12
+> are deferred.
 Scope: **łódzkie**, **mazowieckie**, and the **Elbląg area** (powiat elbląski +
 m. Elbląg) — D9
 Anchor areas (priority for enrichment and QA, 25 km rings — D7, D11):
@@ -16,17 +22,30 @@ user takes, the data the product must already hold to serve those steps, and wha
 
 ---
 
-## Personas
+## Who this is for
 
-| # | Persona | Who | Primary need | Priority |
-|---|---------|-----|--------------|----------|
-| P1 | **Self-builder** ("Marek & Ania") | Couple, 30s, live in Warsaw or Łódź, want to build a single-family house in 2–4 years. Budget for the plot: 150–350k PLN. | Find where their budget actually buys a *buildable* plot at an acceptable commute | **Primary** |
-| P2 | **Patient investor** | Buys 0.3–3 ha, holds 3–10 years, expects rezoning (rolna → budowlana) or subdivision | Spot gminas where the buildable/agricultural price gap is widening | Secondary |
-| P3 | **Relocator** | Selling a flat in Warsaw, deciding between buying a ready house vs. plot + build | Compare "buy finished" vs "buy land and build" per location | Secondary |
-| P4 | **Analyst / us** | The people building this | Trust the numbers; see coverage, freshness, method | Internal |
+> **Corrected after the audit (D37, audit B2).** The previous version invented a
+> persona — "Marek & Ania", a couple in their 30s with a 150–350k PLN budget,
+> building in 2–4 years. None of that came from the owner, and journeys, filters
+> and success metrics were then written against a fiction. It has been removed.
 
-Non-personas for v1: real-estate agents, developers doing land banking at scale,
-mortgage brokers.
+| # | Who | Need | Priority |
+|---|---|---|---|
+| **P1** | **The owner** — buying land to build a house on, in the Budy Grabskie or Elbląg area | Find a plot, and know whether its price is sane and whether building is possible | **Primary — the only one that matters for v0** |
+| P2 | Land as an investment | Spot where the buildable-vs-agricultural gap is widening | Secondary interest |
+| P3 | A few known people the tool is shared with | Same as P1 | Follows P1 |
+
+**Not** personas: real-estate agents, developers, mortgage brokers, and anyone
+valuing land they already own (D36 — Budy Grabskie 53 is somewhere the owner stays,
+not somewhere they own).
+
+**Deliberately unknown**, because it was never asked and should not be guessed:
+budget, timeline, and whether this is one plot or several. Journeys are written to
+work without those, and any requirement that needs them is flagged rather than
+filled in.
+
+**Not a factor** (D39): schools, kindergartens, shops and health care. Asked and
+answered — not relevant to this decision, despite the repository's name.
 
 ---
 
@@ -37,8 +56,9 @@ mortgage brokers.
 **Steps**
 1. Opens the map, sees łódzkie + mazowieckie as a **choropleth of median PLN/m² for
    building plots**, aggregated per gmina.
-2. Sets filters: budget 150–350k PLN, plot area 800–2000 m², zoning = building
-   plot, "utilities on the boundary" toggle.
+2. Sets filters: total budget, plot area, zoning = building plot, "utilities on
+   the boundary" toggle. (The owner's actual budget and area preferences were
+   never asked and are deliberately not hard-coded anywhere — audit B2.)
 3. Adds a commute constraint: *≤ 60 min drive to Warsaw centre* (isochrone or a
    simpler drive-time-to-city column).
 4. The map recolours to **"median price of a plot matching my filter"** — gminas
@@ -53,8 +73,8 @@ mortgage brokers.
 with area + zoning + utilities; drive time from each gmina seat to Warsaw and
 Łódź; ≥ 12 months of listing history for the trend.
 
-**Success:** user can name 3 gminas they had not considered, and state the
-price/commute trade-off between them, in under 10 minutes.
+**Success:** the owner can name gminas they had not considered, and state the
+price/travel trade-off between them.
 
 **Pain today:** Otodom/OLX filtering is per-listing, not per-area. There is no way
 to see "the affordable ring" — you discover it by scrolling hundreds of listings.
@@ -110,7 +130,7 @@ at least one risk they had not checked themselves.
 2. Sees a **column-per-plot table**: price, area, PLN/m², PLN/m² vs. local median,
    zoning designation and what it permits (max building height, biologically
    active area share, permitted use), utilities present, road access type,
-   drive time to Warsaw/Łódź/nearest school/nearest station, days on market,
+   travel time to each configured anchor and the nearest station, days on market,
    price-change history since first seen.
 3. Rows where plots differ materially are highlighted; identical rows collapse.
 4. Assigns weights to the criteria that matter (price 40%, commute 30%,
@@ -166,7 +186,7 @@ scheduled ingestion, per-user saved searches.
 
 ---
 
-## J6 — "Buy a house or build one?" *(housing enters scope)* — P3, post-MVP
+## J6 — "Buy a house or build one?" *(housing enters scope)* — post-MVP
 
 **Trigger:** User is undecided between a finished house and land + construction.
 
@@ -187,7 +207,7 @@ doesn't" — the first journey where housing data is load-bearing.
 
 ---
 
-## J7 — "What is actually happening to prices here?" *(trends)* — P2/P4
+## J7 — "What is actually happening to prices here?" *(trends)* — P2, and the owner as analyst
 
 **Steps**
 1. Picks up to 5 gminas/powiats and an asset class.
@@ -203,7 +223,7 @@ was flat" is defensible, with sample sizes attached.
 
 ---
 
-## J8 — "Can I trust this?" *(transparency, cross-cutting)* — P4 and everyone
+## J8 — "Can I trust this?" *(transparency, cross-cutting)* — everyone
 
 Every number in the product must be one click from: **source**, **as-of date**,
 **sample size**, and **method**, and must be labelled with its **price type**
@@ -254,7 +274,7 @@ them with an asking price.
 **Falsification of the journey, not just the code:** if the range is so wide it
 admits any price, the journey has failed even when every test passes.
 
-## J10 — "What is each feature actually worth?" *(attribution)* — P2/P4
+## J10 — "What is each feature actually worth?" *(attribution)* — P2, and the owner as analyst
 
 **Steps**
 1. Picks an area and an asset class.
@@ -274,7 +294,7 @@ admits any price, the journey has failed even when every test passes.
 **Success:** the user can say "the forest edge is worth roughly X here" and knows
 exactly how much confidence that deserves.
 
-## J11 — "Did the market move, or did the mix change?" *(trends done honestly)* — P2/P4
+## J11 — "Did the market move, or did the mix change?" *(trends done honestly)* — P2, and the owner as analyst
 
 **Trigger:** A price series appears to have moved and the user needs to know
 whether that is real.

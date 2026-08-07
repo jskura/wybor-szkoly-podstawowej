@@ -84,6 +84,29 @@ commit a milestone to it.
 
 ---
 
+## ⚠ Unverified gate — read before any connector work (O10, audit C1)
+
+**Nobody has checked whether the candidate portals' `robots.txt` permits crawling
+listing pages.** I planned the entire offering-price layer — and therefore most of
+the product — on the assumption that it does, and I could not verify it: the
+network egress proxy in my environment blocks both domains (403 on CONNECT).
+
+This is **day-one work in [`18-v0-scope.md`](./18-v0-scope.md) §4** and it gates
+everything downstream:
+
+- If listing paths are **allowed**: proceed as planned.
+- If **disallowed**: the offering-price layer is off the table under our own rules
+  (FR-2, §Operating rules below). What remains is GUS BDL and RCN — powiat-level,
+  quarterly, historical. That is a genuinely different and much smaller product,
+  and the decision to accept it or stop belongs to the owner, not to the plan.
+- If **partially allowed** (e.g. detail pages disallowed, search pages permitted):
+  the list-page-first strategy (D40) may still work for prices, but attribute
+  extraction would lose its source. Scope that case explicitly rather than
+  assuming around it.
+
+Checking takes minutes from any ordinary browser. Nothing else in the offering-price
+path should be built first.
+
 ## Listing portals (high-frequency layer)
 
 The big two consumer portals (Otodom, OLX) carry the volume for building plots;
