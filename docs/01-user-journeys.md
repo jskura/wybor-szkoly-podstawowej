@@ -1,8 +1,14 @@
 # User Journeys — Land & Housing Price Comparison (łódzkie / mazowieckie)
 
-Status: draft for review
-Scope: voivodeships **łódzkie** and **mazowieckie**
-Priority asset class: **land (działki)** — housing is secondary
+Status: draft v0.2, revised against [`00-decisions.md`](./00-decisions.md)
+Scope: **łódzkie**, **mazowieckie**, and the **Elbląg area** (powiat elbląski +
+m. Elbląg) — D9
+Anchor areas (priority for enrichment and QA, 25 km rings — D7, D11):
+**Budy Grabskie** (gmina Skierniewice, łódzkie) and **Elbląg**
+Priority asset class: **land (działki)** — budowlana → rekreacyjna → rolna →
+leśna/inne (D6). Housing is secondary.
+Both **offering prices** and **actual sales prices** are carried throughout
+([`CLAUDE.md`](../CLAUDE.md) rule 5, D3).
 
 These journeys are the input to the PRD. Each one states the trigger, the steps a
 user takes, the data the product must already hold to serve those steps, and what
@@ -76,8 +82,15 @@ second opinion before viewing or negotiating.
 5. Shows **asking vs. transaction spread** for that gmina, from the property price
    register (RCN): "plots here sell for a median of 8% below asking".
 6. Flags **risk badges**: no public-road access, farmland class I–III (protected,
-   hard to rezone), within a flood-hazard zone, no MPZP and no *plan ogólny*
-   coverage, overhead power line crossing, long/narrow shape.
+   hard to rezone), within a flood-hazard zone, overhead power line crossing,
+   long/narrow shape. Where no plan covers the parcel, buildability reads
+   **"brak danych — sprawdź w gminie"** — a terminal state, never inferred from
+   neighbouring plots or from land-use class (D20, FR-17).
+7. Shows **nature attributes** (D22, FR-19), each as its own value rather than a
+   blended score: distance to forest edge, distance to water, protected-area
+   status, distance to the nearest major road and railway. Protected status is
+   presented as **both amenity and constraint** — inside a landscape park is
+   quieter *and* harder to build on, and showing only one framing misleads.
 
 **Data required:** parcel geometry + attributes; zoning layer; the listing corpus
 for comparables; RCN transactions for the spread; hazard/constraint layers.
@@ -193,10 +206,18 @@ was flat" is defensible, with sample sizes attached.
 ## J8 — "Can I trust this?" *(transparency, cross-cutting)* — P4 and everyone
 
 Every number in the product must be one click from: **source**, **as-of date**,
-**sample size**, and **method**. Every aggregate below a minimum sample size (n<10)
-renders as "insufficient data", never as a confident number. A permanent
-**coverage page** shows, per gmina: listings collected, last successful crawl,
-parcel-match rate, and known gaps.
+**sample size**, and **method**, and must be labelled with its **price type**
+(*cena ofertowa* / *cena transakcyjna*).
+
+**Always show, always flag** (D13, D17, D18). Nothing is suppressed. A gmina with
+four observations still gets a number — shown as `mediana 118 zł/m², zakres
+61–240, n=4`, never as a bare figure and never as "insufficient data". Spread is
+the IQR at n ≥ 5 and min–max below that. The user decides what is too thin to act
+on; the product's job is to make thinness visible, not to make the decision.
+
+A permanent **coverage page** shows, per gmina: listings collected, last successful
+crawl, parcel-match rate, zoning-known rate, observation counts for *both* price
+types, and known gaps.
 
 This is not a nice-to-have. The product's only real asset is the user's trust that
 the median it shows is not an artifact of a broken scraper.
@@ -213,9 +234,12 @@ the median it shows is not an artifact of a broken scraper.
 | Parcel resolution (ULDK/EGiB) | | ● | ● | | | | |
 | Zoning enrichment (plan ogólny/MPZP) | ○ | ● | ● | ○ | | | ○ |
 | Comparable-set engine | | ● | ● | | ● | | |
-| RCN transaction data | | ○ | | | ● | | ● |
+| Sales prices — GUS BDL baseline | ○ | ● | | | ● | ○ | ● |
+| Sales prices — RCN parcel level | | ○ | | | ● | | ● |
+| Price-type labelling everywhere | ● | ● | ● | ● | ● | ● | ● |
 | Listing price history | | | ● | ● | ● | | ● |
-| Drive-time / accessibility | ● | ○ | ● | ○ | | ● | |
+| Nature attributes (forest/water/protected/noise) | ○ | ● | ● | ○ | | | |
+| Travel time to configured anchors | ● | ○ | ● | ○ | | ● | |
 | Saved searches + alerts | | | | ● | | | |
 | Housing corpus | | | | | | ● | ○ |
 
@@ -233,5 +257,13 @@ the median it shows is not an artifact of a broken scraper.
    Registry, live since July 2026) makes it feasible for the first time.
 3. **Listing history cannot be backfilled.** J3, J4, J5 and half of J7 depend on
    snapshots we take ourselves. Ingestion must start before any UI exists.
-4. **Sample size is a first-class UI element.** In rural gminas a "median" over
-   4 listings is noise; the design must show that rather than hide it.
+4. **Sample size and spread are first-class UI elements.** In rural gminas a
+   "median" over 4 listings is noise; the design shows that rather than hiding it,
+   and rather than refusing to answer (D17).
+5. **Both price types run the whole length of the product.** Sales prices are not
+   a later milestone: GUS BDL gives a free powiat-level sales floor everywhere from
+   M1, and RCN deepens it to parcel level wherever it turns out to be free (D3, D5).
+   Every journey that shows a price shows which kind it is.
+6. **The anchors set priority, not scope.** Budy Grabskie and Elbląg get the
+   deepest enrichment and the tightest QA, but J1 still explores all three target
+   units — the point is partly to discover somewhere better than the anchors (D10).

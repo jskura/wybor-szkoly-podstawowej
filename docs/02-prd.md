@@ -1,333 +1,404 @@
-# PRD — Land & Housing Price Comparison for łódzkie and mazowieckie
+# PRD — Land & Housing Price Comparison
 
-Status: draft v0.1 · Owner: jskura · Derived from [`01-user-journeys.md`](./01-user-journeys.md)
+Status: **draft v0.2** · Owner: jskura · Date: 2026-08-07
+Inputs: [`00-decisions.md`](./00-decisions.md) (D1–D24) · [`01-user-journeys.md`](./01-user-journeys.md)
+Validation methods: [`04-validation.md`](./04-validation.md) — required before any implementation ([`CLAUDE.md`](../CLAUDE.md) rule 4)
+
+Changes from v0.1: sales prices promoted to first-class alongside asking prices
+(D3); Elbląg area added to scope (D9); two named anchor areas with 25 km priority
+rings (D7, D11); suppression replaced by always-show-with-spread (D13, D17, D18);
+nature attributes added (D12, D22); routing anchors are specific addresses in
+gitignored config (D19, D21).
 
 ---
 
 ## 1. Problem
 
-Someone looking for a plot to build on in łódzkie or mazowieckie has to answer two
-questions that no existing tool answers:
+Someone buying land in these areas has to answer questions no existing tool
+answers:
 
 1. **"Where does my budget work?"** Portals filter listing-by-listing. There is no
-   view of the price surface across ~490 gminas, so buyers search where they
-   happen to have heard of, not where the price/commute trade-off is best.
-2. **"Is this price fair, and may I even build here?"** Asking prices are
-   anchors, not values. Actual transaction prices sit in a public register almost
-   nobody reads, and buildability sits in planning documents that are only now
-   becoming machine-readable.
+   view of the price surface across the ~530 gminas in scope.
+2. **"May I even build here?"** Buildability sits in planning documents that are
+   only now becoming machine-readable, and it is the single biggest determinant of
+   what a plot is worth.
+3. **"Is this price real?"** Asking prices are anchors, not values. What plots
+   actually *sold* for sits in a public register almost nobody reads.
 
-The gap is widest for **land**, because land is the least standardized asset: two
-plots 200 m apart can differ 5× in price per m² for reasons (zoning, road access,
-utilities, soil class) that listings state inconsistently or not at all.
+The gap is widest for **land**: two plots 200 m apart can differ 5× in price per m²
+for reasons — zoning, road access, utilities, soil class, protection status — that
+listings state inconsistently or not at all.
 
 ## 2. What we are building
 
-A data product that continuously collects land and housing offers plus official
-registry data for two voivodeships, normalizes them to comparable units, enriches
-them with the parcel and planning context that determines value, and presents the
-result as **a map you explore, a verdict on a single plot, and a side-by-side
-board** — with the source, date and sample size behind every number.
+A data product that continuously collects **both offering prices and actual sales
+prices** for land and housing across the target areas, normalizes them to
+comparable units, enriches them with the parcel, planning and nature context that
+determines value, and presents the result as a map you explore, a verdict on a
+single plot, and a side-by-side board — with source, as-of date, sample size and
+spread behind every number.
+
+### 2.1 The two price types (rule 5)
+
+This is the product's spine, not an implementation detail.
+
+| | **Offering price** (*cena ofertowa*) | **Actual sales price** (*cena transakcyjna*) |
+|---|---|---|
+| Source | Listing portals | RCN/RCiWN notarial records; GUS BDL aggregates |
+| Frequency | Daily | Quarterly, with lag |
+| Granularity | Individual plot | Parcel or precinct (RCN); powiat (GUS) |
+| Bias | Upward — an ask, not a price | None, but historical and incomplete |
+| Coverage | Only what is currently for sale | Only what has already sold |
+
+Neither substitutes for the other. **Every price in the data model, the API and
+the UI is explicitly labelled with its type.** They are never averaged together,
+never silently swapped when one is missing, and the gap between them is a
+first-class feature (J5) rather than a discrepancy to reconcile away.
 
 ## 3. Goals / non-goals
 
 **Goals (v1)**
-- G1 — A user can identify the gminas where their budget buys a buildable plot at
-  an acceptable commute, in one session. *(J1)*
+- G1 — Identify gminas where a given budget buys a buildable plot at acceptable
+  travel time, in one session. *(J1)*
 - G2 — For any plot in scope, produce a price-per-m² verdict against a transparent
-  comparable set, plus buildability and risk flags. *(J2, J3)*
-- G3 — Numbers are auditable: source, as-of date, sample size, method, always one
-  click away; aggregates below n=10 are suppressed. *(J8)*
-- G4 — Coverage of ≥ 90% of gminas in both voivodeships with ≥ 1 land observation
-  per quarter, and ≥ 60% with a usable monthly median (n ≥ 10).
+  comparable set, plus buildability, nature and risk attributes. *(J2, J3)*
+- G3 — **Both price types available** for every target area at the finest
+  granularity the free sources allow, always labelled. *(J5, J7, rule 5)*
+- G4 — Every number is auditable: source, as-of date, sample size, spread, method.
+  Nothing suppressed, nothing shown bare. *(J8, rule 6)*
+- G5 — Coverage of ≥90% of gminas in the two 25 km anchor rings with at least one
+  land observation per month, and ≥70% of all in-scope gminas per quarter.
 
 **Non-goals (v1)**
-- Other voivodeships. The design must not *prevent* it (region is a parameter),
-  but nothing ships for them.
-- A public commercial AVM, a paid API, or reselling listing content.
-- Mortgage/financing calculators, agent CRM, native mobile app, listing your own
-  plot for sale, contacting sellers through us.
-- Housing beyond what J6/J7 need — flats and houses are collected but get no
-  dedicated UI in v1.
+- Voivodeships beyond scope (§6). Region is a pipeline parameter, but nothing ships.
+- Public launch, commercial use, a paid API, or reselling listing content (D1).
+- Paid data of any kind (D2).
+- Mortgage calculators, agent CRM, native mobile app, listing your own plot,
+  contacting sellers through us.
+- Housing beyond what J6/J7 need — flats and houses are collected from day one so
+  history accrues, but get no dedicated UI in v1.
 - Legal certainty. Every buildability statement is informational; the binding
   document is the *wypis i wyrys* from the gmina.
 
-## 4. Users and priority
+## 4. Users
 
 P1 self-builder (primary) → P2 patient investor → P3 relocator → P4 us.
-See [user journeys §Personas](./01-user-journeys.md#personas).
+See [journeys §Personas](./01-user-journeys.md#personas). Audience is the owner
+plus a few known people (D1).
 
 ## 5. Success metrics
 
+Every metric below has a validation method in [`04-validation.md`](./04-validation.md).
+
 | | Metric | Target at v1 |
 |---|---|---|
-| Coverage | Gminas with ≥10 active land listings | ≥ 60% of 491 |
+| Coverage (offers) | Gminas in anchor rings with ≥10 active land listings | ≥ 70% |
+| Coverage (offers) | All in-scope gminas with ≥1 land listing per quarter | ≥ 70% |
+| **Coverage (sales)** | In-scope powiats with GUS BDL land transaction series | 100% |
+| **Coverage (sales)** | In-scope powiats with parcel-level RCN data | ≥ 40% *(pending D5 research)* |
 | Coverage | Land listings resolved to a parcel geometry | ≥ 40% |
-| Coverage | Listings with a zoning designation attached | ≥ 50% |
-| Quality | Duplicate rate after dedup (manually audited sample of 200) | ≤ 3% |
-| Quality | PLN/m² outliers surviving validation (manual audit) | ≤ 1% |
-| Freshness | Gminas crawled within the last 48 h | ≥ 95% |
-| Value | Time from landing to a 3-gmina shortlist (J1, moderated test, 5 users) | ≤ 10 min |
-| Value | Users who say the J2 verdict changed their view of a plot | ≥ 3 of 5 |
+| Coverage | Listings with a zoning designation (not `unknown`) | ≥ 50% in anchor rings |
+| Quality | Duplicate rate after dedup, audited sample of 200 | ≤ 3% |
+| Quality | PLN/m² outliers surviving validation, manual audit | ≤ 1% |
+| Quality | Aggregates displayed without sample size **and** spread | **0** (hard invariant) |
+| Quality | Prices displayed without a price-type label | **0** (hard invariant) |
+| Freshness | Anchor-ring gminas crawled within the last 48 h | ≥ 95% |
+| Value | Landing → 3-gmina shortlist (J1, moderated, 5 users) | ≤ 10 min |
+| Value | Users saying the J2 verdict changed their view of a plot | ≥ 3 of 5 |
 
-Deliberately not a metric in v1: traffic, sign-ups, revenue. This is a decision
-tool for a small number of people first.
+Not metrics in v1: traffic, sign-ups, revenue.
 
 ## 6. Scope
 
-**Geography.** łódzkie (24 powiats, ~177 gminas) and mazowieckie (42 powiats,
-~314 gminas). Aggregation levels: voivodeship → powiat → gmina → (later) obręb
-ewidencyjny. Gmina is the default unit — it is the level at which planning
-decisions are made and at which GUS/RCN data is reliably available.
+### 6.1 Geography (D7, D9, D10, D11)
 
-**Asset classes**, in priority order:
-1. `land_building` — działka budowlana (priority)
-2. `land_agricultural` — działka rolna (the investor thesis, and the rezoning gap)
-3. `land_recreational` — działka rekreacyjna / ROD-adjacent
-4. `house` — dom jednorodzinny, secondary market
-5. `flat` — mieszkanie, secondary market (needed for J6's sell-side)
+Three target units, region-wide exploration within each:
 
-Land types 1–3 are v1. Types 4–5 are ingested from day 1 (so history accrues) but
-surfaced only in J6/J7.
+| Unit | Approx. gminas | Role |
+|---|---|---|
+| **łódzkie** | ~177 | Contains anchor A |
+| **mazowieckie** | ~314 | Contains the Warsaw travel anchor |
+| **Elbląg area** — powiat elbląski + m. Elbląg | ~10 | Contains anchor B |
 
-**Out of scope entirely:** commercial/industrial property, forests as timber
-assets, rental data.
+Two **anchor areas** get priority for enrichment, daily crawl depth and QA:
+
+- **Anchor A — Budy Grabskie**, gmina Skierniewice, powiat skierniewicki, łódzkie.
+  In Bolimów Landscape Park on the Rawka. 25 km ring.
+- **Anchor B — Elbląg**, warmińsko-mazurskie. 25 km ring.
+
+Anchors set *priority*, not *scope*: the full map of all three units still ships
+(D10). Aggregation levels: voivodeship → powiat → gmina → (later) obręb.
+
+### 6.2 Asset classes (D6)
+
+Priority order, land first:
+1. `land_building` — działka budowlana
+2. `land_recreational` — działka rekreacyjna
+3. `land_agricultural` — działka rolna
+4. `land_forest_other` — działka leśna / inna
+5. `house` — dom, secondary market · 6. `flat` — mieszkanie, secondary market
+
+Land 1–4 are v1 UI. Housing 5–6 is ingested from day one, surfaced in J6/J7 only.
+Out of scope entirely: commercial/industrial, rental data.
 
 ## 7. Data sources
 
-Detailed endpoints, formats, licensing and open questions live in
-[`03-data-sources.md`](./03-data-sources.md). Summary:
+Details in [`03-data-sources.md`](./03-data-sources.md). All free (D2).
 
-| Layer | Source | Role | Confidence |
+| Layer | Source | Price type | Confidence |
 |---|---|---|---|
-| Asking prices | Listing portals (Otodom, OLX, and land-specific boards) | Volume, freshness, granularity | High volume, biased upward |
-| Transaction prices | **RCN / RCiWN** (property price register, opened up nationally in 2026; GML/API via geoportal) | Ground truth for what things sell for | Authoritative, lagging, patchy |
-| Official aggregates | **GUS BDL API** — average transaction prices of land for residential construction, by powiat, urban/rural split | Baseline, sanity check, pre-history | Authoritative, coarse, quarterly |
-| Parcels | **GUGiK ULDK** (parcel by ID / by coordinates, geometry in EPSG:2180) + county **WFS** for EGiB | Turns a listing into a real object | Good coverage, uneven per county |
-| Zoning | **Rejestr Urbanistyczny** (live 2026-07-01) — *plan ogólny* + MPZP as standardized spatial data; GUGiK national register of general plans | Buildability, the differentiator | Rolling rollout, incomplete until 2029 |
-| Boundaries | GUGiK PRG (administrative units) | Aggregation geometry | Stable |
-| Constraints | Flood hazard maps (ISOK/Wody Polskie), soil class from EGiB, protected areas (GDOŚ) | Risk flags | Good |
-| Accessibility | OSM + a routing engine (self-hosted OSRM/Valhalla) | Drive-time rings | Good |
+| Listings | Portals, daily | **Offering** | High volume, upward bias |
+| RCN/RCiWN | Registry, GML from 2021-07-31 | **Sales** | Authoritative, access varies by county — see FR-31 |
+| GUS BDL | API, powiat-level, quarterly | **Sales** | Authoritative, coarse, guaranteed free |
+| Parcels | GUGiK ULDK + county EGiB WFS | — | Good, uneven by county |
+| Zoning | Rejestr Urbanistyczny / plan ogólny / MPZP | — | Incomplete until 2029 |
+| Boundaries | GUGiK PRG + TERYT | — | Stable |
+| Nature | OSM landcover/water, GDOŚ protected areas | — | Good |
+| Constraints | Flood hazard, soil class, road access | — | Good |
+| Routing | OSM + self-hosted OSRM | — | Good |
 
-**Design principle:** official registries are the *authoritative* layer; portal
-listings are the *high-frequency* layer. Where they disagree, the registry wins
-and the discrepancy is shown, not hidden — the asking-vs-transaction gap is itself
-a feature (J5).
+**Principle:** registries are authoritative, listings are high-frequency. Where
+they disagree, both are shown, labelled by type, and the gap is the feature.
 
 ## 8. Functional requirements
 
 ### 8.1 Ingestion
-- FR-1 Per-source connectors, scheduled, incremental, resumable, each writing to a
-  raw immutable landing zone (source payload + fetch timestamp + source URL).
-- FR-2 Respect `robots.txt`, per-host rate limits and backoff; identify with an
-  honest user agent; never authenticate to bypass access controls; never solve or
-  circumvent anti-bot challenges. See §12.
-- FR-3 **Snapshot semantics**: every crawl records the observed state of each
-  listing. Price changes, delisting and relisting are derived from the snapshot
-  series, not from the portal's own history (which it does not expose).
-- FR-4 Prefer official APIs (GUS BDL, ULDK, WFS, RCN) over scraping wherever the
-  same fact is obtainable from both.
-- FR-5 Ingestion failures are visible: a per-source health record with last
-  success, item counts and a schema-drift alarm (a connector silently returning 0
-  items must page us, not quietly flatten a median).
 
-### 8.2 Normalization
-- FR-6 Map every listing to a canonical schema (§10) with: price PLN, area m²,
-  asset class, zoning claim, utilities, road access, coordinates, gmina TERYT.
-- FR-7 Compute `price_per_m2`. Reject or quarantine records failing validation:
-  area outside [100 m², 500 000 m²] for land, price outside [1, 100 000] PLN/m²,
-  price/area missing, "cena do negocjacji"/"zapytaj o cenę" placeholders.
-- FR-8 **Deduplication.** The same plot is routinely listed by 3–6 agencies. Match
-  on: (rounded area, price band, geohash-6, normalized title shingles, image
-  perceptual hash, phone/agency where present). Group into a `plot_cluster` with
-  one canonical record and a `duplicate_count` — which is itself a signal (many
-  agencies = motivated seller).
-- FR-9 Geocode to gmina TERYT; where a parcel ID is present in the text, resolve
-  via ULDK to a real geometry and prefer that over the portal's pin.
+- **FR-1** Per-source connectors: scheduled, incremental, resumable, writing raw
+  immutable payloads with fetch timestamp and source URL.
+- **FR-2** Respect `robots.txt` and per-host rate limits; honest user agent;
+  never bypass authentication or anti-bot measures. See §12.
+- **FR-3** **Snapshot semantics** — every crawl records observed state per listing.
+  Price changes, delisting and relisting are derived from the snapshot series.
+- **FR-4** Daily crawl cadence (D14), off-peak, with backoff.
+- **FR-5** Prefer official APIs over scraping wherever both answer the same question.
+- **FR-6** Source health record per connector: last success, item count, schema-drift
+  alarm. A connector silently returning zero items must alarm, not flatten a median.
 
-### 8.3 Enrichment
-- FR-10 Attach parcel attributes: area (registry, not advert), land-use class,
+### 8.2 Price types (rule 5)
+
+- **FR-7** Every price-bearing row carries a non-null `price_type ∈ {offering, sales}`.
+  Enforced as a database constraint, not a convention.
+- **FR-8** Offering and sales prices are never averaged into a single figure, and
+  never substituted for one another when one is missing.
+- **FR-9** Every price rendered in the UI or returned by the API is labelled with
+  its type, in Polish (*cena ofertowa* / *cena transakcyjna*).
+- **FR-10** Asking-vs-sales spread per gmina (or the finest unit available):
+  `median(offering) − median(sales)`, shown with both sample sizes and both as-of
+  dates, since the two are measured over different periods.
+
+### 8.3 Normalization
+
+- **FR-11** Canonical schema per listing: price PLN, area m², asset class, zoning
+  claim, utilities, road access, coordinates, gmina TERYT.
+- **FR-12** Compute `price_per_m2`. Quarantine records failing validation: land area
+  outside [100 m², 500 000 m²], price outside [1, 100 000] PLN/m², missing
+  price or area, "zapytaj o cenę" placeholders.
+- **FR-13** **Deduplication** — the same plot is routinely listed by 3–6 agencies.
+  Match on rounded area, price band, geohash-6, title shingles, image perceptual
+  hash, hashed seller contact. Group into a `plot_cluster` with a canonical record
+  and a `duplicate_count` (itself a motivated-seller signal).
+- **FR-14** Geocode to gmina TERYT; where a parcel identifier appears in the text,
+  resolve via ULDK and prefer that geometry over the portal's pin.
+
+### 8.4 Enrichment
+
+- **FR-15** Parcel attributes: registry area (not advert area), land-use class,
   soil class, precinct.
-- FR-11 Attach zoning: designation from *plan ogólny*/MPZP where published, plus
-  the derived `buildability` tier — `buildable` / `conditional` / `agricultural` /
-  `unknown`. `unknown` must never be silently treated as buildable.
-- FR-12 Attach constraints: flood zone, protected area, class I–III farmland,
-  no public-road access, transmission-line easement.
-- FR-13 Attach accessibility: drive time to Warsaw centre, Łódź centre, nearest
-  powiat seat, nearest railway station.
+- **FR-16** Zoning: designation from plan ogólny/MPZP, plus derived `buildability ∈
+  {buildable, conditional, agricultural, unknown}`.
+- **FR-17** **`unknown` is a terminal state** (D20). It is never inferred from
+  neighbours or land-use class, never defaulted to buildable, and renders in the UI
+  as *"brak danych — sprawdź w gminie"* with a pointer to obtaining the wypis i wyrys.
+- **FR-18** Constraints: flood zone, protected area, class I–III farmland, no public
+  road access, transmission-line easement.
+- **FR-19** **Nature attributes** (D22), each stored and displayed separately:
+  distance to nearest forest edge; distance to nearest water (river, lake, lagoon);
+  protected-area status; distance to nearest major road and railway.
+- **FR-20** Protected-area status is presented as **both amenity and constraint** —
+  it is genuinely both, and showing only one framing misleads.
+- **FR-21** **Travel time** by road to each configured anchor address (D19).
 
-### 8.4 Analytics
-- FR-14 Aggregates per (gmina × asset class × month): count, median, p25, p75,
-  mean, and the median's sample size. Suppress below n=10; surface the suppression.
-- FR-15 Comparable-set engine: given a subject plot, select comparables by
-  geography (same gmina, else radius), zoning class, area band ±50%, recency
-  ≤ 12 months; return the set, the median, and the subject's deviation. The user
-  can exclude comparables and recompute (J2).
-- FR-16 Asking-vs-transaction spread per gmina, from RCN vs. our listing corpus.
-- FR-17 Time series per gmina/powiat with sample sizes, nominal and CPI-adjusted.
-- FR-18 (post-MVP) Hedonic model — `log(price_per_m2) ~ area + buildability +
-  utilities + road access + drive time + gmina fixed effects` — used for a
-  residual-based "underpriced" flag, shipped only once it beats the naive
-  gmina-median baseline on held-out data. Never shipped as an opaque score.
+### 8.5 Configuration and privacy
 
-### 8.5 Presentation
-- FR-19 **Map view**: choropleth by gmina, metric and filter driven, greying out
-  gminas with no matching supply; zoom to individual listings/parcels.
-- FR-20 **Plot page**: verdict card, comparable set (map + table), risk badges,
-  price history, negotiation panel.
-- FR-21 **Comparison board**: 2–4 plots, column-per-plot, differences highlighted,
-  weighted ranking with visible reasoning, export to PDF/PNG.
-- FR-22 **Trends view**: multi-gmina time series with sample-size bars.
-- FR-23 **Coverage/method page**: per-source freshness, per-gmina counts, match
-  rates, and a written method note for every computed metric.
-- FR-24 (post-MVP) Saved searches and alert digests (J4).
-- FR-25 Polish UI copy with Polish domain terms used correctly (*działka
-  budowlana*, *plan ogólny*, *wypis i wyrys*, *media*, *droga dojazdowa*).
+- **FR-22** Routing anchors live in `config/anchors.yml`, which is **gitignored**
+  (D21). The repo ships `config/anchors.example.yml` with placeholder addresses.
+  The real file exists only on the owner's machine and the VPS.
+- **FR-23** No personal address, name or phone number is ever committed to git or
+  written to a shared artifact. Seller contacts are stored only as salted hashes,
+  for dedup (FR-13).
+
+### 8.6 Analytics
+
+- **FR-24** Aggregates per (gmina × asset class × price type × month): count,
+  median, p25, p75, min, max, mean.
+- **FR-25** **Always show, always flag** (rule 6, D13/D17/D18). No aggregate is
+  suppressed. Every aggregate is returned and rendered with its sample size **and**
+  its spread — IQR normally, min–max when n < 5. An aggregate without both is a
+  bug, enforced at the API boundary.
+- **FR-26** Comparable-set engine: select by geography (same gmina, else radius),
+  zoning class, area band ±50%, recency ≤12 months; return the set, its median, its
+  spread, and the subject's deviation. User can exclude comparables and recompute.
+- **FR-27** Time series per gmina/powiat, **both price types plotted separately**,
+  with sample-size bars, nominal and CPI-adjusted.
+- **FR-28** (post-MVP) Hedonic model for a residual-based "underpriced" flag,
+  shipped only if it beats the gmina-median baseline on held-out data. Never an
+  opaque score.
+
+### 8.7 Presentation
+
+- **FR-29** Polish UI, English code and docs (D15). Domain terms used correctly:
+  *działka budowlana*, *plan ogólny*, *wypis i wyrys*, *media*, *droga dojazdowa*,
+  *cena ofertowa*, *cena transakcyjna*.
+- **FR-30** Map view (choropleth by gmina, filter-driven), plot page (verdict card,
+  comparables, risk and nature badges, price history, negotiation panel),
+  comparison board (2–4 plots, differences highlighted, weighted ranking with
+  visible reasoning, export), trends view, and a coverage/method page.
+
+### 8.8 Research spikes
+
+- **FR-31** **RCN access research** (D5), before any RCN connector is scheduled.
+  Deliverable: a table of the ~70 in-scope powiats with, for each, whether RCN data
+  is published openly, the format, and any fee or request procedure. Feeds O2 and
+  decides whether the ≥40% parcel-level sales coverage target in §5 is achievable
+  for free.
 
 ## 9. Sequencing
 
-Listing data **cannot be backfilled** — the price history that J3/J4/J5/J7 depend
-on only exists if we are already collecting. Therefore M1 ships ingestion before
-any user-facing surface, and the crawler runs from day one even while the UI is
-being designed.
+Two constraints drive the order. Listing data **cannot be backfilled** — the price
+history J3/J4/J5/J7 need only exists if we are already collecting. And sales prices
+are **first-class from the start** (D3), so GUS BDL lands in M1, not M4.
 
-| Milestone | Weeks | Contents | Journeys unblocked |
-|---|---|---|---|
-| **M0 — Spine** | 1–2 | Repo, schema, boundaries (PRG), TERYT dictionary, GUS BDL baseline import, source health scaffolding | — |
-| **M1 — Collect** | 2–5 | Land connectors for both voivodeships, snapshot pipeline, dedup, normalization, validation, coverage page | (data accrues) |
-| **M2 — See** | 5–8 | Gmina aggregates, choropleth map, filters, drive-time layer | **J1** |
-| **M3 — Judge** | 8–11 | ULDK parcel resolution, zoning + constraint enrichment, comparable engine, plot page, comparison board | **J2, J3**, J8 |
-| **M4 — Ground-truth** | 11–14 | RCN ingestion, asking-vs-transaction spread, trends view | **J5, J7** |
-| **M5 — Extend** | 14+ | Saved searches + alerts; housing surfaced; buy-vs-build | **J4, J6** |
+| Milestone | Contents | Journeys |
+|---|---|---|
+| **M0 — Spine** | Schema with `price_type` constraint, PRG boundaries, TERYT, anchor config, source health scaffolding, RCN access research (FR-31) | — |
+| **M1 — Both price types flowing** | Land connectors (daily) for all three units; **GUS BDL sales baseline**; snapshot pipeline; dedup; normalization; coverage page | data accrues |
+| **M2 — See** | Gmina aggregates for both price types, choropleth, filters, travel time to anchors | **J1** |
+| **M3 — Judge** | ULDK parcel resolution, zoning, nature and constraint enrichment, comparable engine, plot page, comparison board | **J2, J3**, J8 |
+| **M4 — Parcel-level sales** | RCN connector for whichever powiats FR-31 found free; asking-vs-sales spread; trends | **J5, J7** |
+| **M5 — Extend** | Saved searches and alerts; housing surfaced; buy-vs-build | **J4, J6** |
 
-M2 is the first demoable milestone; M3 is the first genuinely useful one.
+M2 is the first demoable milestone; M3 the first genuinely useful one.
 
-## 10. Data model (core entities)
+## 10. Data model
 
 ```
-source                (id, name, kind[portal|registry|api], base_url, robots_ok,
-                       rate_limit, last_success_at, health)
-raw_document          (id, source_id, url, fetched_at, payload, content_hash)
+source              (id, name, kind[portal|registry|api], base_url, robots_ok,
+                     rate_limit, last_success_at, health)
+raw_document        (id, source_id, url, fetched_at, payload, content_hash)
 
-listing               (id, source_id, external_id, first_seen_at, last_seen_at,
-                       is_active, url, title, description,
-                       price_pln, area_m2, price_per_m2,
-                       asset_class, zoning_claim, utilities[], road_access,
-                       lat, lon, teryt_gmina, parcel_id?, plot_cluster_id,
-                       seller_type[private|agency])
-listing_snapshot      (listing_id, observed_at, price_pln, is_active)   -- price history
-plot_cluster          (id, canonical_listing_id, duplicate_count, member_ids[])
+listing             (id, source_id, external_id, first_seen_at, last_seen_at,
+                     is_active, url, title, description,
+                     price_pln, area_m2, price_per_m2,
+                     price_type CHECK = 'offering'  NOT NULL,      -- FR-7
+                     asset_class, zoning_claim, utilities[], road_access,
+                     lat, lon, teryt_gmina, parcel_id?, plot_cluster_id,
+                     seller_contact_hash, seller_type)
+listing_snapshot    (listing_id, observed_at, price_pln, is_active)   -- append-only
+plot_cluster        (id, canonical_listing_id, duplicate_count, member_ids[])
 
-parcel                (id, parcel_identifier, teryt_gmina, obreb, geom,
-                       registry_area_m2, land_use_class, soil_class)
-parcel_zoning         (parcel_id, plan_type[plan_ogolny|mpzp|none], designation,
-                       buildability[buildable|conditional|agricultural|unknown],
-                       source_doc, as_of)
-parcel_constraint     (parcel_id, kind, severity, source, as_of)
+transaction         (id, source[rcn|gus_bdl], parcel_id?, teryt_unit, unit_level,
+                     transacted_at, price_pln, area_m2, price_per_m2,
+                     price_type CHECK = 'sales' NOT NULL,           -- FR-7
+                     property_kind, as_of)
 
-transaction           (id, source[rcn], parcel_id?, teryt_gmina, transacted_at,
-                       price_pln, area_m2, price_per_m2, property_kind)
+parcel              (id, parcel_identifier, teryt_gmina, obreb, geom,
+                     registry_area_m2, land_use_class, soil_class)
+parcel_zoning       (parcel_id, plan_type, designation,
+                     buildability[buildable|conditional|agricultural|unknown],
+                     source_doc, as_of)
+parcel_constraint   (parcel_id, kind, severity, source, as_of)
+parcel_nature       (parcel_id, dist_forest_m, dist_water_m, water_kind,
+                     protected_area_kind?, dist_major_road_m, dist_railway_m)
+parcel_access       (parcel_id, anchor_key, drive_minutes, distance_km)
 
-admin_unit            (teryt, level[woj|powiat|gmina], name, geom, parent_teryt,
-                       drive_min_to_warszawa, drive_min_to_lodz)
-metric_gmina_month    (teryt_gmina, month, asset_class,
-                       n, median_ppm2, p25, p75, mean, is_suppressed)
+anchor              (key, label, lat, lon)          -- populated from gitignored config
+admin_unit          (teryt, level, name, geom, parent_teryt)
+
+metric_unit_month   (teryt_unit, unit_level, month, asset_class,
+                     price_type,                                     -- FR-7/FR-8
+                     n, median_ppm2, p25, p75, min_ppm2, max_ppm2, mean_ppm2,
+                     as_of, source_ids[])
 ```
 
-Two invariants worth stating: `listing_snapshot` is append-only (it is the only
-history we will ever have), and every derived row carries `as_of` + `source` so
-FR-23 and G3 are mechanically satisfiable rather than aspirational.
+Invariants worth stating explicitly, because the validation doc tests each one:
 
-## 11. Architecture (proposed)
+1. `listing_snapshot` is append-only — it is the only history we will ever have.
+2. Every price-bearing table has a non-null `price_type` with a CHECK constraint.
+3. `metric_unit_month` rows are keyed *including* `price_type`; no row ever mixes.
+4. Every derived row carries `as_of` and source, so provenance is mechanical.
+5. No row is ever deleted for being thin — thinness is expressed via `n` and spread.
 
-- **Ingestion**: Python. `httpx` + `selectolax` for static pages; Playwright
-  (already available in this environment) only where a source genuinely requires
-  a browser. One module per source implementing a common `fetch → parse → emit`
-  contract. Scheduled via cron/GitHub Actions initially; Prefect/Dagster only if
-  the DAG earns it.
-- **Storage**: PostgreSQL + **PostGIS**. Non-negotiable — every core question
-  ("plots within this drive-time ring", "parcels intersecting this zoning
-  polygon") is spatial. Raw payloads to object storage or a `raw_document` table.
-- **Transformation**: SQL models (dbt-style, or plain versioned SQL) producing the
-  `metric_*` tables. Analysis notebooks read the same tables the app does — no
-  parallel truth.
-- **API**: FastAPI, serving GeoJSON/vector tiles for the choropleth and JSON for
-  plot pages.
-- **Frontend**: Next.js + **MapLibre GL** (choropleth, listing pins, parcel
-  outlines) + a small chart library for trends.
-- **Routing**: self-hosted OSRM on an OSM extract of both voivodeships, run
-  offline to precompute drive-time columns per gmina.
+## 11. Architecture
 
-*Shortcut worth considering:* if we want J1 on screen in two weeks rather than
-six, M2 can ship as a Streamlit + pydeck internal tool over the same Postgres,
-with the Next.js frontend arriving at M3. The data layer is identical either way,
-so this is a reversible choice — recommended if the first audience is us.
+- **Ingestion** — Python. `httpx` + `selectolax` for static pages, Playwright only
+  where genuinely required. One module per source, common `fetch → parse → emit`
+  contract. Scheduled by cron on the VPS.
+- **Storage** — PostgreSQL + **PostGIS**. Every core question is spatial.
+- **Transformation** — versioned SQL models producing `metric_*` tables. Analysis
+  reads the same tables the app does; no parallel truth.
+- **API** — FastAPI, GeoJSON/vector tiles for the map, JSON for plot pages.
+- **Frontend** — Next.js + MapLibre GL, Polish copy.
+- **Routing** — self-hosted OSRM over an OSM extract of the target areas;
+  drive times to anchors precomputed offline.
+- **Deployment** — Docker Compose on a cheap VPS (D16), daily cron. A simple access
+  gate for the handful of users is open question O4.
+- **Testing** — pytest, with fixtures recorded from real sources. Per rule 3, tests
+  precede implementation; per rule 4, each feature's validation method precedes its
+  tests.
 
 ## 12. Legal, ethical and operating constraints
 
-Framing: **v1 is a private analytical tool for personal purchase decisions, not a
-published service.** That framing is what keeps the following manageable, and it
-changes materially if we ever publish or commercialize — treat that as a gate
-requiring a fresh review, not a growth step.
+Framing: **a private analytical tool for personal purchase decisions, shared with a
+few known people** (D1) — not a published service. Publishing or commercializing is
+a gate requiring fresh review, not a growth step.
 
-- Respect `robots.txt` and portal terms; crawl at a polite rate (single-digit
-  requests/minute per host, off-peak); never bypass authentication, paywalls or
-  anti-bot measures.
-- Store the **minimum** from adverts: price, area, location, attributes. Do not
-  store seller names or phone numbers as readable fields — keep only a salted
-  hash where needed for deduplication (FR-8), which keeps GDPR exposure minimal.
-- Do not republish listing text or photos. Show our derived numbers and link back
-  to the source listing.
-- Substantial systematic extraction of a portal's database is the specific legal
-  risk (sui generis database right), and it grows sharply with commercial reuse of
-  a competing product. Keeping v1 private, derived-metrics-only and modest in
-  volume is the mitigation.
-- Prefer official open data (GUS BDL, ULDK, WFS, RCN, PRG) wherever it answers the
-  same question — it is licensed for reuse and carries none of the above risk.
-- RCN access may involve fees or per-county request procedures; budget effort for
-  that in M4 rather than assuming a clean API everywhere.
+- Respect `robots.txt`, portal terms, polite rate limits (single-digit
+  requests/minute per host, off-peak, daily cadence per D14).
+- Never bypass authentication, paywalls, anti-bot measures or CAPTCHAs.
+- Store the minimum from adverts. Seller names and phone numbers → salted hash only
+  (FR-23), never a readable field.
+- Never republish listing text or photos; show derived numbers and link to source.
+- The specific legal risk is substantial systematic extraction (sui generis database
+  right), rising sharply with commercial reuse. Private, low-volume,
+  derived-metrics-only is the mitigation.
+- Prefer official open data wherever it answers the same question — licensed for
+  reuse, no such risk.
+- Personal addresses never enter git (FR-22, FR-23).
 
 ## 13. Risks
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Portals block or throttle us | Kills the high-frequency layer | Polite crawling; multiple sources; official data as the floor; degrade to GUS/RCN-only aggregates rather than going dark |
-| Zoning data incomplete until 2029 | Buildability unknown for many plots | Explicit `unknown` tier, never inferred as buildable; prioritise gminas with published *plan ogólny*; fall back to land-use class as a weak signal |
-| Thin rural samples | Misleading medians | n≥10 suppression, IQR shown, sample-size bars everywhere |
-| Duplicates inflate counts | Wrong "supply" and skewed medians | plot_cluster dedup; audit 200 records manually per §5 |
-| RCN access is bureaucratic/paid | M4 slips | Start the access process during M1; GUS BDL as the interim transaction baseline |
-| Silent scraper drift | Corrupted history, unrecoverable | Schema-drift alarms (FR-5), raw payloads retained so re-parsing is always possible |
-| Scope creep into all of Poland | Nothing finishes | Region is a parameter, but no non-target-voivodeship data ships in v1 |
+| RCN turns out to be paid in most in-scope powiats | Sales prices stay coarse, undermining D3 | FR-31 research first; GUS BDL guarantees a free powiat-level sales floor everywhere |
+| Portals block us | Kills the offering-price layer | Polite crawling, multiple sources, degrade to registry-only aggregates rather than going dark |
+| Zoning incomplete until 2029 | Buildability unknown for many plots | Terminal `unknown` state (FR-17); prioritise gminas with published plan ogólny |
+| Thin rural samples around Budy Grabskie | Misleading medians | Mandatory spread + n on every aggregate (FR-25); min–max below n=5 |
+| Always-show is misread as confident | User acts on n=3 | Spread is not optional anywhere; enforced at the API boundary and tested |
+| Duplicates inflate counts | Wrong supply, skewed medians | plot_cluster dedup, 200-record manual audit |
+| Silent scraper drift | Corrupted, unrecoverable history | Schema-drift alarms (FR-6); raw payloads retained so re-parsing is always possible |
+| Anchor addresses leak into git | Personal privacy | Gitignored config, example file only, no addresses in fixtures |
+| Scope creep to all of Poland | Nothing finishes | Region is a parameter; only the three units in §6.1 ship |
 
 ## 14. Open questions
 
-1. **Private or public?** Personal decision tool, shared with friends, or a public
-   product? This changes §12 from "manageable" to "needs counsel", and changes the
-   metrics in §5 entirely.
-2. **Budget** for paid data (RCN county fees, a commercial listing-data provider,
-   hosting)? A paid feed would remove most of §12's risk.
-3. **Which portals** exactly, and are there land-specific boards worth more than
-   the big two for rural plots (agricultural land often trades off-portal)?
-4. **How far back** should the GUS/RCN baseline go — 3 years or 10?
-5. **Warsaw-centric or symmetric?** Do we treat Warsaw as *the* gravity centre
-   (which mazowieckie's market suggests), or model łódzkie's Łódź-centred market
-   with equal weight?
-6. **Drive time vs. distance** — is a self-hosted routing engine worth the setup
-   in M2, or does straight-line distance to the nearest station suffice initially?
+Tracked in [`00-decisions.md`](./00-decisions.md) as O1–O5: portal selection, RCN
+access outcome, final repo name, the access gate for friends, and GUS history
+depth. None block M0.
 
 ---
 
 ## Appendix — traceability
 
-Every FR traces to at least one journey; every MVP journey has full FR coverage.
-
 | Journey | Requirements |
 |---|---|
-| J1 Where can I afford | FR-1..9, 14, 19 |
-| J2 Is it fairly priced | FR-6..12, 15, 16, 20 |
-| J3 Side-by-side | FR-3, 10..13, 15, 21 |
-| J4 Alerts | FR-1, 3, 8, 24 |
-| J5 Negotiation | FR-3, 16, 20 |
-| J6 Buy vs build | FR-6, 14, 22 |
-| J7 Trends | FR-14, 17, 22 |
-| J8 Trust | FR-5, 7, 14, 23 |
+| J1 Where can I afford | FR-1..6, 11..14, 21, 24, 25, 30 |
+| J2 Is it fairly priced | FR-7..17, 18..20, 26, 30 |
+| J3 Side-by-side | FR-3, 15..21, 26, 30 |
+| J4 Alerts | FR-1, 3, 4, 13 (+M5) |
+| J5 Negotiation | FR-3, 7..10, 27, 30 |
+| J6 Buy vs build | FR-11, 24, 27 |
+| J7 Trends | FR-7..10, 24, 25, 27 |
+| J8 Trust | FR-6, 12, 25, 29, 30 |
+| Rule 5 (two price types) | FR-7, 8, 9, 10, 24, 27 |
+| Rule 6 (always show, always flag) | FR-25 |
