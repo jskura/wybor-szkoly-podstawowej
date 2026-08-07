@@ -633,6 +633,135 @@ figures come out of the UI until resolved.
 - **Falsified by** Re-parsing being impossible because raw payloads were not
   retained; a recomputation that mutates snapshots or silently overwrites history.
 
+## v0 additions — methods the reshaped scope requires
+
+Added after [`20-verification-strategy.md`](./20-verification-strategy.md). These
+cover the new sources (D47), the biases in §3 and §5 of that document, and the
+techniques that work where no oracle exists. Tier references are to `20` §2.
+
+### V43 — Corpus completeness against the source's own count (F5, tier B)
+
+- **AC** For each portal query, the number of listings we collect matches the
+  count the source itself reports for that query, within a small tolerance for
+  churn during the crawl. A systematic shortfall — pagination stopping early,
+  a filter silently excluding results — raises an alarm and blocks publication.
+- **How** (a) Parse the source's stated result count and compare to rows emitted,
+  per query, every run, as a `Δ` assertion; (b) a unit test with a fixture whose
+  pagination truncates at page 3 of 10, asserting the alarm fires.
+- **Against** The source's own reported totals; a deliberately truncated fixture.
+- **Falsified by** Collecting materially fewer rows than the source reports with no
+  alarm. **This is the highest-value single check in the ingestion path** — a
+  silently partial corpus still produces confident medians.
+
+### V44 — Sort-order independence (F6, tier B)
+
+- **AC** The same query crawled under two different sort orders yields
+  statistically indistinguishable price distributions. If they differ, our sample
+  is biased by collection order, not by the market.
+- **How** A scheduled comparison run — crawl one representative query sorted by
+  price ascending and by date, compare the resulting distributions; alarm on a
+  material divergence.
+- **Against** The source itself, queried two ways.
+- **Falsified by** Distributions that differ beyond sampling noise, which means the
+  corpus depends on how we asked rather than what exists.
+
+### V45 — Stock and flow are computed and labelled separately (`20` §5)
+
+- **AC** Every aggregate is available as **stock** (all active listings) and
+  **flow** (first seen within the window), each labelled. Neither is ever rendered
+  without saying which it is. The two are never averaged.
+- **How** (a) Unit test on a fixture where a long-standing overpriced listing sits
+  alongside recent cheaper ones: assert stock median > flow median by the
+  constructed amount, and that both are returned; (b) a UI test asserting the label
+  is present on both; (c) an architectural check that no function returns an
+  unlabelled aggregate.
+- **Against** A hand-constructed fixture with a known stock/flow gap.
+- **Falsified by** An unlabelled aggregate anywhere; the two blended; only one
+  computed.
+
+### V46 — Auction and tender prices never blend with asking prices (F9, O19)
+
+- **AC** Bailiff/bankruptcy starting prices and KOWR tender prices carry a distinct
+  price kind and never enter an aggregate with portal asking prices. An auction
+  starting price is a statutorily-derived floor, not an ask, and mixing them would
+  drag every median down and look like a market movement.
+- **How** (a) A schema constraint plus a `Δ` assertion that no aggregate's source
+  set spans price kinds; (b) a unit test with an auction fixture priced far below
+  the asking distribution, asserting the asking median is unchanged by its
+  presence; (c) an architectural test that the aggregation key includes price kind.
+- **Against** A fixture combining all three kinds with deliberately divergent values.
+- **Falsified by** Any aggregate whose inputs span kinds; a median that moves when
+  auction rows are added to an asking-price query.
+
+### V47 — Metamorphic properties of the numeric core (`20` §4.3)
+
+- **AC** All of the following hold on generated inputs: doubling every price
+  doubles the median exactly; scaling price and area together leaves zł/m²
+  unchanged; permuting input order leaves output identical; adding an exact
+  duplicate leaves the post-dedup median and `n` unchanged; adding an observation
+  outside the area band leaves the estimate unchanged; adding one of a different
+  buildability class leaves the estimate unchanged.
+- **How** Property-based tests over generated fixtures, one per relation.
+- **Against** No oracle needed — these are relations between outputs, which is
+  precisely why they work where ground truth is unavailable.
+- **Falsified by** Any relation failing. The out-of-band and wrong-class cases are
+  the load-bearing ones: they catch a filter that is silently ignoring its
+  arguments, which fixture-based tests can pass straight through.
+
+### V48 — Differential test of percentile logic (F11, tier A)
+
+- **AC** Our median, p25 and p75 agree with a reference implementation
+  (numpy/pandas) on random inputs, including even-length arrays, ties, and n=1,2,4,5.
+- **How** Property-based comparison against the reference across generated arrays.
+- **Against** The reference implementation.
+- **Falsified by** Any disagreement. Percentile conventions differ; adopting one
+  silently produces slightly-wrong ranges forever.
+
+### V49 — Golden-corpus regression (`20` §4.5)
+
+- **AC** A frozen, scrubbed crawl of one gmina produces byte-stable aggregate
+  outputs. Any change to normalization, dedup or aggregation that alters them fails
+  the test until the diff is explained in the commit message.
+- **How** Golden-file comparison in CI.
+- **Against** The committed corpus and its recorded expected outputs (gmina choice
+  is O24).
+- **Falsified by** Silent output drift — the main defence against slow degradation
+  that no single test notices.
+
+### V50 — Quarantine composition monitoring (F12)
+
+- **AC** Quarantine rate is tracked **per reason**, not in aggregate. A spike in one
+  reason alarms, because it usually means a whole segment is being silently dropped
+  — every hectare-stated plot, or every listing from one agency template.
+- **How** `Δ` assertion on per-reason rates against a rolling baseline.
+- **Against** The live quarantine table.
+- **Falsified by** A segment disappearing from the corpus without an alarm.
+
+### V51 — Known-plot acceptance check (D54, `20` §6)
+
+- **AC** Against **pre-registered** owner estimates for 8–10 known plots, committed
+  before any tool output is seen: the tool's range overlaps the owner's for at
+  least 7 of 10; no plot is off by more than 2×; every mismatch is adjudicated and
+  recorded as *tool wrong*, *prior wrong*, or *undecidable*. Thresholds are
+  provisional (O23).
+- **How** A written protocol run once before v0 is accepted, and re-run after any
+  change to the comparable logic.
+- **Against** The owner's pre-registered judgement — the only oracle available at
+  tier C.
+- **Falsified by** Failing the thresholds, or — more insidiously — running the
+  check *without* pre-registration, which turns it into a rationalisation of
+  whatever the tool produced.
+
+### V52 — Mutation testing of the numeric core (`20` §4.8, scope open — O21)
+
+- **AC** Deliberate faults injected into normalization, aggregation and estimation
+  — swapping p25 and p75, dropping a filter clause, flipping a comparison — are
+  caught by the existing suite.
+- **How** A mutation-testing run over those modules only.
+- **Against** The test suite itself.
+- **Falsified by** A surviving mutant in the numeric core. A suite that passes
+  against a mutated median function is not testing the median.
+
 ## Deferred — method required before implementation
 
 These have no validation method yet. Per rule 4, one must be written here before

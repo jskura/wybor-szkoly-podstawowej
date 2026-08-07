@@ -101,7 +101,7 @@ no longer a reason to prioritise anything.
 | 7 | KOWR connector | 1.5 |
 | 8 | Auction connector (source choice open — O16) | 2 |
 | 9 | Trivial dedup — exact/near-exact only | 0.5 |
-| 10 | Aggregates by gmina and area band: median, p25/p75, min/max, n — always with spread | 1 |
+| 10 | Aggregates by gmina and area band: median, p25/p75, min/max, n — always with spread, computed as **both stock and flow** (`20` §5) | 1.5 |
 | 11 | Notebook: "price this plot" | 1 |
 | 12 | One map view | 1 |
 
@@ -151,6 +151,15 @@ flag.
 
 **v0's validation subset** from [`04-validation.md`](./04-validation.md):
 V1, V2, V4 (with the D42 correction), V5, V6 (both rings), V7, V10, V12, V13, V14,
-V28, V30. New methods needed for the KOWR and auction connectors before those are
-built. The good-neighbour and purchasability methods are already written in
+V28, V30 — **plus the v0 additions** V43–V52, which cover the new sources and the
+biases found in [`20-verification-strategy.md`](./20-verification-strategy.md):
+corpus completeness against the source's own count, sort-order bias, stock vs flow,
+auction/tender price separation, metamorphic properties, percentile differential
+testing, golden-corpus regression, quarantine composition, the known-plot
+acceptance check, and mutation testing of the numeric core.
+
+The good-neighbour and purchasability methods are written in
 [`19-legal-and-feasibility.md`](./19-legal-and-feasibility.md) §1.3 and §2.3.
+
+**Before the first test is written**, each work item must clear the entry criteria
+in [`20-verification-strategy.md`](./20-verification-strategy.md) §8.

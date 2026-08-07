@@ -86,6 +86,7 @@ Start with `18` (what we're building), then `17` (why it shrank).
 | [`docs/11-operations.md`](docs/11-operations.md) | Daily pipeline, backup, monitoring, recovery drills |
 | [`docs/12-glossary.md`](docs/12-glossary.md) | Polish ↔ code terminology |
 | [`docs/19-legal-and-feasibility.md`](docs/19-legal-and-feasibility.md) | **v0.5** — the WZ good-neighbour test, and agricultural purchase restrictions |
+| [`docs/20-verification-strategy.md`](docs/20-verification-strategy.md) | **How we know it's right** — verification tiers, the silent-failure catalogue, metamorphic testing, the known-plot protocol |
 | [`docs/13-scope.md`](docs/13-scope.md) | 26-epic work breakdown. **Retained as a menu, not the current plan** |
 | [`docs/14-api-contract.md`](docs/14-api-contract.md) | Endpoints and types; where the price-type and sample-size rules are enforced |
 | [`docs/15-database-schema.md`](docs/15-database-schema.md) | Full DDL — the product rules encoded as constraints |
