@@ -13,8 +13,8 @@ a plot's asking price can be judged against what comparable land actually costs.
 
 The full design — 26 epics, roughly **150–200 focused days** — is documented and
 retained, but the **plan of record is [`docs/18-v0-scope.md`](docs/18-v0-scope.md)**:
-a ~10-day version covering the two 25 km anchor rings, both price types, and no
-zoning. Build it, learn from it, then decide what else earns its place.
+a ~13-day version covering both 25 km anchor rings, both price types, and
+off-portal supply. Build it, learn from it, then decide what else earns its place.
 
 Why the change: [`docs/17-assumption-audit.md`](docs/17-assumption-audit.md) is a
 self-review that found seven internal contradictions and a long list of choices
@@ -59,7 +59,8 @@ are v0.5.
 |---|---|
 | `robots.txt` forbids crawling | Offering prices are off the table — fall back to a registry-only product, or stop |
 | Very few listings in the rings | Rural land trades off-portal; the answer is different sources, not more engineering |
-| Listings plentiful, prices coherent | Zoning is the highest-value next addition — price without buildability is nearly meaningless |
+| Listings plentiful, prices coherent | Go straight to v0.5 — can I build here, and may I legally buy it |
+| KOWR and auctions add little supply | Drop them rather than maintain three connectors |
 | You stop opening the notebook | The tool was not the bottleneck. Stop |
 
 ## Documents
@@ -68,10 +69,10 @@ Start with `18` (what we're building), then `17` (why it shrank).
 
 | Doc | What it is |
 |---|---|
-| [`docs/18-v0-scope.md`](docs/18-v0-scope.md) | **The plan of record** — the ~10-day version, its work plan, its checks, and what it will teach us |
+| [`docs/18-v0-scope.md`](docs/18-v0-scope.md) | **The plan of record** — the ~13-day version, its work plan, its checks, and what it will teach us |
 | [`docs/17-assumption-audit.md`](docs/17-assumption-audit.md) | **Self-review** — contradictions, unasked questions, unverified facts |
 | [`CLAUDE.md`](CLAUDE.md) | Binding project rules: PRD first, ask don't assume, TDD, validation method per feature, two price types, provenance |
-| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — 44 decisions, 14 open items |
+| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — 54 decisions, 19 open items |
 | [`docs/01-user-journeys.md`](docs/01-user-journeys.md) | 12 journeys (J1–J8 buying, J9–J12 analytical) and the capability map |
 | [`docs/02-prd.md`](docs/02-prd.md) | Requirements FR-1..60, data model, architecture, milestones, risks |
 | [`docs/03-data-sources.md`](docs/03-data-sources.md) | Polish data sources, the `robots.txt` gate, scraping ground rules |
