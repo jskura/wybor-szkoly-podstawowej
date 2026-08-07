@@ -1,151 +1,156 @@
-# v0 — the two-week version
+# v0 — the first buildable version
 
-**This is the plan of record** (D38). [`13-scope.md`](./13-scope.md) — the 26-epic,
-150–200 day plan — is retained as a possible future, not as the current scope.
+**Plan of record** (D38, reshaped by batch 11). [`13-scope.md`](./13-scope.md) —
+the 26-epic, 150–200 day plan — is retained as a menu, not the plan.
 
-Goal: answer the question you actually asked — *"is this plot's price sane for this
-area?"* — in about two weeks, then decide from evidence what is worth building next.
+Goal: answer the question you confirmed is the real constraint (D52) — *"is this
+price fair?"* — across both anchor rings, using every source where rural land
+actually appears.
 
 ---
 
-## 1. What v0 is
+## 1. What changed after batch 11
+
+Four answers reshaped this document, and one of them overturned reasoning I had
+repeated throughout the whole documentation set.
+
+| Answer | Effect |
+|---|---|
+| **Buying within 6 months** (D45) | *"Listing history cannot be backfilled"* was my headline sequencing argument in five documents. On a six-month horizon it barely matters. **Snapshots stay — they are nearly free and they are insurance — but they are no longer the reason to hurry.** What matters now is seeing what is on the market *this week*, across as many sources as possible |
+| **WZ route acceptable** (D46) | `unknown` buildability is a **flag, not a filter**. The zoning epic drops in urgency; the **good-neighbour test** (`19` §1) replaces it as the thing worth building |
+| **Three off-portal sources** (D47) | Auctions, KOWR and gmina BIP enter scope. For rural land these may carry more signal than the portals |
+| **Both rings** (D49) | No geographic narrowing, so the ten-day figure no longer holds — §3 |
+
+## 2. What v0 is
 
 | | |
 |---|---|
-| **Question answered** | For a plot in one of the two anchor rings: how does its zł/m² compare to other land on offer nearby, and to what land actually sold for in that powiat? |
-| **Geography** | The **two 25 km rings only** — Budy Grabskie and Elbląg. Roughly 40–60 gminas, not ~500 |
-| **Asset** | Land only, all four classes as claimed by the advert |
-| **Offering prices** | One portal, daily, list-page-first (D40) |
-| **Sales prices** | GUS BDL, powiat level, quarterly — free and guaranteed available |
-| **Output** | A notebook plus one simple map view. No API, no Next.js, no accounts |
+| **Question** | For a plot in either ring: is its zł/m² sane next to comparable land, and next to what land actually sold for in that powiat? |
+| **Geography** | **Both** 25 km rings — Budy Grabskie and Elbląg (D49) |
+| **Plot focus** | ~2000–4000 m² (D48). Comparables band around that; nothing is excluded, but the defaults centre there |
+| **Offering prices** | One portal, daily, list-page-first — **plus** KOWR and auction sources (D47) |
+| **Sales prices** | GUS BDL, powiat level, quarterly — free and guaranteed |
+| **Output** | A notebook, plus one simple map |
 | **Hosting** | Your machine. No VPS (D44) |
-| **Effort** | ~10 working days |
+| **How built** | I implement, you review each step (D53), TDD per rule 3 |
 
-## 2. What v0 deliberately excludes
+## 3. Effort — v0 no longer fits ten days (O15)
 
-Everything below is *deferred, not cancelled* — each has a home in `13`.
+Stated plainly rather than absorbed silently:
 
-Zoning and buildability · parcel resolution (ULDK/EGiB) · nature attributes ·
-travel-time routing (OSRM) · self-hosted geocoding (Nominatim) · the hedonic
-feature-value model · mix-adjusted indices · the comparable-set widening ladder ·
-RCN parcel-level transactions · saved searches, alerts and digests · housing ·
-the full frontend and API · dedup scoring against labelled sets · the extraction
-evaluation set.
-
-**Consequence to state plainly:** without zoning, v0 cannot tell you whether a plot
-is buildable. It compares price to price. That is a real limitation and the most
-likely reason you will want v1.
-
-## 3. What v0 does *not* cut — the foundations
-
-The distinction that makes v0 safe to build: **v0 cuts features, not foundations.**
-Four things are irreversible if skipped, and all four are in v0 from day one.
-
-| Foundation | Why it cannot wait |
+| Increment | Days |
 |---|---|
-| **Daily snapshots**, append-only | Price history cannot be backfilled. A month not collected is a month lost forever |
-| **Raw payload storage** | Every parser will be wrong at some point; without raw payloads a bad parse is unrecoverable |
-| **`price_type` on every price** | Retrofitting this into a schema and a codebase later means auditing every number |
-| **Provenance** — source + `as_of` + `n` + spread on every figure | The same argument; and it is nearly free at the start |
+| Baseline — portals, **both rings**, price comparison | ~10 |
+| + bailiff / bankruptcy auctions | +2 |
+| + KOWR state land | +1.5 |
+| + gmina BIP notices (~50 gminas, each a different format) | +4–6 |
+| + parcels, buildings, good-neighbour test (D50) | +3–4 |
+| + farmland purchasability badge (D51) | +1 |
+| **Everything you asked for** | **~22–25 days** |
 
-Everything else in v0 can be thrown away and rewritten without loss.
+**Recommended split — needs your ratification (O15):**
 
-## 4. Work plan
+- **v0 (~10–13 days)** — both rings; portals + KOWR + auctions; price comparison;
+  snapshots as insurance. **Drops gmina BIP**, which is the highest-effort and most
+  heterogeneous of the three sources.
+- **v0.5 (~8 days)** — parcels, the good-neighbour test, the purchasability badge.
+  Given D46 and D52 this is where the product gets genuinely decision-useful.
+- **Gmina BIP** — only if v0 shows portal and KOWR coverage is thin.
 
-Ordered. Days are indicative for one person working focused.
+If you would rather have everything at once, that is your call to make — it is
+~4–5 weeks rather than ~2, and I would rather say so than deliver it late.
 
-| # | Work | Days | Notes |
-|---|---|---|---|
-| **0** | **Verify `robots.txt` for the candidate portals (O10)** | 0.2 | **Gate.** If listing paths are disallowed, stop and re-plan — see §7 |
-| 1 | Repo skeleton, Postgres+PostGIS in Docker, migrations, config | 1 | Local only |
-| 2 | Minimal schema: `source`, `raw_document`, `listing`, `listing_snapshot`, `transaction`, `admin_unit` — with the `price_type` CHECK constraints from [`15`](./15-database-schema.md) | 1 | Foundations, §3 |
-| 3 | PRG boundaries + TERYT for the two rings only; the Budy Grabskie → gmina Skierniewice known-answer test | 1 | |
-| 4 | GUS BDL client; import land sales series for the rings' powiats, `price_type='sales'` | 1.5 | Free, low risk, gives a working answer before any scraping exists |
-| 5 | Portal connector: `robots.txt` handling, rate limiting, list-page-first fetch, raw storage | 2 | |
-| 6 | Parse + normalize: area units (ar/ha/comma), zł/m², validity bands, quarantine | 1.5 | |
-| 7 | Daily snapshot writer + a scheduled local run | 0.5 | Start collecting as early as possible |
-| 8 | Trivial dedup: exact/near-exact match only, no labelled scoring | 0.5 | Good enough to stop obvious double-counting |
-| 9 | Gmina and area-band aggregates: median, p25/p75, min/max, n — always with spread | 1 | |
-| 10 | Notebook: "price this plot" — enter area + gmina, get the local distribution and where the plot sits in it | 1 | The actual deliverable |
-| 11 | One map view (Streamlit + a simple choropleth) | 1 | Optional if the notebook suffices |
+## 4. What v0 still excludes
 
-**Total ≈ 10–12 days**, with the `robots.txt` gate on day one.
+Zoning plans (MPZP / plan ogólny) · nature attributes · travel-time routing ·
+self-hosted geocoding · the hedonic feature-value model · mix-adjusted indices ·
+the comparable widening ladder · RCN parcel-level transactions · alerts and
+digests · housing · API and frontend · labelled evaluation sets for extraction and
+dedup.
 
-## 5. The v0 answer to "is this plot fairly priced?"
+**The honest limitation:** v0 compares price to price. It cannot tell you whether
+you may build — that is v0.5's good-neighbour test — nor whether you may legally
+buy — that is v0.5's purchasability badge. Both matter more than price
+(`19` §3), and both come immediately after.
 
-Deliberately crude, and honest about being crude:
+## 5. What v0 does not cut — the foundations
 
-```
-Działka: 1 500 m², Budy Grabskie, cena ofertowa 213 000 zł → 142 zł/m²
+v0 cuts features, not foundations. Three things cannot be retrofitted cheaply:
 
-Oferty w gminie Skierniewice, działki 750–2 250 m², ostatnie 12 mies.:
-    mediana 118 zł/m² · zakres 96–141 (IQR) · n = 23
-    → ta działka jest powyżej górnej granicy zakresu
-
-Ceny transakcyjne, powiat skierniewicki (GUS, 2025 Q4):
-    średnia 104 zł/m² · dane kwartalne, poziom powiatu
-
-⚠ v0 nie sprawdza planu zagospodarowania — nie wiemy, czy można tu budować.
-```
-
-No comparable-set widening ladder, no size adjustment, no buildability filter.
-The area band is a simple ±50%, and it is **provisional** (O11).
-
-## 6. How we know v0 worked (replaces the fictional user testing, D43)
-
-The audit killed the five-user testing programme (A6). These are checks you can run
-alone:
-
-| Check | Passes if |
+| Foundation | Why |
 |---|---|
-| **Sanity vs GUS** | Our offering median per powiat sits *above* the GUS sales figure, by a plausible margin. An inversion means a broken parser, not a market finding |
-| **Known-plot check** | Pick 5 listings you have looked at yourself. Does v0's verdict match your own judgement? Where it disagrees, is v0 wrong or are you? |
-| **Unit-conversion audit** | Hand-check 20 listings stated in ar or ha. Zero conversion errors — a 100× error here is silent and fatal |
-| **Coverage** | How many gminas in each ring have ≥5 listings? If most have 0–2, portals are not the right source for your areas (audit C2) and that is the finding |
-| **Duplicate eyeball** | Scan 50 listings for the same plot appearing twice. If duplicates are rampant, dedup gets promoted |
-| **Snapshot integrity** | After two weeks, price changes are reconstructible from the snapshot series |
+| **Raw payload storage** | Every parser is eventually wrong; without raw payloads a bad parse is unrecoverable |
+| **`price_type` on every price** | Retrofitting means auditing every number in the system |
+| **Provenance** — source, `as_of`, `n`, spread | Same argument, and nearly free at the start |
 
-The middle two are the real test. If v0's numbers disagree with your own sense of
-plots you have actually seen, the data or the method is wrong and no amount of
-further building fixes that.
+**Daily snapshots** were on this list; after D45 they are demoted to *cheap
+insurance*. They cost little and protect against the horizon slipping, but they are
+no longer a reason to prioritise anything.
 
-## 7. What v0 is designed to find out
+## 6. Work plan
 
-v0 is partly an instrument for deciding whether v1 is worth it. Each outcome has a
-prepared response:
+| # | Work | Days |
+|---|---|---|
+| **0** | **Verify `robots.txt` for the candidate portals (O10)** — gate; if disallowed, stop and re-plan | 0.2 |
+| 1 | Repo skeleton, Postgres+PostGIS in Docker, migrations, config | 1 |
+| 2 | Minimal schema with the `price_type` CHECK constraints from [`15`](./15-database-schema.md) | 1 |
+| 3 | PRG + TERYT for **both rings**; the Budy Grabskie → gmina Skierniewice known-answer test | 1 |
+| 4 | GUS BDL client; sales series for both rings' powiats | 1.5 |
+| 5 | Portal connector: robots handling, rate limiting, list-page-first, raw store, snapshots | 2.5 |
+| 6 | Parse + normalize: area units, zł/m², validity bands, quarantine | 1.5 |
+| 7 | KOWR connector | 1.5 |
+| 8 | Auction connector (source choice open — O16) | 2 |
+| 9 | Trivial dedup — exact/near-exact only | 0.5 |
+| 10 | Aggregates by gmina and area band: median, p25/p75, min/max, n — always with spread | 1 |
+| 11 | Notebook: "price this plot" | 1 |
+| 12 | One map view | 1 |
+
+**≈ 13 days** with gmina BIP dropped and the good-neighbour work in v0.5.
+
+## 7. How we know v0 worked
+
+D54 makes this concrete: what would make you distrust it is **a number you know is
+wrong**. So the known-plot check is the **primary** acceptance test, not a
+secondary one.
+
+| Check | Passes if | Priority |
+|---|---|---|
+| **Known-plot check** | Pick 5–10 plots you have actually looked at. v0's verdict matches your own judgement, or where it differs, v0 turns out to be right | **Primary (D54)** |
+| **Sanity vs GUS** | Our offering median per powiat sits *above* the GUS sales figure by a plausible margin. An inversion means a broken parser, not a market finding | High |
+| **Unit-conversion audit** | Hand-check 20 listings stated in ar or ha. Zero errors — a 100× error here is silent and fatal | High |
+| **Coverage** | How many gminas in each ring have ≥5 listings? If most have 0–2, portals are the wrong source and that is the finding | High |
+| **Source contribution** | How much supply do KOWR and auctions add over portals? Decides whether gmina BIP is worth the 4–6 days | Medium |
+| **Duplicate eyeball** | Scan 50 listings for the same plot twice | Medium |
+
+## 8. What v0 is designed to find out
 
 | If v0 shows… | Then |
 |---|---|
-| `robots.txt` forbids crawling (O10) | Offering prices are off the table. Fall back to GUS/RCN only — a much smaller, powiat-level product. **Decide before building anything else** |
-| Very few listings in the rings (C2) | Rural land trades off-portal. The answer is not more engineering — it is different sources (gmina boards, KOWR, local agents) |
-| Listings are plentiful and prices coherent | v1 is worth it. The highest-value addition is **zoning/buildability**, because price without buildability is nearly meaningless |
-| Prices look coherent but you still can't decide | The gap is comparables quality — promote the widening ladder and size adjustment (O6) |
+| `robots.txt` forbids crawling (O10) | Offering prices are off the table. Fall back to GUS/RCN plus KOWR and auctions — a smaller product. Decide before building further |
+| Few listings in the rings (audit C2) | Rural land trades off-portal; promote gmina BIP and local agents over more engineering |
+| KOWR and auctions add little | Drop them and stop maintaining three connectors |
+| Prices coherent, but you still can't decide | The gap is buildability and purchasability — go straight to v0.5 (`19`) |
+| A number you know is wrong (D54) | Diagnose before adding anything. Raw payloads make re-parsing possible |
 | You stop opening the notebook | The tool was not the bottleneck. Stop |
 
-## 8. Rules that still apply in full
+## 9. The question worth asking before starting (O18)
 
-`CLAUDE.md` is not suspended for v0:
+You are buying within six months (D45). v0 is ~2 weeks and v0.5 another ~1.5, and
+that assumes focused time. If the build slips, **the tool may not exist in time to
+inform the purchase it was built for.**
 
-1. **PRD first** — v0's requirements are this document; anything beyond it needs a PRD entry.
-2. **Ask, don't assume** — the audit is the standing reminder. Provisional values are marked (O11).
-3. **TDD** — tests before implementation, including for a ten-day build.
-4. **Validation method before implementation** — §6 for the product, and the v0 subset of [`04-validation.md`](./04-validation.md) for the code.
-5. **Both price types, always labelled** — v0 has both from day one.
-6. **Always show, always flag** — every aggregate with `n` and spread, nothing suppressed.
+That does not make it pointless — it may still be worth having for market
+understanding, for a later purchase, or for the friends it is shared with. But it
+is worth answering deliberately now rather than discovering it in month five.
 
-### v0's validation subset
+## 10. Rules that still apply
 
-From [`04-validation.md`](./04-validation.md), the methods that apply now:
-**V1** (price_type constraints), **V2** (never mixed), **V4** (n + spread, with the
-D42 correction), **V5** (provenance), **V6** (boundaries, rings only), **V7**
-(anchor config privacy), **V10** (normalization and quarantine), **V12**
-(append-only snapshots), **V13** (GUS import), **V14** (crawl politeness), **V28**
-(area units), **V30** (TERYT, the Skierniewice trap).
+`CLAUDE.md` is not suspended. PRD first · ask, don't assume · TDD · a validation
+method before each feature · both price types always labelled · always show, always
+flag.
 
-Deferred with their features: V3, V8, V9, V11, V15–V27, V29, V31–V42.
-
-## 9. After v0
-
-Do not plan v1 now. Run v0, apply §6, read §7, then decide. The 26-epic plan in
-`13` remains available if the evidence justifies it — but it should be entered
-deliberately, one epic at a time, and only where v0 showed the gap.
+**v0's validation subset** from [`04-validation.md`](./04-validation.md):
+V1, V2, V4 (with the D42 correction), V5, V6 (both rings), V7, V10, V12, V13, V14,
+V28, V30. New methods needed for the KOWR and auction connectors before those are
+built. The good-neighbour and purchasability methods are already written in
+[`19-legal-and-feasibility.md`](./19-legal-and-feasibility.md) §1.3 and §2.3.

@@ -107,6 +107,49 @@ everything downstream:
 Checking takes minutes from any ordinary browser. Nothing else in the offering-price
 path should be built first.
 
+## Off-portal supply (D47) — new, and possibly the more valuable half
+
+Both anchor rings are rural, and rural land often never reaches a consumer portal.
+Three source families, none of which were in the plan before batch 11:
+
+### Bailiff and bankruptcy auctions (O16)
+
+Court bailiffs (*licytacje komornicze*) and bankruptcy trustees (*syndyk*) sell
+land through public auctions, with statutory starting prices set as a fraction of a
+surveyor's valuation. This is where materially under-market land appears.
+
+- Access models differ per source — a central e-auction service, individual bailiff
+  office sites, and *Monitor Sądowy i Gospodarczy* for bankruptcy estates. Which
+  to target is **O16**.
+- Prices here are **not comparable to asking prices** without care: an auction
+  starting price is a legally-derived floor, not an ask. It needs its own
+  price type or at minimum an explicit marker, otherwise it will drag every median
+  down and look like a market shift. **This is a rule-5 question** — see the open
+  item at the end of this section.
+- Auction listings carry the parcel identifier far more often than portal adverts
+  do, which makes them the easiest to resolve to real geometry.
+
+### KOWR — state agricultural land
+
+KOWR publishes sales and tender notices for state-owned agricultural land. Relevant
+given the sizes in play (D48), and it comes with the purchase-law questions in
+[`19-legal-and-feasibility.md`](./19-legal-and-feasibility.md) §2 attached.
+
+### Gmina BIP sale notices
+
+Gminas publish their own land sale notices in their public information bulletins.
+Genuinely off-portal supply, but roughly 50 gminas across the two rings, each with
+its own bulletin layout — the highest-effort source by a wide margin (4–6 days),
+which is why the recommended split defers it (O15).
+
+### Open question this raises
+
+**Auction starting prices, KOWR tender prices and portal asking prices are three
+different kinds of number.** Rule 5 already forbids mixing offering and sales
+prices; this suggests the taxonomy needs a third category, or explicit sub-types
+under `offering`. It must be settled before the auction connector is written, or
+the first aggregate that blends them will be quietly wrong.
+
 ## Listing portals (high-frequency layer)
 
 The big two consumer portals (Otodom, OLX) carry the volume for building plots;

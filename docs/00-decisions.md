@@ -109,6 +109,45 @@ earlier decisions where they conflict.
 | D43 | A6 five-user testing programme | Replaced with checks the owner can actually run alone — see [`18-v0-scope.md`](./18-v0-scope.md) §6 |
 | D44 | A7 infrastructure does not fit | v0 needs **no VPS, no OSRM, no Nominatim**. Sizing is deferred until something needs hosting |
 
+## Batch 11 — the buying situation (2026-08-07)
+
+These came from asking what had still never been discussed. Several overturn
+reasoning I had repeated throughout the documents.
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D45 | When are you buying? | **Within 6 months** | **Overturns the sequencing argument I used everywhere.** Accrued price history barely pays off on that horizon. Snapshots stay as cheap insurance, but "history cannot be backfilled" is no longer the reason to hurry |
+| D46 | Would you buy without a zoning plan? | **Yes — the *warunki zabudowy* route** | `unknown` buildability is a **flag, not a filter**. The zoning epic (E8) drops in urgency; WZ *feasibility* rises in its place |
+| D47 | Other land sources? | **Bailiff/bankruptcy auctions, KOWR state land, gmina BIP notices** — all three | Three new connector families, none previously in the plan |
+| D48 | Plot size? | **~2000–4000 m²** | Comparable band and strata bands re-centred (O11). Straddles the 0.3 ha line in farmland law — see D51 |
+| D49 | Which ring for v0? | **Both rings** (overrides the earlier "one ring, all sources") | v0 no longer fits ten days — see §Effort below |
+| D50 | Estimate WZ feasibility? | **Yes — compute the "dobre sąsiedztwo" test** | Requires parcel geometry **and** building data, both of which v0 had excluded |
+| D51 | Flag farmland purchasability? | **Yes, as a risk badge** | New legal layer: who may buy, and KOWR pre-emption. See [`19-legal-and-feasibility.md`](./19-legal-and-feasibility.md) |
+| D52 | What is the real constraint, if not budget? | **Knowing whether the price is fair** | Confirms the original framing. Budget filtering is not built; distributions are shown instead |
+| D53 | How do we build it? | **I implement, you review each step** | TDD cycle per rule 3, reviewed incrementally rather than in one lump |
+| D54 | What would make you distrust it? | **A number you know is wrong** | Makes the known-plot check the **primary** acceptance test, not a secondary one |
+
+### Effort consequence of D49 + D47 + D50
+
+Both rings, four source families and the good-neighbour test do not fit in ten
+days. The honest arithmetic:
+
+| Increment | Days |
+|---|---|
+| v0 baseline — portals, both rings, price comparison | ~10 |
+| + bailiff / bankruptcy auction connector | +2 |
+| + KOWR state land connector | +1.5 |
+| + gmina BIP notices (~50 gminas, each a different format) | +4–6 |
+| + parcels, buildings and the good-neighbour test (D50) | +3–4 |
+| + farmland purchasability flag (rides on the parcel work) | +1 |
+| **Total** | **~22–25 days** |
+
+**Recommended split, not yet ratified (O15):** keep v0 at ~10–13 days with both
+rings, portals, KOWR and auctions — dropping **gmina BIP**, which is the highest
+effort and the most heterogeneous of the three — then add parcels, the
+good-neighbour test and purchasability as **v0.5** (~8 days). Gmina BIP follows
+only if coverage turns out thin.
+
 ## Open — not yet decided
 
 | # | Question | Blocks |
@@ -127,3 +166,8 @@ earlier decisions where they conflict.
 | **O12** | The **50 ha area cap** probably excludes legitimate agricultural parcels. Provisional; revisit if agricultural land matters (D37 suggests it may not) | Post-v0 |
 | **O13** | **A3 — thin-data map rendering.** Rule 6 says always show; a choropleth where most tiles rest on 1–3 listings may mislead in aggregate even when each tile is honestly labelled. Not resolved | When a map exists |
 | **O14** | Housing: the original request said "housing and land". Land is priority (D6, D37), but housing is currently deferred to the last milestone. Is that acceptable, or should housing be collected in v0? | v0 scope |
+| **O15** | **v0 no longer fits ten days** (D49 + D47 + D50 ⇒ ~22–25 days). Recommended split: v0 ≈ 10–13 days dropping gmina BIP; v0.5 adds parcels, good-neighbour and purchasability. **Needs ratifying** | v0 start |
+| **O16** | Which auction sources specifically — e-licytacje.komornik.pl, individual bailiff sites, Monitor Sądowy i Gospodarczy for bankruptcy estates? Each has a different access model | Auction connector |
+| **O17** | The good-neighbour test needs **building** geometry, not just parcels. County EGiB WFS coverage for buildings is uneven; where absent, fall back to OSM buildings with lower confidence, or decline to answer? | v0.5 |
+| **O19** | **Price-kind taxonomy.** Auction starting prices, KOWR tender prices and portal asking prices are three different kinds of number. Rule 5 forbids mixing offering and sales; this needs a third category or explicit sub-types, settled **before** the auction connector is written | Auction connector |
+| **O18** | D45 (buying within 6 months) undercuts the value of the whole build. If the tool is not usable in time to inform the actual purchase, is it still worth building — as a market-learning exercise, or for a later purchase? Worth answering explicitly rather than discovering in month five | Whole project |

@@ -29,22 +29,29 @@ or a registry-only one.
 
 | | |
 |---|---|
-| Question | "Is this plot's price sane for this area?" |
-| Geography | The two 25 km rings only — ~40–60 gminas, not ~500 |
-| Offering prices | One portal, daily, list-page-first |
+| Question | "Is this plot's price fair?" — confirmed as the real constraint (D52) |
+| Geography | Both 25 km rings — Budy Grabskie and Elbląg |
+| Plot focus | ~2000–4000 m² |
+| Offering prices | One portal, plus KOWR state land and bailiff/bankruptcy auctions |
 | Sales prices | GUS BDL, powiat level — free and guaranteed available |
 | Output | A notebook, plus one simple map |
 | Hosting | Your machine. No VPS, no routing engine, no geocoder |
-| Effort | ~10 days |
-| Not included | Zoning, parcels, routing, nature, regression, alerts, API, frontend |
+| Effort | ~13 days (gmina BIP deferred) |
+| Not included | Zoning, nature, routing, regression, alerts, API, frontend |
 
-v0 cuts **features, not foundations**. Four things cannot be retrofitted, so all
-four are there from day one: daily append-only snapshots (price history cannot be
-backfilled), raw payload storage (every parser is eventually wrong), `price_type`
-on every price, and provenance on every figure.
+**v0.5 (~8 days) follows immediately** with what actually decides a purchase: the
+WZ good-neighbour test, and whether you may legally buy the plot at all — see
+[`docs/19-legal-and-feasibility.md`](docs/19-legal-and-feasibility.md).
 
-**What v0 cannot do:** without zoning, it cannot tell you whether a plot is
-buildable. It compares price to price. That is the most likely reason to want v1.
+v0 cuts **features, not foundations**. Three things cannot be retrofitted, so all
+three are there from day one: raw payload storage (every parser is eventually
+wrong), `price_type` on every price, and provenance on every figure. Daily
+snapshots run too, but as cheap insurance rather than the point — a six-month
+buying horizon (D45) means accrued history barely pays off.
+
+**What v0 cannot do:** it compares price to price. It cannot tell you whether you
+may build, or whether you may legally buy. Both matter more than price, and both
+are v0.5.
 
 ### What v0 is designed to find out
 
@@ -77,6 +84,7 @@ Start with `18` (what we're building), then `17` (why it shrank).
 | [`docs/10-nfr-and-access.md`](docs/10-nfr-and-access.md) | Scale, the crawl budget, retention, access, cost |
 | [`docs/11-operations.md`](docs/11-operations.md) | Daily pipeline, backup, monitoring, recovery drills |
 | [`docs/12-glossary.md`](docs/12-glossary.md) | Polish ↔ code terminology |
+| [`docs/19-legal-and-feasibility.md`](docs/19-legal-and-feasibility.md) | **v0.5** — the WZ good-neighbour test, and agricultural purchase restrictions |
 | [`docs/13-scope.md`](docs/13-scope.md) | 26-epic work breakdown. **Retained as a menu, not the current plan** |
 | [`docs/14-api-contract.md`](docs/14-api-contract.md) | Endpoints and types; where the price-type and sample-size rules are enforced |
 | [`docs/15-database-schema.md`](docs/15-database-schema.md) | Full DDL — the product rules encoded as constraints |
