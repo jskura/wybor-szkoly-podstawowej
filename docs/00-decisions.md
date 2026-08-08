@@ -159,6 +159,48 @@ From [`20-verification-strategy.md`](./20-verification-strategy.md).
 | D57 | Pre-register estimates for the known-plot check? | **No** | Closes O22. Replaced by **leave-one-out cross-validation** (V51) — automatic, repeatable, and tier A/B rather than tier C. Plus a zero-effort collapsed-verdict spot check (V51b) |
 | D58 | Which verification techniques? | **Metamorphic, differential, mutation.** Golden-corpus regression **not** selected | Closes O21. Leaves a drift-detection gap recorded as O26 |
 
+## Batch 14 — the interface, and a finding that outranks it (2026-08-07)
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D59 | What surface? | **Streamlit app** (O28) | +2 days over a notebook. Reusable, shareable with the few friends (D1) |
+| D60 | Map at this scale? | **Yes, worth the day** (O29) | Choropleth over both rings, plus the gmina table |
+| D61 | How to point at a plot? | **Paste a listing URL** (O30) | Needs per-portal page parsing; +0.5 day, and it breaks when a portal changes |
+| D62 | Keep agree/disagree? | **"I will not be able to price the plots myself"** | See below — this is not a UI answer, it is a product-level finding |
+
+### D63 — The user cannot verify the tool's output. This changes the project.
+
+You said you cannot price plots yourself. Taken seriously, three things follow, and
+none of them is about the interface.
+
+**1. Tier C verification no longer exists.** [`20`](./20-verification-strategy.md)
+§2 defined four tiers of what is knowable. Tier C — "verifiable only by human
+judgement" — assumed a human who could judge. That human does not exist for this
+project. V51b (agree/disagree) is withdrawn: asking you to rate a verdict you have
+no basis to rate would manufacture false signal, which is worse than no signal.
+
+**2. D54 is now largely unfireable.** You said a number you know is wrong would
+destroy your trust. If you cannot price plots, you will rarely be in a position to
+know. **The safeguard you named cannot, in general, trigger.** That is worth
+stating plainly rather than leaving as an unexamined comfort.
+
+**3. The tool is not a second opinion — it is the only opinion.** Every earlier
+document treated it as a check on your own judgement. It is now the judgement.
+That raises the cost of being wrong substantially, and it means the burden shifts
+entirely onto tier A/B verification: cross-validation, GUS cross-checking, and the
+metamorphic, differential and mutation tests. Those must carry weight they were not
+designed to carry alone.
+
+**What replaces the human check.** Not a price judgement — a **comparability
+judgement**. You may not know what a plot is worth, but you can look at a
+comparable and say *"that one is on a main road and mine is in a forest"*. That is
+a layperson-answerable question and it directly improves the estimate, because the
+comparable set is the estimate. V51c replaces V51b on that basis.
+
+**Consequence for the interface:** where the tool is uncertain it must say so
+loudly and specifically, because you cannot supply the missing judgement yourself.
+See [`21`](./21-v0-ui-and-ux.md) §7.
+
 ## Batch 13 — gap closure (2026-08-07)
 
 A decisive pass over every open item. Each is now **closed**, **closed with a

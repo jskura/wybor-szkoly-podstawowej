@@ -765,7 +765,26 @@ techniques that work where no oracle exists. Tier references are to `20` §2.
   Price *level* is constrained separately by V16 (GUS cross-check); this constrains
   internal consistency. Neither is tier D.
 
-### V51b — Zero-effort human spot check (`20` §6.2)
+### V51b — Zero-effort human spot check — **WITHDRAWN (D63)**
+
+> The owner cannot price plots, so a verdict rating would be uninformed input
+> presented as evidence. Replaced by V51c.
+
+### V51c — Comparability feedback (D63, `21` §7)
+
+- **AC** Each comparable in a set carries a "nie pasuje" control. Marking one
+  removes it and recomputes the estimate, and the exclusion is logged with the
+  subject, the comparable, and the resulting change in the estimate. Repeated
+  exclusions of the same *kind* of comparable are surfaced as a signal that a
+  selection rule is wrong.
+- **How** (a) Unit test that exclusion recomputes and logs; (b) a report over the
+  exclusion log grouping by attribute, so a systematic pattern is visible.
+- **Against** The owner's comparability judgement — which is answerable without
+  pricing expertise, unlike a verdict rating.
+- **Falsified by** Exclusions that do not recompute; a pattern of exclusions never
+  feeding back into the selection rules.
+
+### V51b-old — original spot check (retained for reference)
 
 - **AC** The notebook presents a plot's data with the verdict **collapsed**, so an
   impression forms before the answer is seen; one click records agree / disagree /

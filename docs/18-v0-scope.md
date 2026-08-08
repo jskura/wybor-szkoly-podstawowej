@@ -107,14 +107,14 @@ no longer a reason to prioritise anything.
 | 8 | Auction connector (source choice open — O16) | 2 |
 | 9 | Trivial dedup — exact/near-exact only | 0.5 |
 | 10 | Aggregates by gmina and area band: median, p25/p75, min/max, n — always with spread, computed as **both stock and flow** (`20` §5) | 1.5 |
-| 11 | Notebook: "price this plot" | 1 |
-| 12 | One map view | 1 |
+| 11 | Streamlit app: "price this plot", URL paste, comparable exclusion (D59, D61) | 3 |
+| 12 | Choropleth + gmina table (D60) | 1 |
 
 | 13 | Gmina BIP notices (~50 gminas, heterogeneous formats) | 4–6 |
 | 14 | Parcels + buildings; the WZ good-neighbour test (`19` §1) | 3–4 |
 | 15 | Farmland purchasability badge (`19` §2) | 1 |
 
-**≈ 22–25 days** — everything, per D55.
+**≈ 24–27 days** — everything, per D55, including the Streamlit surface (D59).
 
 ## 7. How we know v0 worked
 

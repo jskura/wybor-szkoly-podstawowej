@@ -37,7 +37,7 @@ tier, and the tier determines what "verified" is allowed to mean.
 |---|---|---|---|
 | **A — Exactly verifiable** | A correct answer exists and we can compute it independently | Area unit conversion; percentile maths; `price_type` constraints; TERYT assignment | High. A failure here is a bug, unambiguously |
 | **B — Verifiable against an independent source** | No exact oracle, but a second source constrains the answer | Our offering median vs GUS sales; our listing count vs the portal's own stated result count; parcel geometry vs ULDK | Good. Disagreement means *something* is wrong, though not always what |
-| **C — Verifiable only by human judgement** | Truth exists but only in someone's head | Is this plot's verdict sensible? Is this comparable set reasonable? | Weak but essential — D54 makes this the primary acceptance test |
+| **C — Verifiable only by human judgement** | Truth exists but only in someone's head | ~~Is this plot's verdict sensible?~~ **Unavailable (D63)** — the owner cannot price plots, so no one can judge a verdict. Only *comparability* judgements survive: is this comparable actually similar? | **Largely gone.** See §6.4 |
 | **D — Verifiable only over time** | The answer does not exist yet | Was the valuation right? Did the plot sell near our estimate? | Not available for v0. Requires realized outcomes months later |
 
 **Rule:** a feature may not ship claiming more confidence than its tier supports.
@@ -209,7 +209,23 @@ uniformly overpriced plots would score perfectly. Level is constrained separatel
 by the GUS sales cross-check (V16); LOOCV constrains internal consistency. Neither
 alone is sufficient, and together they are still not tier D.
 
-### 6.2 Zero-effort human check
+### 6.4 Tier C is unavailable (D63)
+
+The owner cannot price plots. Every use of human judgement as a check on *price*
+is therefore withdrawn — asking for a rating with no basis manufactures false
+signal, which is worse than none.
+
+What survives is narrower and genuinely answerable: **is this comparable similar to
+the subject plot?** A layperson can see that one sits on a main road and the other
+in forest. Since the comparable set determines the estimate, that judgement feeds
+straight into correctness.
+
+**Consequence:** the burden falls entirely on tiers A and B. In particular the GUS
+sales cross-check (V16) is now the *only* external constraint on the level of our
+estimates — if the whole corpus were biased upward, LOOCV would score perfectly and
+nothing else would catch it. V16 is promoted from sanity check to primary safeguard.
+
+### 6.2 Zero-effort human check — WITHDRAWN (D63)
 
 Your judgement still matters, but it should cost you nothing beyond looking:
 

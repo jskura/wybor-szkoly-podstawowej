@@ -18,6 +18,12 @@ evidence. So the design principle is not "show the data" but:
 A dashboard that makes you assemble the answer yourself has failed, even if every
 number on it is correct.
 
+## 1a. Settled (D59–D62)
+
+**Streamlit app**, not a notebook (D59). **Choropleth plus table** (D60). **Paste a
+listing URL** to check a plot (D61). The agree/disagree control is **withdrawn** —
+see §7, which is the most important section in this document.
+
 ## 2. Three surfaces, in priority order
 
 ### 2.1 The plot check — the primary surface
@@ -62,8 +68,11 @@ percentage off a midpoint:
   [ pokaż wszystkie 23 ]   [ zgadzam się / nie zgadzam się / nie wiem ]
 ```
 
-The agree/disagree control is one click and feeds V51b. No numbers to write, no
-homework — that was the point of D57.
+Instead of an agree/disagree control on the verdict (withdrawn, D63), each
+comparable carries a **"nie pasuje"** control. You may not be able to price a plot,
+but you can see that a comparable sits on a main road while yours is in forest.
+That is a layperson-answerable judgement, and because the comparable set *is* the
+estimate, it improves the answer directly. See §7.
 
 ### 2.2 The area view — the map
 
@@ -129,11 +138,47 @@ Visual restraint is deliberate. The product's credibility rests on numbers looki
 carefully handled rather than attractively presented — and a notebook that looks
 like a notebook sets honest expectations about what it is.
 
-## 6. Open UI questions
+## 7. Designing for a user who cannot check the answer (D63)
 
-| # | Question |
-|---|---|
-| **O28** | **Notebook vs small web app.** A notebook is ~1 day and zero infrastructure; a minimal Streamlit app is ~2–3 days, is far easier to use repeatedly, and is what you would show a friend. Given D1 (shared with a few people), Streamlit may be worth the extra days |
-| **O29** | **Map necessity.** With only two 25 km rings — maybe 50 gminas — a sorted table may beat a choropleth entirely. The map costs ~1 day; a table costs hours and may read better at this scale |
-| **O30** | Should the plot check accept a **pasted listing URL** (needs per-portal parsing of an arbitrary page) or only manual entry of area + gmina? URL paste is much nicer and somewhat more work |
-| **O31** | Does the **agree/disagree control** (V51b) belong in v0, or does it feel like homework despite being one click? It is the only human signal left after D57 |
+You told me you will not be able to price plots yourself. That is the single most
+important input to this design, and it inverts an assumption every earlier document
+made — that the tool was a *second* opinion, checked against your own.
+
+It is the only opinion. So the interface has to do work that would otherwise be
+done by your scepticism.
+
+### 7.1 Rules that follow
+
+| # | Rule | Why |
+|---|---|---|
+| U10 | **Uncertainty is stated in words, not only in numbers.** "Zakres szeroki — mało podobnych ofert" alongside `n=4`, because a range is only legible to someone who already has a prior | You cannot supply the missing judgement |
+| U11 | **The tool must volunteer when it is out of its depth.** Below a comparable threshold it leads with *"za mało danych, żeby ocenić — to jest orientacja, nie wycena"* rather than presenting a confident-looking band | Silence would read as confidence |
+| U12 | **Never a single unqualified number**, anywhere, in any export or screenshot | A figure separated from its caveats is what gets acted on |
+| U13 | **Show what would change the answer** — "gdyby ta działka miała plan miejscowy, porównania byłyby inne" — so the limits are concrete rather than abstract | Turns an unknown into a question you can take to the gmina |
+| U14 | **The comparable set is shown before the verdict**, not after | If the comparables look wrong to you, the verdict is wrong, and that judgement you *can* make |
+
+### 7.2 The honest disclosure
+
+Somewhere you will actually read it — not a footer:
+
+> *Ten tool porównuje ceny ofertowe. Nie jest wyceną rzeczoznawcy i nie sprawdza,
+> czy na działce można budować. Przy małej liczbie porównań wynik jest orientacyjny.*
+
+This matters more than usual precisely because you cannot catch our errors.
+Overstating confidence to a user who can verify is a nuisance; to a user who
+cannot, it is the whole failure mode.
+
+### 7.3 What we lose, and cannot recover
+
+Tier C is gone (`20` §2). There is no longer any check on the *level* of our
+estimates except the GUS sales cross-check — which is powiat-level and quarterly.
+If our entire corpus were biased upward, LOOCV would score perfectly and nothing
+else would notice except a coarse comparison against GUS.
+
+**That makes the GUS cross-check (V16) the most important single check in the
+system**, and it was previously treated as a sanity test. It is promoted.
+
+## 8. Resolved UI questions
+
+O28 → Streamlit (D59) · O29 → map plus table (D60) · O30 → URL paste (D61) ·
+O31 → withdrawn, replaced by the comparability control (D62/D63).
