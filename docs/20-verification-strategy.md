@@ -44,10 +44,13 @@ tier, and the tier determines what "verified" is allowed to mean.
 A tier-C feature is never described in the UI as though it were tier A.
 
 Roughly: v0's ingestion and normalization are tier A/B; its aggregates are tier B;
-its verdict is tier C; the valuation's actual accuracy is tier D and **will not be
-known during v0 at all**. That last point deserves stating plainly — v0 can be
-fully correct as software and still give bad advice, and only tier D would reveal
-it.
+the valuation's actual accuracy is tier D and **will not be known during v0 at
+all**. v0 can be fully correct as software and still give bad advice, and only
+tier D would reveal it.
+
+**Since D63 there is no tier C at all** — the owner cannot price plots, so no one
+can judge whether a verdict is sensible. Everything therefore rests on tiers A and
+B, which were designed as *supporting* evidence and now carry the whole load. §6.4.
 
 ## 3. The silent-failure catalogue
 

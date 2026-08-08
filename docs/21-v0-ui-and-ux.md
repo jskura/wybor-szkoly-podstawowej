@@ -1,10 +1,11 @@
 # v0 UI & UX
 
 What you actually look at. [`09-ux-specification.md`](./09-ux-specification.md)
-describes the eventual full interface; this describes the two surfaces v0 ships —
-a **notebook** and **one map** — and the interaction design that makes them honest.
+describes the eventual full interface; this describes what v0 ships — a **Streamlit
+app** with a plot check, a **map**, and a **coverage view** — and the interaction
+design that makes them honest.
 
-Requirements: FR-71, FR-67, FR-25. Validation: V59, V51b, V45, V62.
+Requirements: FR-71, FR-67, FR-25. Validation: V59, V51c, V45, V62.
 
 ---
 
@@ -39,7 +40,7 @@ You have a listing or a plot in mind. You want a verdict.
 │  3 200 m² · gmina Skierniewice · 142 zł/m²              │
 │  cena ofertowa                                          │
 ├─────────────────────────────────────────────────────────┤
-│  ▸ WERDYKT                                    [rozwiń]  │   ← collapsed (V51b)
+│  ▸ WERDYKT                                    [rozwiń]  │   ← collapsed (§7)
 ├─────────────────────────────────────────────────────────┤
 │  Podobne oferty (przepływ, ostatnie 90 dni)             │
 │    mediana 118 · zakres 96–141 · n = 23                 │
@@ -53,10 +54,10 @@ You have a listing or a plot in mind. You want a verdict.
 └─────────────────────────────────────────────────────────┘
 ```
 
-The **verdict is collapsed by default**. That is not decoration: it is V51b's
-mechanism for getting your unbiased impression before you see the tool's answer,
-which is what replaced pre-registration (D57). You look at the evidence, form a
-view, then expand.
+The **verdict is collapsed by default** so the evidence is read before the
+conclusion. With tier-C judgement unavailable (D63) this no longer captures an
+unbiased price impression — it simply stops the headline number from being the only
+thing anyone reads.
 
 Expanding shows the verdict phrased **relative to the range**, never as a
 percentage off a midpoint:
@@ -65,7 +66,7 @@ percentage off a midpoint:
 ▾ WERDYKT
   Powyżej górnej granicy zakresu przepływu (96–141)
   Podstawa: 23 oferty, ta sama gmina, 1 600–4 800 m², ostatnie 90 dni
-  [ pokaż wszystkie 23 ]   [ zgadzam się / nie zgadzam się / nie wiem ]
+  [ pokaż wszystkie 23 ]        każda z nich: [ nie pasuje ]
 ```
 
 Instead of an agree/disagree control on the verdict (withdrawn, D63), each
@@ -111,7 +112,7 @@ could mislead.
 | U2 | Every price shows **type** (ofertowa/transakcyjna) and **kind** (asking/licytacja/przetarg) | FR-64. An auction start price next to an asking price without labels is actively misleading |
 | U3 | Flow and stock always both shown, always labelled, flow first | D56, FR-67 |
 | U4 | The flow window length appears next to every flow figure | O27/V62 — "mediana przepływu" means nothing without "ostatnie 90 dni" |
-| U5 | Verdict collapsed until expanded | V51b |
+| U5 | Verdict collapsed until expanded | Evidence before conclusion (§7) |
 | U6 | `unknown` renders as explicit text, never as blank or dash | A blank reads as "nothing to worry about" |
 | U7 | Absence states are distinguished: not-yet-crawled / no-listings / out-of-scope / too-few-comparables | Each implies a different action |
 | U8 | Stale data shows its age **on the number**, not in a corner | FR-8/V8 |
@@ -121,7 +122,7 @@ could mislead.
 
 No accounts, no saved searches, no alerts, no comparison board, no trends charts,
 no what-if calculator, no mobile layout. All are specified in `09` and `13` for
-later; none earns its place in a local notebook for one person.
+later; none earns its place in a first version for one person.
 
 **One consequence worth naming:** without trends, v0 cannot show you whether prices
 are moving. Given a six-month horizon (D45) and no accrued history, that is the
@@ -135,8 +136,13 @@ Polish number formatting: space thousands separator, comma decimal, `zł/m²`. D
 `DD.MM.YYYY`.
 
 Visual restraint is deliberate. The product's credibility rests on numbers looking
-carefully handled rather than attractively presented — and a notebook that looks
-like a notebook sets honest expectations about what it is.
+carefully handled rather than attractively presented, and a plain interface sets
+honest expectations about what this is — especially given §7.
+
+## 6. Effort
+
+Streamlit app with URL paste and comparable exclusion ≈ 3 days; choropleth plus
+gmina table ≈ 1 day. Reflected in [`18`](./18-v0-scope.md) §6 items 11–12.
 
 ## 7. Designing for a user who cannot check the answer (D63)
 
