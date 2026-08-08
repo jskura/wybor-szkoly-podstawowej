@@ -215,10 +215,15 @@ Sectors, and the expectation each one pins:
 
 | teryt | name | azimuths | inner r (m) | outer r (m) | vertex step | nearest boundary distance | centroid distance | in ring `T`? |
 |---|---|---|---|---|---|---|---|---|
-| `9801011` | Straddler | 0.0° → 30.0° | 24 000 | 40 000 | 1.0° | ≈ 23 999.1 m | ≈ 32 200 m | **yes** |
+| `9801011` | Straddler | 0.0° → 30.0° | 24 000 | 40 000 | 1.0° | ≈ 23 999.09 m | ≈ 32 700 m | **yes** |
 | `9801021` | JustInside | 60.0° → 90.0° | 24 900 | 26 000 | 0.25° | ≈ 24 899.94 m | ≈ 25 450 m | **yes** |
-| `9801031` | JustOutside | 120.0° → 150.0° | 25 100 | 30 000 | 0.25° | ≈ 25 099.94 m | ≈ 27 500 m | **no** |
-| `9801041` | FullyInside | 180.0° → 210.0° | 1 000 | 10 000 | 1.0° | ≈ 999.96 m | ≈ 5 900 m | **yes** |
+| `9801031` | JustOutside | 120.0° → 150.0° | 25 100 | 30 000 | 0.25° | ≈ 25 099.94 m | ≈ 27 600 m | **no** |
+| `9801041` | FullyInside | 180.0° → 210.0° | 1 000 | 10 000 | 1.0° | ≈ 999.96 m | ≈ 6 700 m | **yes** |
+
+Centroid radii are area centroids of an annular sector,
+`r̄ = ⅔·(r_out³ − r_in³)/(r_out² − r_in²)`, which is why `9801021` sits at 25.45 km
+despite its boundary reaching 24.9 km — it is a member under D64 and a non-member
+under the centroid rule. `9801011` is the same trap at larger scale.
 
 Parents: voivodeship `98` "Pierscieniowskie", powiat `9801` "pierscieniowski",
 each the convex hull of its children (computed by the same script, so hierarchy FKs
@@ -238,7 +243,7 @@ The manifest block the script emits, which is the oracle for R3.19/R3.20:
   "radius_m": 25000,
   "in_ring_T": ["9801011", "9801021", "9801041"],
   "not_in_ring_T": ["9801031"],
-  "would_be_in_ring_under_centroid_rule": ["9801021", "9801041"],
+  "would_be_in_ring_under_centroid_rule": ["9801041"],
   "measured_nearest_m": {"9801011": null, "9801021": null,
                          "9801031": null, "9801041": null},
   "measured_centroid_m": {"9801011": null, "9801021": null,
@@ -248,10 +253,12 @@ The manifest block the script emits, which is the oracle for R3.19/R3.20:
 
 The `measured_*` nulls are filled by the script with `Geod.inv()` results at build
 time and committed. The **discriminating assertion** is
-`in_ring_T != would_be_in_ring_under_centroid_rule`: `9801011` is a member under
-D64 and a non-member under the centroid rule, which is precisely the ambiguity C1
-identified. A ring implementation that silently used centroids fails R3.19 on that
-one gmina and passes every other spatial test in the suite.
+`in_ring_T != would_be_in_ring_under_centroid_rule`: `9801011` and `9801021` are
+members under D64 and non-members under the centroid rule, which is precisely the
+ambiguity C1 identified. A ring implementation that silently used centroids fails
+R3.19 on those two gminas and passes every other spatial test in the suite.
+`9801041` (both rules include it) and `9801031` (both rules exclude it) are the
+controls that stop R3.19 from passing for a trivial reason.
 
 The script asserts before writing, and fails the build if any of these is false:
 
@@ -504,18 +511,20 @@ naive = 111320.0 * math.hypot(lon2 - lon1, lat2 - lat1)   # degrees treated as p
 
 | Pair | Correct | Naive result | Error | Assertion |
 |---|---|---|---|---|
-| `dist_pair_ring` | 20 000 m | **≈ 27 000 m** | ≈ 7 000 m | `abs(naive - 20000.0) > 1000.0` |
-| `dist_pair_short` | 600 m | **≈ 975 m** | ≈ 375 m | `abs(naive - 600.0) > 1.0` |
+| `dist_pair_ring` | 20 000 m | **≈ 27 500 m** | ≈ 7 500 m | `abs(naive - 20000.0) > 1000.0` |
+| `dist_pair_short` | 600 m | **≈ 1 000 m** | ≈ 400 m | `abs(naive - 600.0) > 1.0` |
 
-The ring pair is the load-bearing one: the error there is ~35 %, so no plausible
+The ring pair is the load-bearing one: the error there is ~37 %, so no plausible
 tolerance hides it. The short pair is included because it shows the naive method
 also fails at the scale where the tolerance is tightest — but note it fails by
-375 m, not by 1000 m, so R3.16's `> 1000.0` threshold applies to the ring pair
-**only**. Pass 1 did not distinguish them; type both limbs.
+about 400 m, not by 1000 m, so R3.16's `> 1000.0` threshold applies to the ring
+pair **only**. Pass 1 did not distinguish them; type both limbs.
 
-The magnitudes above are arithmetic from `cos(53°) = 0.601815` and the 111 320 m
+The magnitudes above are arithmetic from `cos(53°) ≈ 0.6018` and the 111 320 m
 constant, and are stated as "≈, assert `>`" rather than as equalities — the exact
 naive value depends on `Geod.fwd`'s meridian arc, which is not 111 320 m/degree.
+Assert the inequality; record the observed value in the test's failure message so a
+future PROJ change is visible rather than silent.
 
 ---
 
