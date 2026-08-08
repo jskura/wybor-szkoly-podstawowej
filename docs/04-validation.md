@@ -786,6 +786,168 @@ techniques that work where no oracle exists. Tier references are to `20` §2.
 - **Falsified by** A surviving mutant in the numeric core. A suite that passes
   against a mutated median function is not testing the median.
 
+## Coverage gaps found by audit — methods for FR-61..72
+
+> Answering *"is every feature supported by a validation method?"* mechanically
+> produced **no**. KOWR, auctions, gmina BIP, the good-neighbour test and the
+> purchasability badge appeared **zero times** in the PRD, and several v0 work
+> items had no method at all. FR-61..72 close the rule-1 gap; V53–V62 close the
+> rule-4 gap.
+
+### V53 — KOWR connector (FR-61)
+
+- **AC** Notices for both rings are collected, normalized, and carry
+  `price_kind = 'tender'`. Every record resolves to a gmina TERYT and an area in
+  m². Notices without a usable price or area are quarantined with a reason, not
+  dropped. The corpus count matches KOWR's own listing count for the same filter.
+- **How** Integration test against a recorded fixture per notice layout; `Δ`
+  count-agreement assertion (as V43); quarantine-reason assertion (as V50).
+- **Against** Recorded KOWR fixtures, including at least one notice with no stated
+  area and one tender with a price range rather than a figure.
+- **Falsified by** A KOWR record entering an asking-price aggregate; a silently
+  dropped notice; an unresolved TERYT.
+
+### V54 — Auction connector (FR-62)
+
+- **AC** Bailiff and bankruptcy notices are collected with
+  `price_kind = 'auction_start'`, the **statutory fraction** of the valuation
+  recorded where stated, and the auction date captured. An auction starting price
+  never enters an asking-price aggregate.
+- **How** (a) Fixture-based parse tests per source layout; (b) the V46 separation
+  test; (c) a test that a notice stating "cena wywoławcza 3/4 sumy oszacowania"
+  records both the figure **and** the fraction, since the fraction is what makes
+  the number interpretable.
+- **Against** Recorded auction fixtures from whichever sources O16 selects.
+- **Falsified by** A starting price treated as an ask; a lost fraction; an auction
+  whose date is not captured, since a past auction is not supply.
+
+### V55 — Gmina BIP connector (FR-63)
+
+- **AC** Each of the ~50 gminas in the two rings is either **covered** by a working
+  parser or **explicitly listed as uncovered**, with a reason. There is no silent
+  middle: a gmina we cannot parse is reported as a coverage gap, never as a gmina
+  with no land for sale.
+- **How** (a) A per-gmina coverage report, asserted to account for **every** gmina
+  in scope; (b) fixture tests per distinct bulletin layout; (c) a `Δ` assertion
+  that the covered-gmina count matches the parser registry.
+- **Against** Recorded BIP fixtures per layout family.
+- **Falsified by** A gmina silently absent from both the covered and uncovered
+  lists — the specific failure that would make an empty area look like a cheap one.
+
+### V56 — v0 dedup, weaker but real (FR-70)
+
+- **AC** Exact duplicates — same source, same external id, or identical
+  (area, price, gmina) triples — collapse to one record with a `duplicate_count`.
+  **No labelled-set scoring** is claimed, and the coverage page states that dedup
+  is exact-match only, so the duplicate rate is *unknown rather than measured*.
+- **How** (a) Unit tests on the exact-match rules; (b) metamorphic: adding an exact
+  duplicate leaves the median and `n` unchanged (V47); (c) a test that the UI/report
+  carries the "exact-match only" caveat.
+- **Against** Fixtures with exact duplicates and with near-duplicates that v0 is
+  **not** expected to catch.
+- **Falsified by** An exact duplicate surviving; a near-duplicate being merged
+  (v0 must not over-merge); a claim of a measured duplicate rate anywhere.
+
+### V57 — Raw payload storage and re-parse (FR-72)
+
+- **AC** Every fetched document is stored with source, URL, fetch time and content
+  hash; identical re-fetches do not duplicate storage. A parser fix can re-derive
+  listings for a past window from raw payloads and recompute aggregates **without**
+  mutating snapshots.
+- **How** (a) Unit test on hash-based deduplication of stored payloads; (b) a
+  re-parse drill on a fixture window with a deliberately wrong parser, asserting
+  corrected outputs, unchanged snapshots and a recorded correction.
+- **Against** A fixture window with known-correct expected values.
+- **Falsified by** Re-parse being impossible; snapshots mutated during recovery.
+
+### V58 — List-page-first sufficiency (FR-68, D40)
+
+- **AC** The list page yields price and active status accurately enough that
+  detail-page fetches can be limited to first sight and observed changes. Where a
+  list page's price disagrees with its detail page, the **detail page wins** and
+  the disagreement is counted.
+- **How** (a) A sampled reconciliation: fetch detail pages for a random subset and
+  compare to what the list page reported; assert the disagreement rate stays below
+  a threshold set from the first run; (b) a test that a price change visible only
+  on the detail page is still caught on the next cycle.
+- **Against** A live sampled comparison, plus fixtures with a deliberate list/detail
+  mismatch.
+- **Falsified by** A material disagreement rate with no alarm — it would mean the
+  cheap path is quietly wrong, and the cheap path is nearly the whole corpus.
+
+### V59 — Notebook honesty (FR-71)
+
+- **AC** The notebook obeys `09` §1: no aggregate without `n` and spread; every
+  price labelled with **type and kind**; stock and flow always distinguished;
+  verdict collapsed by default (V51b); `unknown` rendered explicitly rather than
+  blank.
+- **How** Output-snapshot tests over the notebook's rendering helpers — the same
+  assertions V35/V36 make of the full UI, applied to the surface v0 actually ships.
+- **Against** Rendered notebook cell outputs for each state, including thin data,
+  no data, and stale data.
+- **Falsified by** A bare aggregate; an unlabelled price kind; a blank where
+  `unknown` belongs.
+
+### V60 — WZ good-neighbour test (FR-65)
+
+Specified in [`19-legal-and-feasibility.md`](./19-legal-and-feasibility.md) §1.3
+and registered here so the coverage table sees it. Summary: 10 hand-checked
+parcels per ring, half with obvious built neighbours and half clearly isolated;
+the computed signal matches orthophoto inspection; **no parcel with missing
+building data is ever reported `unlikely`**; no verdict renders without its
+disclaimer.
+
+### V61 — Farmland purchasability badge (FR-66)
+
+Specified in [`19-legal-and-feasibility.md`](./19-legal-and-feasibility.md) §2.3
+and registered here. Summary: badge present for every agricultural register class,
+absent for every non-agricultural one, and an unknown class produces neither a
+badge nor an implication that the plot is unrestricted. Copy thresholds are
+citation-checked against the consolidated act on the date shipped.
+
+### V62 — Flow window is defined, ratified and visible (FR-67)
+
+- **AC** The "flow" window has a single defined length, stated wherever a flow
+  figure appears. Changing it is a versioned method change, not a silent tweak.
+- **How** (a) Unit test that the window is read from configuration, not hardcoded
+  at call sites; (b) a rendering test that the window length appears alongside every
+  flow figure; (c) sensitivity check — report flow medians at several window
+  lengths, so the choice can be made on evidence (O27).
+- **Against** Fixtures spanning several months.
+- **Falsified by** A flow figure with no stated window; two call sites using
+  different windows.
+
+---
+
+## v0 work item → validation coverage
+
+The mechanical answer to *"is every feature covered?"*. Regenerate this table when
+the work plan changes.
+
+| `18` §6 item | Validation |
+|---|---|
+| 0 robots.txt gate | V14 + **decision recorded in `00`** (a gate, not a feature) |
+| 1 Repo, Docker, migrations, config | V7 (anchor privacy); migrations covered by V1's constraint-existence test |
+| 2 Schema + `price_type` CHECKs | V1, V2 |
+| 3 PRG + TERYT, both rings | V6, V30, V31 |
+| 4 GUS BDL client | V13, V16 |
+| 5 Portal connector | V12, V14, V43, V44, **V57**, **V58** |
+| 6 Parse + normalize | V10, V28, V50 |
+| 7 KOWR connector | **V53**, V46 |
+| 8 Auction connector | **V54**, V46 |
+| 9 Dedup (v0 form) | **V56**, V47 |
+| 10 Aggregates, stock + flow | V4, V45, V47, V48, **V62** |
+| 11 Notebook | **V59**, V51, V51b |
+| 12 Map view | **V59** (same helpers); V35–V37 apply if a real frontend arrives |
+| 13 Gmina BIP | **V55** |
+| 14 Parcels + good-neighbour | **V60** (`19` §1.3) |
+| 15 Purchasability badge | **V61** (`19` §2.3) |
+| Cross-cutting | V5 provenance, V51 LOOCV, V52 mutation, V47 metamorphic, V48 differential |
+
+**Still uncovered, deliberately:** the drift-detection gap from dropping
+golden-file regression (O26), and everything at verification tier D — whether the
+valuation is actually right — which no v0 method can reach.
+
 ## Deferred — method required before implementation
 
 These have no validation method yet. Per rule 4, one must be written here before

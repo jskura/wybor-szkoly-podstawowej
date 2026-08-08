@@ -75,11 +75,11 @@ Start with `18` (what we're building), then `17` (why it shrank).
 | [`docs/18-v0-scope.md`](docs/18-v0-scope.md) | **The plan of record** — the ~22–25 day version, its work plan, its checks, and what it will teach us |
 | [`docs/17-assumption-audit.md`](docs/17-assumption-audit.md) | **Self-review** — contradictions, unasked questions, unverified facts |
 | [`CLAUDE.md`](CLAUDE.md) | Binding project rules: PRD first, ask don't assume, TDD, validation method per feature, two price types, provenance |
-| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — 58 decisions, 21 open items |
+| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — 58 decisions, 22 open items |
 | [`docs/01-user-journeys.md`](docs/01-user-journeys.md) | 12 journeys (J1–J8 buying, J9–J12 analytical) and the capability map |
-| [`docs/02-prd.md`](docs/02-prd.md) | Requirements FR-1..60, data model, architecture, milestones, risks |
+| [`docs/02-prd.md`](docs/02-prd.md) | Requirements FR-1..72, data model, architecture, milestones, risks |
 | [`docs/03-data-sources.md`](docs/03-data-sources.md) | Polish data sources, the `robots.txt` gate, scraping ground rules |
-| [`docs/04-validation.md`](docs/04-validation.md) | V1–V42 — how we know each feature works. v0's subset is in `18` §8 |
+| [`docs/04-validation.md`](docs/04-validation.md) | V1–V62 — how we know each feature works, plus a work-item → coverage table |
 | [`docs/05-analytics-methodology.md`](docs/05-analytics-methodology.md) | The valuation method — comparables, ranges, mix adjustment, scoring |
 | [`docs/06-taxonomy-and-extraction.md`](docs/06-taxonomy-and-extraction.md) | Asset classes, and how messy advert text becomes structured attributes |
 | [`docs/07-geocoding.md`](docs/07-geocoding.md) | Location resolution, precision tiers, and what each tier may be used for |

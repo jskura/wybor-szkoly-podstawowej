@@ -390,6 +390,51 @@ these are the requirements it must satisfy.
 - **FR-60** Recomputation is **versioned, never silent**; material revisions are
   surfaced on the coverage page (`08` §4).
 
+### 8.9a Batch-11 features — off-portal sources and feasibility
+
+> **Rule-1 gap, now closed.** D47, D50, D51, D56 and D40 were decided and
+> documented in `18`, `19` and `20`, but **never written as requirements**. Five
+> features were about to be implemented with no PRD entry. Added here.
+
+- **FR-61** **KOWR connector** — sale and tender notices for state agricultural
+  land across both rings, normalized to the canonical schema (D47).
+- **FR-62** **Auction connector** — bailiff (*licytacje komornicze*) and bankruptcy
+  (*syndyk*) land sales (D47). Source selection is O16.
+- **FR-63** **Gmina BIP connector** — municipal sale notices across the ~50 gminas
+  in the two rings, each with its own bulletin layout (D47).
+- **FR-64** **Price-kind taxonomy** (resolves O19). `price_kind` is distinct from
+  `price_type`: an **asking** price, an **auction starting** price (a statutory
+  floor derived from a valuation) and a **tender** price are three different
+  quantities. No aggregate may span kinds. Blending them would drag medians down
+  and read as a market movement.
+- **FR-65** **WZ feasibility — the good-neighbour test** (D50). Composite signal
+  `{likely, uncertain, unlikely, unknown}` from building proximity, shared public
+  road access, land-use class and protected-area overlap. Never a prediction:
+  missing building data yields `unknown`, **never** `unlikely`, and `likely`
+  carries the same disclaimer as `unlikely` (`19` §1.2).
+- **FR-66** **Farmland purchasability badge** (D51). Driven by the **register**
+  land-use class, never the advert's claim. States *possible* restrictions, never
+  certainty; never a filter; unknown class produces no badge **and** no reassurance.
+- **FR-67** **Stock and flow** (D56). Every aggregate is computed both ways —
+  stock (all active) and flow (first seen within the window) — each labelled, never
+  blended. **Flow is the headline.** The flow window length is unratified (O27).
+- **FR-68** **List-page-first crawl** (D40). List pages supply price and active
+  status for the whole corpus; detail pages are fetched only on first sight or when
+  a list page shows a change. This is what makes daily observation compatible with
+  the politeness policy (`10` §2.1).
+- **FR-69** **LOOCV acceptance harness** (D57). Hold out each listing, rebuild its
+  comparable set from the remainder, estimate, compare to actual asking price;
+  report coverage, hit rate, median absolute error and >2× tail per run.
+- **FR-70** **v0 dedup** — exact and near-exact matching only, without the labelled
+  scoring set the full FR-13 requires. A deliberately weaker feature, so it needs
+  its own weaker-but-real acceptance criteria rather than inheriting FR-13's.
+- **FR-71** **Notebook surface** — the v0 delivery vehicle. Subject to the same
+  honesty rules as any UI (`09` §1): no bare aggregate, every price labelled with
+  type **and** kind, verdict collapsed by default (V51b).
+- **FR-72** **Raw payload retention and re-parse** in v0 form — every fetched
+  document stored with its hash, and a documented path from a parser fix to
+  recomputed aggregates without touching snapshots.
+
 ### 8.10 Research spikes
 
 - **FR-31** **RCN access research** (D5), before any RCN connector is scheduled.
