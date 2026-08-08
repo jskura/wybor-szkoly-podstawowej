@@ -71,6 +71,38 @@ Neither substitutes for the other. Every price figure in the data model, the API
 and the UI must be explicitly labelled with which type it is. The gap between the
 two is a product feature, never a discrepancy to reconcile away.
 
+## 7. The standard workflow
+
+Every substantial piece of work follows this cycle. It is two passes, not one, and
+each pass ends at a commit.
+
+**Pass 1 — design**
+
+1. **Author** the artefact for *every* part of the application, not a subset.
+2. **Review and analyse gaps** — what is missing, contradictory, or unverifiable.
+3. **Simplify** — remove duplication, dead content and unnecessary complexity.
+4. **Commit.**
+
+**Pass 2 — detail**
+
+5. **Plan the concrete detail** for every part (for TDD: the actual test cases,
+   fixtures and data).
+6. **Review.**
+7. **Simplify.**
+8. **Commit.**
+
+**Parallelise.** Steps 1, 2 and 5 fan out across independent agents working on
+disjoint areas — one file per agent so they never collide. Steps 3, 4, 7 and 8 are
+consolidation and belong to a single writer.
+
+**Why two passes.** A design pass that is immediately implemented hides its gaps;
+a review that happens after the detail is written is too late to change the shape.
+The first commit is a reviewable checkpoint on the shape, the second on the
+substance.
+
+Applies to TDD specs, requirements, validation methods and any other artefact
+produced across the whole application at once.
+
 ## 6. Provenance, and always show — always flag
 
 Every stored and displayed number carries its **source**, **as-of date** and
