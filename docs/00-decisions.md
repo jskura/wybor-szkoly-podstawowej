@@ -159,7 +159,49 @@ From [`20-verification-strategy.md`](./20-verification-strategy.md).
 | D57 | Pre-register estimates for the known-plot check? | **No** | Closes O22. Replaced by **leave-one-out cross-validation** (V51) — automatic, repeatable, and tier A/B rather than tier C. Plus a zero-effort collapsed-verdict spot check (V51b) |
 | D58 | Which verification techniques? | **Metamorphic, differential, mutation.** Golden-corpus regression **not** selected | Closes O21. Leaves a drift-detection gap recorded as O26 |
 
-## Open — not yet decided
+## Batch 13 — gap closure (2026-08-07)
+
+A decisive pass over every open item. Each is now **closed**, **closed with a
+proposal you can overturn**, or **genuinely blocked on you** — with no item left in
+the vague middle.
+
+| # | Was | Resolution |
+|---|---|---|
+| O1 | Which portals | **Proposed**: one portal for v0, chosen after O10. Candidates are the two large consumer portals; whichever permits crawling wins. If both do, pick the one with more land listings in the rings — measurable on day 1 |
+| O2 | RCN access research | **Out of v0.** v0's sales baseline is GUS BDL, which is free and guaranteed. RCN returns only if v0 shows powiat-level sales are too coarse to be useful |
+| O3 | Repo name | **Recommend `cena-ziemi`.** Awaiting your rename on GitHub; not blocking |
+| O4 | Access gate | **N/A for v0** — it runs locally (D44). Returns only if hosted |
+| O5 | GUS history depth | **Closed**: import everything BDL publishes. No reason to truncate free data |
+| O6 | Size adjustment | **Closed with a measurement plan.** No explicit adjustment in v0. Instead: fit and *report* size elasticity per ring, and let LOOCV (V51) reveal whether error correlates with plot size. Adjust only if the evidence says so — this replaces my guess with a measurement |
+| O7 | Standard-plot benchmark | **Adopted.** D48 makes it natural: report "what a 3000 m² buildable plot costs here" per gmina, as one comparable number across areas. Cheap once aggregates exist |
+| O8 | Digest cadence | **Out of v0** |
+| O9 | Notebook access mechanism | **Closed** — v0 *is* a local notebook against a local database |
+| **O10** | **robots.txt** | **BLOCKED ON YOU.** Unreachable from here. Procedure: open each portal's `/robots.txt`, record the verbatim text and the date in `docs/evidence/`, and note whether listing and search paths are allowed for a generic agent. Everything on the offering-price side waits on this |
+| O11 | Valuation parameters | **Closed as provisional-and-measured.** Values stay as documented, marked `‡`, and V51 reports sensitivity so they are ratified from evidence rather than opinion |
+| O12 | 50 ha area cap | **Closed**: band widened to 300 m² – 200,000 m². Anything outside is **flagged and visible**, never silently dropped — the original cap would have discarded legitimate farmland |
+| O13 | Thin-data map rendering | **Proposed**: tiles below n=5 render hatched rather than solid, and the gmina label always carries `n`. In v0 the map is secondary to the notebook, which lowers the stakes |
+| O14 | Housing | **Proposed**: collect but do not surface. The same connector returns it at near-zero marginal cost, and it keeps your original "housing and land" framing alive without spending v0 days on it |
+| O15 | v0/v0.5 split | **Closed by D55** — everything at once |
+| O16 | Auction sources | **Proposed**: start with the central e-auction service for bailiff sales, since one integration covers many offices; add *Monitor Sądowy i Gospodarczy* for bankruptcy estates only if the first proves thin |
+| O17 | Building data coverage | **Closed**: EGiB buildings where the county publishes them, OSM buildings as a lower-confidence fallback, and **missing data yields `unknown`, never `unlikely`** (`19` §1.2) |
+| **O18** | Is it worth building at all | **BLOCKED ON YOU.** ~22–25 days against a six-month horizon. Framed in `18` §9; only you can answer it |
+| O19 | Price-kind taxonomy | **Closed by FR-64** — asking / auction_start / tender, never blended |
+| O20–O24 | Verification choices | **Closed by D56–D58** |
+| O25 | LOOCV thresholds | **Closed as procedure**: set from the first run's actuals, then treat regressions as failures. Guessing them now would be the same error the audit found |
+| O26 | Drift-detection gap | **Closed with a cheaper substitute.** Full golden-file regression was declined (D58), so instead each pipeline run prints an **aggregate diff report** — every gmina whose median moved more than a threshold since the last run, with its `n` before and after. Printed for review, not asserted in CI. Catches most silent drift at a fraction of the cost |
+| O27 | Flow window | **Proposed 90 days**, with V62's sensitivity check reporting 30 / 60 / 90 / 180 so the choice is evidence-based |
+
+### Still blocked on you
+
+Only three, and only one blocks work:
+
+1. **O10 — `robots.txt`.** Blocks the entire offering-price path. Minutes to check.
+2. **O18 — whether this is worth building** given the timing. Not blocking, but worth answering before day 4 rather than day 20.
+3. **O3 — the repo rename.** Cosmetic.
+
+Everything else is decided or has a proposal you can overturn.
+
+## Open — not yet decided (historical; see batch 13 for current status)
 
 | # | Question | Blocks |
 |---|---|---|
