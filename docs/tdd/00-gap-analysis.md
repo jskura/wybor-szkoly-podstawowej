@@ -100,3 +100,51 @@ Worth recording, because these are additions rather than corrections:
 | O11 | Valuation parameters unratified | Nothing — they are provisional and measured |
 | — | The hand-labelled parcel set does not exist | V60 has no ground truth yet |
 | — | The agricultural threshold in `19` §2.1 is an unverified secondary-source claim | The purchasability badge's copy |
+
+
+---
+
+# Pass 2 review — what writing the concrete data found
+
+Pass 1 wrote sequences; pass 2 wrote the numbers, and computing them found
+defects that reading prose could not. Six plans, six agents, `docs/tdd/plans/`.
+
+## H. Confirmed by two agents independently
+
+| # | Defect | Fix |
+|---|---|---|
+| **H1** | **`price_kind` had no member a `sales` row could carry.** D65 defined `{asking, auction_start, tender}` — all offering-side — while U2 requires *every* price to show its kind. The GUS block could not satisfy a rule these documents impose on it, and the price-separation fixture could not be written | **D68**: `transaction` added, pinned by CHECK on the sales table |
+| **H2** | **GUS publishes no spread**, yet every aggregate must carry one (rule 6). As specified the sales block either broke the rule or raised an error on correct data | **D69**: `range_kind = 'unavailable'` with explicit copy. Showing the absence *is* rule 6; erroring on it is not |
+
+Two agents reaching the same conclusion from different directions turns a
+suspicion into a certainty. Both defects were mine, introduced in the pass-1 fix.
+
+## I. Single-agent findings, all real
+
+| # | Defect | Fix |
+|---|---|---|
+| I1 | **A consistently transposed easting/northing is an isometry** — every distance survives it, so *no distance test can detect it*. The degrees-are-wrong control does not cover this | Distance tests are insufficient alone; an **absolute-position** assertion is required. Recorded against V31 |
+| I2 | The repo gave **two different TERYT codes for gmina Skierniewice** (`1015042` in the API contract, `1015062` in the pass-1 spec). I invented the first | Both removed; the register is the only source, with a guard test failing when a document disagrees with it |
+| I3 | **`no_listings` and `no_building_coverage` absence reasons** were used by the surface spec but absent from the API contract's list, so its own conformance test could not pass | Added |
+| I4 | `parcel_wz_feasibility` **could not store its own reasoning** — no reason code, land use, protection, radius or evidence reference | Columns added |
+| I5 | `parcel_building.distance_m INT` **could not hold** the millimetre precision the test plan asserts | Now `distance_mm BIGINT` |
+| I6 | **Eleven arithmetic defects in the pass-1 aggregates spec**, three changing stated values — a row in the wrong area band with an expected median wrong in both directions, an age off by a day, an abbreviated enum | Pass-2 plan supersedes; pass-1 doc marked |
+| I7 | **Fetching `robots.txt` consumes a rate-limit slot**, so a 500-request run is 501 calls; and two pass-1 tests contradicted each other on whether backoff and minimum interval add or compose | Resolved as `max`, not sum |
+| I8 | **The `robots.txt` gate covers three source families**, not one — KOWR and gmina BIP are hosts too, so their fixtures are equally unrecordable | `03` corrected |
+| I9 | **EGiB carries no road ownership**, so the single `likely` cell of the feasibility truth table is unreachable in production without a ratified proxy | Recorded as open; `likely` may simply never fire, which is an acceptable outcome |
+| I10 | **V60 can validate only the neighbour signal**, not the composite verdict — the hand-labelled set cannot establish ground truth for a verdict that depends on unobservable factors | Scope of V60 narrowed explicitly |
+
+## J. Decisions taken
+
+| # | Decision |
+|---|---|
+| **D68** | `price_kind` gains `transaction` for sales rows. Rule 5 unaffected; `price_type` still separates offering from sales, `price_kind` is the finer axis within each |
+| **D69** | `range_kind` gains `unavailable`, for sources that publish a central value with no spread. Rendered as explicit copy, never as a missing field or an error |
+
+## K. What pass 2 demonstrates about the workflow
+
+Rule 7 exists because of exactly this. Pass 1's specs were reviewed and looked
+right. Pass 2 computed the numbers and found eleven arithmetic errors in one
+document alone, two logical holes that two agents hit independently, and a
+projection bug that is *invisible to the entire class of test* pass 1 had
+specified. None of it would have surfaced from more reading.

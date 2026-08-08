@@ -87,9 +87,13 @@ commit a milestone to it.
 ## ⚠ Unverified gate — read before any connector work (O10, audit C1)
 
 **Nobody has checked whether the candidate portals' `robots.txt` permits crawling
-listing pages.** I planned the entire offering-price layer — and therefore most of
-the product — on the assumption that it does, and I could not verify it: the
-network egress proxy in my environment blocks both domains (403 on CONNECT).
+listing pages — and the same is true of the KOWR and gmina-BIP hosts.** The gate
+covers *three* source families, not one; the pass-2 connector plan found that
+none of their fixtures may be recorded until the evidence exists.
+
+I planned the entire offering-price layer — and therefore most of the product —
+on the assumption that crawling is permitted, and could not verify it: the
+network egress proxy in my environment blocks these domains (403 on CONNECT).
 
 This is **day-one work in [`18-v0-scope.md`](./18-v0-scope.md) §6, item 0** and it gates
 everything downstream:

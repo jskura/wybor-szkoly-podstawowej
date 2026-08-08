@@ -160,7 +160,7 @@ done by your scepticism.
 | U11 | **The tool must volunteer when it is out of its depth.** Below a comparable threshold it leads with *"za mało danych, żeby ocenić — to jest orientacja, nie wycena"* rather than presenting a confident-looking band | Silence would read as confidence |
 | U12 | **Never a single unqualified number**, anywhere, in any export or screenshot | A figure separated from its caveats is what gets acted on |
 | U13 | **Show what would change the answer** — "gdyby ta działka miała plan miejscowy, porównania byłyby inne" — so the limits are concrete rather than abstract | Turns an unknown into a question you can take to the gmina |
-| U14 | **The comparable set is shown before the verdict**, not after | If the comparables look wrong to you, the verdict is wrong, and that judgement you *can* make |
+| U14 | **The comparable set is shown before the verdict**, not after — and §2.1's layout follows this order | If the comparables look wrong to you, the verdict is wrong, and that judgement you *can* make |
 
 ### 7.2 The honest disclosure
 

@@ -23,7 +23,8 @@ Epic: E1.3. Validation: V1, V2, V5, V12, V29, V31.
 
 ```sql
 CREATE TYPE price_type      AS ENUM ('offering','sales');
-CREATE TYPE price_kind      AS ENUM ('asking','auction_start','tender');  -- D65
+CREATE TYPE price_kind      AS ENUM ('asking','auction_start','tender',
+                                     'transaction');  -- D65, +D68
 CREATE TYPE asset_class     AS ENUM ('land_building','land_recreational',
                                      'land_agricultural','land_forest_other',
                                      'house','flat');
@@ -33,7 +34,7 @@ CREATE TYPE location_precision  AS ENUM ('parcel','address','pin','locality','gm
 CREATE TYPE utility_state   AS ENUM ('present','at_boundary','absent','unknown');
 CREATE TYPE road_access     AS ENUM ('public_paved','public_unpaved','easement','none','unknown');
 CREATE TYPE unit_level      AS ENUM ('voivodeship','powiat','gmina','obreb');
-CREATE TYPE range_kind      AS ENUM ('iqr','min_max');
+CREATE TYPE range_kind      AS ENUM ('iqr','min_max','unavailable');  -- D69
 CREATE TYPE series_kind     AS ENUM ('stock','flow');                    -- D56, D66
 ```
 
@@ -280,7 +281,8 @@ CREATE TABLE parcel_building (            -- A4, FR-65
   parcel_id      BIGINT NOT NULL REFERENCES parcel(id),
   source         TEXT NOT NULL CHECK (source IN ('egib','osm')),
   geom           geometry(MultiPolygon, 4326) NOT NULL,
-  distance_m     INT NOT NULL,
+  distance_mm    BIGINT NOT NULL,       -- millimetres: INT metres made the
+                                        -- test plan's assertions untestable
   as_of          DATE NOT NULL,
   PRIMARY KEY (parcel_id, source, geom)
 );
@@ -297,6 +299,11 @@ CREATE TABLE parcel_wz_feasibility (      -- A4, FR-65
   verdict         TEXT NOT NULL CHECK (verdict IN ('likely','uncertain','unlikely','unknown')),
   neighbour_found BOOLEAN,
   shares_road     BOOLEAN,
+  land_use_class  TEXT,
+  protection_kind TEXT,
+  search_radius_m INT,
+  reason_code     TEXT NOT NULL,          -- why this verdict, not just which
+  evidence_ref    JSONB,                  -- the parcel_building rows relied on
   coverage_source TEXT,                   -- NULL only when verdict='unknown'
   computed_at     TIMESTAMPTZ NOT NULL,
   -- The load-bearing constraint: 'unlikely' requires evidence that we actually
@@ -332,6 +339,8 @@ CREATE TABLE transaction (
   price_per_m2  NUMERIC(12,2),
   price_type    price_type NOT NULL DEFAULT 'sales'
                   CHECK (price_type = 'sales'),      -- V1
+  price_kind    price_kind NOT NULL DEFAULT 'transaction'
+                  CHECK (price_kind = 'transaction'),  -- D68
   property_kind TEXT,
   CONSTRAINT published_after_transacted CHECK (as_of >= transacted_at)
 );

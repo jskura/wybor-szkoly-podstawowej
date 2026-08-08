@@ -39,7 +39,8 @@ Epic: E15. Validation: V3, V4, V38, V39.
 ```jsonc
 {
   "median": 118.0,
-  "range": { "low": 96.0, "high": 141.0, "kind": "iqr" },  // "iqr" (n>=5) | "min_max" (n<5)
+  "range": { "low": 96.0, "high": 141.0, "kind": "iqr" },
+  // "iqr" (n>=5) | "min_max" (n<5) | "unavailable" (source publishes no spread — D69)
   "n": 23,
   "price_type": "offering",
   "as_of": "2026-08-01",
@@ -57,8 +58,8 @@ the shape makes the violation unrepresentable rather than merely forbidden.
 { "absent": true, "reason": "no_sales_data", "detail": "Brak danych transakcyjnych dla tej gminy" }
 ```
 
-Reasons: `no_sales_data`, `not_yet_crawled`, `out_of_scope`, `precision_too_low`,
-`no_comparables`, `no_plan_data`. Clients render each differently (`09` §3) — which
+Reasons: `no_sales_data`, `no_listings`, `not_yet_crawled`, `out_of_scope`,
+`precision_too_low`, `no_comparables`, `no_plan_data`, `no_building_coverage`. Clients render each differently (`09` §3) — which
 is only possible because they are distinguished here.
 
 ### 2.4 `Estimate` — the valuation return (FR-32)
@@ -116,7 +117,7 @@ which is the serialization half of V21's structural separation.
 
 ```jsonc
 {
-  "teryt": "1015042", "name": "Skierniewice", "level": "gmina",
+  "teryt": "<TERC>", "name": "Skierniewice", "level": "gmina",   // code to be read from the register, never invented
   "offering": { /* Aggregate */ },
   "sales":    { /* Aggregate or Absent */ },
   "gap": { "pct": 9.4, "offering_as_of": "2026-08-01", "sales_as_of": "2025-12-31" }
@@ -156,7 +157,7 @@ travel times, `location_precision`, and `duplicate_count`.
 
 ```jsonc
 {
-  "place": { "kind": "gmina", "teryt": "1015042" },   // or {"kind":"point","lat":..,"lon":..,"radius_km":10}
+  "place": { "kind": "gmina", "teryt": "<TERC>" },   // or {"kind":"point","lat":..,"lon":..,"radius_km":10}
   "features": {
     "area_m2": 1500, "buildability": "buildable",
     "utilities": {"electricity":"at_boundary","water":"present","gas":"unknown","sewage":"septic"},
