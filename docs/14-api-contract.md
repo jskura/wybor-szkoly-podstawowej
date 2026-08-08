@@ -1,7 +1,7 @@
 # API contract
 
 The interface between the backend and every consumer (frontend, digests,
-notebooks). Two invariants are enforced **at this boundary** rather than trusted
+query layer). Two invariants are enforced **at this boundary** rather than trusted
 to callers, because this is the last place they can be checked:
 
 - **No price without `price_type`** (V3, rule 5)
@@ -148,7 +148,7 @@ travel times, `location_precision`, and `duplicate_count`.
 | `POST` | `/estimates` | Estimate from a feature bundle — **no listing needed** (FR-33) |
 | `GET` | `/estimates/{id}/comparables` | Enumerated comparable set |
 | `POST` | `/estimates/{id}/recompute` | Recompute excluding listed comparable ids (FR-36) |
-| `POST` | `/estimates/compare-places` | Same features, several places (FR-31) |
+| `POST` | `/estimates/compare-places` | Same features, several places (FR-33) |
 | `GET` | `/features/values` | Feature values — returns `ModelEstimate[]` only |
 | `GET` | `/units/{teryt}/rezoning-uplift` | Strata contrast + mandatory caveat (FR-40) |
 

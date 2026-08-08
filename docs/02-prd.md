@@ -1,7 +1,7 @@
 # PRD — Land & Housing Price Comparison
 
 Status: **draft v0.3** · Owner: jskura · Date: 2026-08-07
-Inputs: [`00-decisions.md`](./00-decisions.md) (D1–D44) · [`01-user-journeys.md`](./01-user-journeys.md)
+Inputs: [`00-decisions.md`](./00-decisions.md) (D1–D63) · [`01-user-journeys.md`](./01-user-journeys.md)
 Validation methods: [`04-validation.md`](./04-validation.md) — required before any implementation ([`CLAUDE.md`](../CLAUDE.md) rule 4)
 
 > ## ⚠ Read this first — scope changed after the audit
@@ -10,8 +10,9 @@ Validation methods: [`04-validation.md`](./04-validation.md) — required before
 > contradictions and a long list of choices I made without asking. The scope
 > decision that followed (D38) is:
 >
-> **The plan of record is [`18-v0-scope.md`](./18-v0-scope.md) — a ~10-day version
-> covering the two 25 km anchor rings only.** This PRD describes the *full* system,
+> **The plan of record is [`18-v0-scope.md`](./18-v0-scope.md) — a ~26–29 day
+> version covering both 25 km anchor rings, off-portal sources and the
+> feasibility layer.** This PRD describes the *full* system,
 > which is now a possible future rather than the current plan. Requirements below
 > are still the reference for anything we build, but they are not a commitment to
 > build all of it.
@@ -140,10 +141,10 @@ produced the invented numbers the audit found:
 | Listings resolved to a parcel | Unknown until parcel work exists |
 | Duplicate rate, outlier rate, extraction precision | Provisional targets in `04`, all unratified (O11) |
 
-**Product value** — the v0 checks in [`18-v0-scope.md`](./18-v0-scope.md) §6:
-does the tool's verdict match the owner's own judgement on plots they have
-actually seen, and does our offering median sit plausibly above the GUS sales
-figure? Those are falsifiable and runnable by one person.
+**Product value** — the v0 checks in [`18-v0-scope.md`](./18-v0-scope.md) §7.
+Since D63 the owner cannot price plots, so the primary test is leave-one-out
+cross-validation (V51), with the GUS comparison (V16) as the only external
+constraint on price level.
 
 Not metrics: traffic, sign-ups, revenue.
 
@@ -234,9 +235,11 @@ they disagree, both are shown, labelled by type, and the gap is the feature.
 
 - **FR-11** Canonical schema per listing: price PLN, area m², asset class, zoning
   claim, utilities, road access, coordinates, gmina TERYT.
-- **FR-12** Compute `price_per_m2`. Quarantine records failing validation: land area
-  outside [100 m², 500 000 m²], price outside [1, 100 000] PLN/m², missing
-  price or area, "zapytaj o cenę" placeholders.
+- **FR-12** Compute `price_per_m2`. Land area outside **[300 m², 200 000 m²]** and
+  price outside [1, 100 000] PLN/m² are **flagged and kept visible, never silently
+  dropped** (O12) — the earlier 50 ha cap would have discarded legitimate farmland.
+  Records with no usable price or area, or "zapytaj o cenę" placeholders, are
+  quarantined with a reason.
 - **FR-13** **Deduplication** — the same plot is routinely listed by 3–6 agencies.
   Match on rounded area, price band, geohash-6, title shingles, image perceptual
   hash, hashed seller contact. Group into a `plot_cluster` with a canonical record
@@ -390,7 +393,7 @@ these are the requirements it must satisfy.
 - **FR-60** Recomputation is **versioned, never silent**; material revisions are
   surfaced on the coverage page (`08` §4).
 
-### 8.9a Batch-11 features — off-portal sources and feasibility
+### 8.10 Batch-11 features — off-portal sources and feasibility
 
 > **Rule-1 gap, now closed.** D47, D50, D51, D56 and D40 were decided and
 > documented in `18`, `19` and `20`, but **never written as requirements**. Five
@@ -428,14 +431,15 @@ these are the requirements it must satisfy.
 - **FR-70** **v0 dedup** — exact and near-exact matching only, without the labelled
   scoring set the full FR-13 requires. A deliberately weaker feature, so it needs
   its own weaker-but-real acceptance criteria rather than inheriting FR-13's.
-- **FR-71** **Notebook surface** — the v0 delivery vehicle. Subject to the same
-  honesty rules as any UI (`09` §1): no bare aggregate, every price labelled with
-  type **and** kind, verdict collapsed by default (V51b).
+- **FR-71** **Streamlit app surface** (D59) — the v0 delivery vehicle. Subject to
+  the same honesty rules as any UI (`09` §1): no bare aggregate, every price
+  labelled with type **and** kind, verdict collapsed by default (`21` §U5).
+  Comparable exclusion feedback per V51c.
 - **FR-72** **Raw payload retention and re-parse** in v0 form — every fetched
   document stored with its hash, and a documented path from a parser fix to
   recomputed aggregates without touching snapshots.
 
-### 8.10 Research spikes
+### 8.11 Research spikes
 
 - **FR-31** **RCN access research** (D5), before any RCN connector is scheduled.
   Deliverable: a table of the ~70 in-scope powiats with, for each, whether RCN data
@@ -569,9 +573,10 @@ a gate requiring fresh review, not a growth step.
 
 ## 14. Open questions
 
-Tracked in [`00-decisions.md`](./00-decisions.md) as O1–O5: portal selection, RCN
-access outcome, final repo name, the access gate for friends, and GUS history
-depth. None block M0.
+Tracked in [`00-decisions.md`](./00-decisions.md) batch 13, which closes or assigns
+every item O1–O31. **O10 (robots.txt) blocks all offering-price work, including
+day 1.** O18 (is this worth building against a six-month horizon) and O3 (repo
+rename) are the other two still with you.
 
 ---
 
@@ -598,11 +603,11 @@ depth. None block M0.
 
 | Doc | Covers |
 |---|---|
-| [`00-decisions.md`](./00-decisions.md) | D1–D35, open items O1–O9 |
+| [`00-decisions.md`](./00-decisions.md) | D1–D63, open items O1–O31 |
 | [`01-user-journeys.md`](./01-user-journeys.md) | J1–J12 |
-| `02-prd.md` | This document — FR-1..60 |
+| `02-prd.md` | This document — FR-1..72 |
 | [`03-data-sources.md`](./03-data-sources.md) | Sources, licensing, scraping rules |
-| [`04-validation.md`](./04-validation.md) | V1–V42 |
+| [`04-validation.md`](./04-validation.md) | V1–V62 |
 | [`05-analytics-methodology.md`](./05-analytics-methodology.md) | Valuation, comparables, mix adjustment, scoring |
 | [`06-taxonomy-and-extraction.md`](./06-taxonomy-and-extraction.md) | Asset classes, attribute extraction |
 | [`07-geocoding.md`](./07-geocoding.md) | Location resolution and precision gating |
@@ -615,3 +620,8 @@ depth. None block M0.
 | [`14-api-contract.md`](./14-api-contract.md) | Endpoints, shared types, boundary enforcement |
 | [`15-database-schema.md`](./15-database-schema.md) | Full DDL; the rules encoded as constraints |
 | [`16-repository-layout.md`](./16-repository-layout.md) | Module layout, connector contract, enforced boundaries, definition of done |
+| [`17-assumption-audit.md`](./17-assumption-audit.md) | Self-review of docs 00–16 |
+| [`18-v0-scope.md`](./18-v0-scope.md) | **The plan of record** |
+| [`19-legal-and-feasibility.md`](./19-legal-and-feasibility.md) | WZ good-neighbour test; agricultural purchase law |
+| [`20-verification-strategy.md`](./20-verification-strategy.md) | Verification tiers, silent-failure catalogue, techniques |
+| [`21-v0-ui-and-ux.md`](./21-v0-ui-and-ux.md) | The v0 interface |

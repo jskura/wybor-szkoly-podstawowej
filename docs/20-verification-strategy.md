@@ -48,10 +48,6 @@ the valuation's actual accuracy is tier D and **will not be known during v0 at
 all**. v0 can be fully correct as software and still give bad advice, and only
 tier D would reveal it.
 
-**Since D63 there is no tier C at all** — the owner cannot price plots, so no one
-can judge whether a verdict is sensible. Everything therefore rests on tiers A and
-B, which were designed as *supporting* evidence and now carry the whole load. §6.4.
-
 ## 3. The silent-failure catalogue
 
 The specific ways this system can be wrong with nobody noticing. Each needs a
@@ -120,12 +116,12 @@ Percentile and median logic is checked against an independent implementation
 definitions differ between conventions, and picking one silently is exactly the
 kind of decision that produces slightly-wrong ranges forever.
 
-### 4.5 Golden-file regression
+### 4.5 Golden-file regression — considered, **not selected** (D58)
 
-One frozen corpus — a real crawl of a single gmina, scrubbed and committed — with
-its expected aggregate outputs. Any change to normalization, dedup or aggregation
-that alters these outputs must be *explained* in the commit, not merely accepted.
-This is the main defence against slow, unnoticed drift.
+A frozen corpus with expected outputs would be the main defence against slow,
+unnoticed drift. It was not adopted. The gap is recorded as **O26** and covered
+partially by the aggregate diff report (`00` batch 13) and by watching the LOOCV
+metrics as a trend.
 
 ### 4.6 Cross-source agreement (tier B)
 
@@ -164,10 +160,9 @@ standing stock is.
 - **Stock** — median of all currently active listings.
 - **Flow** — median of listings *first seen* in the last N weeks.
 
-Neither is "the" answer. Flow is closer to the current market; stock is what you
-will actually be choosing from. Showing only one, without saying which, would be a
-quiet distortion — and I would have shipped exactly that, since every aggregate
-specified so far is a stock measure.
+**Flow is the headline** (D56); stock is shown alongside. Flow is closer to the
+current market; stock is what you will actually be choosing from — showing either
+unlabelled would be a quiet distortion.
 
 This also partially rehabilitates snapshots after D45: even on a six-month horizon,
 distinguishing flow from stock needs *some* history — a few weeks, not years.
@@ -228,20 +223,9 @@ sales cross-check (V16) is now the *only* external constraint on the level of ou
 estimates — if the whole corpus were biased upward, LOOCV would score perfectly and
 nothing else would catch it. V16 is promoted from sanity check to primary safeguard.
 
-### 6.2 Zero-effort human check — WITHDRAWN (D63)
+### 6.2 Zero-effort human check — withdrawn (D63)
 
-Your judgement still matters, but it should cost you nothing beyond looking:
-
-- The notebook shows a plot's data — area, location, attributes, comparables —
-  **with the verdict collapsed**. You form an impression, then expand it.
-- One click records *agree* / *disagree* / *unsure*. No numbers to write, no
-  homework, no commitment beforehand.
-- Any **disagree** is a bug lead: inspect the comparable set and record whether the
-  tool was wrong, your impression was wrong, or it is undecidable.
-
-Because the verdict is hidden until after you have looked, this keeps most of the
-blindness pre-registration would have given, at roughly zero cost. It is weaker
-evidence, and it is not the primary test any more — LOOCV is.
+Replaced by comparability feedback (V51c, §6.4).
 
 ### 6.3 A slower signal worth collecting
 
@@ -258,7 +242,7 @@ Stated so it is not discovered later as a surprise:
   months away. v0 can only be *internally* correct.
 - **Whether the corpus represents the market** (F13). Structurally unknowable from
   inside.
-- **Whether a WZ would actually be granted** (v0.5, `19` §1.2). We compute an
+- **Whether a WZ would actually be granted** (`19` §1.2). We compute an
   indication and refuse to predict.
 - **Whether RCN-level sales data would change the picture.** Not in v0.
 
@@ -268,7 +252,7 @@ Before writing the first test for any v0 work item, all of these must hold —
 this operationalises rules 3 and 4:
 
 1. The item has a PRD requirement or a `18-v0-scope.md` work-plan entry.
-2. It has a validation method in `04-validation.md` (or `19` for v0.5 items).
+2. It has a validation method in `04-validation.md`.
 3. Its **verification tier** (§2) is assigned.
 4. Any silent-failure modes from §3 it touches have a named detector.
 5. Its fixtures exist, are dated, and are scrubbed of personal data.
@@ -280,11 +264,11 @@ this operationalises rules 3 and 4:
 |---|---|---|
 | O20 | **Closed (D56)** | Flow is the headline, stock shown alongside, neither ever unlabelled |
 | O21 | **Closed (D58)** | Mutation testing is in scope for v0 |
-| O22 | **Closed (D57)** | No pre-registration. Replaced by LOOCV (§6.1) plus a zero-effort check (§6.2) |
+| O22 | **Closed (D57, D63)** | No pre-registration. Replaced by LOOCV (§6.1) and comparability feedback (V51c) |
 | O23 | **Superseded** | The 7-of-10 pass criteria died with pre-registration. LOOCV thresholds are set from the first run's actuals rather than guessed — see O25 |
 | O24 | **Superseded** | Golden-corpus regression was not selected (D58) — see the gap below |
-| **O25** | Open | LOOCV thresholds (hit rate, error, tail) cannot be set honestly before the first run. Set them from actuals, then treat regressions against them as failures |
-| **O26** | Open | **Drift detection gap.** Golden-corpus regression was the main defence against slow, unnoticed change in normalization/dedup/aggregation output. Mutation testing proves the suite has teeth; metamorphic tests prove relations hold; **neither notices output quietly changing over time.** Options: adopt the golden corpus after all, or accept the gap and rely on LOOCV metrics moving as the alarm |
+| O25 | **Closed** (`00` batch 13) | LOOCV thresholds (hit rate, error, tail) cannot be set honestly before the first run. Set them from actuals, then treat regressions against them as failures |
+| O26 | **Closed** (`00` batch 13) with the aggregate diff report | **Drift detection gap.** Golden-corpus regression was the main defence against slow, unnoticed change in normalization/dedup/aggregation output. Mutation testing proves the suite has teeth; metamorphic tests prove relations hold; **neither notices output quietly changing over time.** Options: adopt the golden corpus after all, or accept the gap and rely on LOOCV metrics moving as the alarm |
 
 ### The gap left by dropping golden-file regression
 

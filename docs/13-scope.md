@@ -7,8 +7,9 @@
 > stating that total, which the audit ([`17`](./17-assumption-audit.md) §D) called
 > out.
 >
-> **The plan of record is [`18-v0-scope.md`](./18-v0-scope.md)** — about ten days,
-> two anchor rings, offering and sales prices, no zoning (D38). This document is
+> **The plan of record is [`18-v0-scope.md`](./18-v0-scope.md)** — ~26–29 days,
+> both anchor rings, portals plus KOWR, auctions and gmina BIP, and the
+> feasibility layer (D47, D49, D55). This document is
 > retained as the menu to draw from *after* v0 shows which gaps are real.
 >
 > Enter it deliberately, one epic at a time, and only where v0 produced evidence
@@ -290,7 +291,7 @@ The product's central capability (D26).
 | E12.9 | Rezoning uplift via strata contrast + mandatory caveat | **V22** |
 | E12.10 | **`valuation_log` writing from the first estimate** | **V24** |
 | E12.11 | `method_version` stamping and increment discipline | **V24** |
-| E12.12 | Size adjustment — **blocked on O6** | deferred |
+| E12.12 | Size adjustment — **O6 closed**: measure elasticity, adjust only if LOOCV shows size-correlated error | deferred |
 
 **Gate:** no mixed-buildability comparable set anywhere; every estimate path logs.
 
@@ -327,7 +328,7 @@ Needs elapsed time as much as effort — outcomes arrive months after prediction
 | E15.3 | Boundary enforcement: no aggregate without `n` **and** range | **V4** |
 | E15.4 | Vector tiles / GeoJSON for the choropleth | V38 |
 | E15.5 | Plot, estimate, what-if, trends, coverage endpoints | `14` |
-| E15.6 | Read-only notebook query layer + stability contract — **O9** | deferred |
+| E15.6 | Read-only query layer + stability contract (post-v0) | deferred |
 
 ### E16–E21 — Frontend · `XL` total · after E15
 
@@ -399,10 +400,10 @@ accumulating at E4; backups must exist by then.
 
 ---
 
-## 3a. Which epics v0 touches
+## 4. Which epics v0 touches
 
-v0 ([`18`](./18-v0-scope.md)) takes thin slices of five epics and skips the other
-twenty-one entirely:
+v0 ([`18`](./18-v0-scope.md)) takes thin slices of seven epics, plus parts of E7,
+E9 and E16 added by batch 11/14:
 
 | Epic | v0 takes | v0 skips |
 |---|---|---|
@@ -414,9 +415,11 @@ twenty-one entirely:
 | E6 Dedup | Exact/near-exact only | Labelled scoring, image hashing, cluster monitoring |
 | E11 Metrics | Gmina + area-band medians with spread | Strata, mix adjustment, generations, coverage suite |
 
-Not touched at all in v0: E7–E10, E12–E14, E15–E26.
+Partly touched: **E7** (parcels for the good-neighbour test), **E9** (buildings and
+protected areas), **E16** (the Streamlit surface, D59).
+Not touched: E8, E10, E12–E15, E17–E26.
 
-## 4. Milestone composition
+## 5. Milestone composition
 
 | Milestone | Epics | Rough size | Exit gate |
 |---|---|---|---|
@@ -431,7 +434,7 @@ Not touched at all in v0: E7–E10, E12–E14, E15–E26.
 **Assumption, flagged (rule 2):** milestone sizes assume part-time solo work and
 no parallelism. They are ranges for sequencing discussion, not a schedule.
 
-## 5. Dependency risks
+## 6. Dependency risks
 
 | Risk | Affects | Mitigation |
 |---|---|---|
@@ -442,12 +445,12 @@ no parallelism. They are ranges for sequencing discussion, not a schedule.
 | E14 needs elapsed time | Evaluation | Start logging at E12.10 so the clock starts as early as possible |
 | Labelled sets (E5.9, E6.4) are manual | M1 | Budget them explicitly; they are not optional |
 
-## 6. Work not yet estimated
+## 7. Work not yet estimated
 
 Honest gaps, listed rather than hidden:
 
 - E8.1–8.3 depend on the Rejestr Urbanistyczny's actual data shapes, which need a
   spike before sizing.
-- E22.5 and E15.6 are blocked on O8 and O9.
-- E12.12 is blocked on O6; E12 has no standard-plot benchmark pending O7.
+- E22.5 and E15.6 relate to O8/O9, both closed as out-of-v0 in `00` batch 13.
+- E12.12 follows O6's measurement plan; the standard-plot benchmark (O7) is adopted and rendered in `21` §2.2.
 - E23 cannot be sized before E23.1 exists.

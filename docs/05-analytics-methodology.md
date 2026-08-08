@@ -102,19 +102,20 @@ widening step reached, and the full list of contributing plots.
 - `p25–p75` → the range shown when n ≥ 5
 - `min–max` → the range shown when n < 5 (rule 6)
 
-## 4. Size adjustment — open (O6)
+## 4. Size adjustment — closed as measure-then-decide (O6)
 
 Price per m² falls as plots get larger: a 5000 m² plot rarely costs five times a
 1000 m² plot. The ±50% area band limits the damage but does not remove it.
 
-**Recommendation (not yet decided):** fit a size-elasticity curve per
+**Decided (O6, `00` batch 13): measure first, adjust only on evidence.** Fit a size-elasticity curve per
 (voivodeship × asset class × buildability) — regress `log(price_per_m2)` on
 `log(area)` — and adjust each comparable to the subject's size before taking the
 median. Elasticity is reported, so the adjustment is inspectable.
 
-Until O6 is resolved, the area band is the only size control, and the plot page
-states that comparables are unadjusted for size within the band. This is an
-**assumption flagged under rule 2**, not a silent default.
+For v0 the area band is the only size control, and the surface states that
+comparables are unadjusted for size within the band. The elasticity is **reported**
+and LOOCV (V51) is checked for size-correlated error; an adjustment ships only if
+that evidence supports it.
 
 ## 5. The verdict
 
@@ -226,8 +227,8 @@ tool. It is available on the coverage page as a descriptive statistic, labelled 
 descriptive, because comparing raw area averages is the specific error §7 and D28
 exist to prevent.
 
-O7 (standard-plot benchmark) would add a third mechanism and is recommended but
-not yet decided.
+O7 (standard-plot benchmark) is **adopted** (`00` batch 13) and rendered in the
+gmina panel (`21` §2.2): what a 3 000 m² buildable plot costs in each area.
 
 ## 9. Prediction logging and evaluation (D35)
 

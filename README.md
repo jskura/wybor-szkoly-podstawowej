@@ -13,7 +13,7 @@ a plot's asking price can be judged against what comparable land actually costs.
 
 The full design — 26 epics, roughly **150–200 focused days** — is documented and
 retained, but the **plan of record is [`docs/18-v0-scope.md`](docs/18-v0-scope.md)**:
-a ~22–25 day version covering both 25 km anchor rings, both price types,
+a ~26–29 day version covering both 25 km anchor rings, both price types,
 off-portal supply and the feasibility layer. Build it, learn from it, then decide what else earns its place.
 
 Why the change: [`docs/17-assumption-audit.md`](docs/17-assumption-audit.md) is a
@@ -34,9 +34,9 @@ or a registry-only one.
 | Plot focus | ~2000–4000 m² |
 | Offering prices | One portal, plus KOWR state land and bailiff/bankruptcy auctions |
 | Sales prices | GUS BDL, powiat level — free and guaranteed available |
-| Output | A notebook, plus one simple map |
+| Output | A Streamlit app, plus a choropleth and gmina table |
 | Hosting | Your machine. No VPS, no routing engine, no geocoder |
-| Effort | ~22–25 days — everything at once (D55) |
+| Effort | ~26–29 days — everything at once (D55), incl. the Streamlit surface (D59) |
 | Includes | Gmina BIP, the WZ good-neighbour test, and the purchasability badge |
 | Not included | Zoning plans, nature, routing, hedonic model, alerts, API, frontend |
 | Headline number | **Flow** (recently listed), with stock alongside |
@@ -52,9 +52,9 @@ wrong), `price_type` on every price, and provenance on every figure. Daily
 snapshots run too, but as cheap insurance rather than the point — a six-month
 buying horizon (D45) means accrued history barely pays off.
 
-**What v0 cannot do:** it compares price to price. It cannot tell you whether you
-may build, or whether you may legally buy. Both matter more than price, and both
-are v0.5.
+**What v0 cannot do:** it does not read zoning plans, so buildability comes from
+the WZ good-neighbour test rather than from an MPZP. It shows no price trends,
+because there is no accrued history to show.
 
 ### What v0 is designed to find out
 
@@ -62,9 +62,9 @@ are v0.5.
 |---|---|
 | `robots.txt` forbids crawling | Offering prices are off the table — fall back to a registry-only product, or stop |
 | Very few listings in the rings | Rural land trades off-portal; the answer is different sources, not more engineering |
-| Listings plentiful, prices coherent | Go straight to v0.5 — can I build here, and may I legally buy it |
+| Listings plentiful, prices coherent | The remaining question is buildability — invest in zoning data next |
 | KOWR and auctions add little supply | Drop them rather than maintain three connectors |
-| You stop opening the notebook | The tool was not the bottleneck. Stop |
+| You stop opening the app | The tool was not the bottleneck. Stop |
 
 ## Documents
 
@@ -72,10 +72,10 @@ Start with `18` (what we're building), then `17` (why it shrank).
 
 | Doc | What it is |
 |---|---|
-| [`docs/18-v0-scope.md`](docs/18-v0-scope.md) | **The plan of record** — the ~22–25 day version, its work plan, its checks, and what it will teach us |
+| [`docs/18-v0-scope.md`](docs/18-v0-scope.md) | **The plan of record** — the ~26–29 day version, its work plan, its checks, and what it will teach us |
 | [`docs/17-assumption-audit.md`](docs/17-assumption-audit.md) | **Self-review** — contradictions, unasked questions, unverified facts |
 | [`CLAUDE.md`](CLAUDE.md) | Binding project rules: PRD first, ask don't assume, TDD, validation method per feature, two price types, provenance |
-| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — 58 decisions; all 27 gaps closed or assigned, 3 blocked on you |
+| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — D1–D63; open items O1–O31, all closed or assigned, 3 blocked on you |
 | [`docs/01-user-journeys.md`](docs/01-user-journeys.md) | 12 journeys (J1–J8 buying, J9–J12 analytical) and the capability map |
 | [`docs/02-prd.md`](docs/02-prd.md) | Requirements FR-1..72, data model, architecture, milestones, risks |
 | [`docs/03-data-sources.md`](docs/03-data-sources.md) | Polish data sources, the `robots.txt` gate, scraping ground rules |
@@ -88,9 +88,9 @@ Start with `18` (what we're building), then `17` (why it shrank).
 | [`docs/10-nfr-and-access.md`](docs/10-nfr-and-access.md) | Scale, the crawl budget, retention, access, cost |
 | [`docs/11-operations.md`](docs/11-operations.md) | Daily pipeline, backup, monitoring, recovery drills |
 | [`docs/12-glossary.md`](docs/12-glossary.md) | Polish ↔ code terminology |
-| [`docs/19-legal-and-feasibility.md`](docs/19-legal-and-feasibility.md) | **v0.5** — the WZ good-neighbour test, and agricultural purchase restrictions |
+| [`docs/19-legal-and-feasibility.md`](docs/19-legal-and-feasibility.md) | The WZ good-neighbour test, and agricultural purchase restrictions |
 | [`docs/21-v0-ui-and-ux.md`](docs/21-v0-ui-and-ux.md) | **What you actually look at** — the plot check, the map, the coverage view, and the interaction rules that keep them honest |
-| [`docs/20-verification-strategy.md`](docs/20-verification-strategy.md) | **How we know it's right** — verification tiers, the silent-failure catalogue, metamorphic testing, the known-plot protocol |
+| [`docs/20-verification-strategy.md`](docs/20-verification-strategy.md) | **How we know it's right** — verification tiers, the silent-failure catalogue, metamorphic testing, cross-validation |
 | [`docs/13-scope.md`](docs/13-scope.md) | 26-epic work breakdown. **Retained as a menu, not the current plan** |
 | [`docs/14-api-contract.md`](docs/14-api-contract.md) | Endpoints and types; where the price-type and sample-size rules are enforced |
 | [`docs/15-database-schema.md`](docs/15-database-schema.md) | Full DDL — the product rules encoded as constraints |

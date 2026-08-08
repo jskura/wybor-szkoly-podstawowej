@@ -30,7 +30,7 @@ repeated throughout the whole documentation set.
 | **Plot focus** | ~2000–4000 m² (D48). Comparables band around that; nothing is excluded, but the defaults centre there |
 | **Offering prices** | One portal, daily, list-page-first — **plus** KOWR and auction sources (D47) |
 | **Sales prices** | GUS BDL, powiat level, quarterly — free and guaranteed |
-| **Output** | A notebook, plus one simple map |
+| **Output** | A Streamlit app (D59), plus a choropleth and gmina table (D60) |
 | **Hosting** | Your machine. No VPS (D44) |
 | **How built** | I implement, you review each step (D53), TDD per rule 3 |
 | **Headline aggregate** | **Flow** — recently listed — with stock alongside, both labelled (D56) |
@@ -48,9 +48,10 @@ Stated plainly rather than absorbed silently:
 | + gmina BIP notices (~50 gminas, each a different format) | +4–6 |
 | + parcels, buildings, good-neighbour test (D50) | +3–4 |
 | + farmland purchasability badge (D51) | +1 |
-| **Everything you asked for** | **~22–25 days** |
+| + Streamlit surface, map, URL paste (D59–D61) | +3.5 |
+| **Everything you asked for** | **~26–29 days** |
 
-**Decided: everything at once (D55).** No v0/v0.5 split. The full ~22–25 days,
+**Decided: everything at once (D55).** No v0/v0.5 split. The full ~26–29 days,
 including gmina BIP and the feasibility layer, delivered as one scope.
 
 I recommended the split and you chose otherwise, which is your call — recording the
@@ -73,10 +74,10 @@ the comparable widening ladder · RCN parcel-level transactions · alerts and
 digests · housing · API and frontend · labelled evaluation sets for extraction and
 dedup.
 
-**The honest limitation:** v0 compares price to price. It cannot tell you whether
-you may build — that is v0.5's good-neighbour test — nor whether you may legally
-buy — that is v0.5's purchasability badge. Both matter more than price
-(`19` §3), and both come immediately after.
+**The honest limitation:** v0 does not read zoning plans. Buildability comes from
+the WZ good-neighbour test (`19` §1), which indicates rather than decides, and
+purchasability from the register class (`19` §2). Both are in scope (D55); neither
+is a substitute for a *wypis i wyrys*.
 
 ## 5. What v0 does not cut — the foundations
 
@@ -109,22 +110,23 @@ no longer a reason to prioritise anything.
 | 10 | Aggregates by gmina and area band: median, p25/p75, min/max, n — always with spread, computed as **both stock and flow** (`20` §5) | 1.5 |
 | 11 | Streamlit app: "price this plot", URL paste, comparable exclusion (D59, D61) | 3 |
 | 12 | Choropleth + gmina table (D60) | 1 |
-
 | 13 | Gmina BIP notices (~50 gminas, heterogeneous formats) | 4–6 |
 | 14 | Parcels + buildings; the WZ good-neighbour test (`19` §1) | 3–4 |
 | 15 | Farmland purchasability badge (`19` §2) | 1 |
 
-**≈ 24–27 days** — everything, per D55, including the Streamlit surface (D59).
+**≈ 26–29 days** — the table above sums to 18.2 days for items 0–12, plus 4–6,
+3–4 and 1 for items 13–15.
 
 ## 7. How we know v0 worked
 
-D54 makes this concrete: what would make you distrust it is **a number you know is
-wrong**. So the known-plot check is the **primary** acceptance test, not a
-secondary one.
+D54 said a number you know is wrong would destroy trust — but D63 established that
+you cannot price plots, so that check cannot generally fire. **Leave-one-out
+cross-validation (V51) is the primary acceptance test**, and the GUS comparison is
+the only external constraint on price *level*.
 
 | Check | Passes if | Priority |
 |---|---|---|
-| **Known-plot check** | Pick 5–10 plots you have actually looked at. v0's verdict matches your own judgement, or where it differs, v0 turns out to be right | **Primary (D54)** |
+| **Cross-validation (V51)** | Held-out listings fall inside their predicted ranges at roughly the range's nominal rate, with a thin >2× tail | **Primary (D57, D63)** |
 | **Sanity vs GUS** | Our offering median per powiat sits *above* the GUS sales figure by a plausible margin. An inversion means a broken parser, not a market finding | High |
 | **Unit-conversion audit** | Hand-check 20 listings stated in ar or ha. Zero errors — a 100× error here is silent and fatal | High |
 | **Coverage** | How many gminas in each ring have ≥5 listings? If most have 0–2, portals are the wrong source and that is the finding | High |
@@ -138,13 +140,13 @@ secondary one.
 | `robots.txt` forbids crawling (O10) | Offering prices are off the table. Fall back to GUS/RCN plus KOWR and auctions — a smaller product. Decide before building further |
 | Few listings in the rings (audit C2) | Rural land trades off-portal; promote gmina BIP and local agents over more engineering |
 | KOWR and auctions add little | Drop them and stop maintaining three connectors |
-| Prices coherent, but you still can't decide | The gap is buildability and purchasability — go straight to v0.5 (`19`) |
+| Prices coherent, but you still can't decide | The gap is zoning depth — invest in MPZP/plan ogólny data |
 | A number you know is wrong (D54) | Diagnose before adding anything. Raw payloads make re-parsing possible |
-| You stop opening the notebook | The tool was not the bottleneck. Stop |
+| You stop opening the app | The tool was not the bottleneck. Stop |
 
 ## 9. The question worth asking before starting (O18)
 
-You are buying within six months (D45). v0 is ~2 weeks and v0.5 another ~1.5, and
+You are buying within six months (D45). v0 is ~26–29 days as one scope (D55), and
 that assumes focused time. If the build slips, **the tool may not exist in time to
 inform the purchase it was built for.**
 
@@ -160,7 +162,7 @@ flag.
 
 **v0's validation subset** from [`04-validation.md`](./04-validation.md):
 V1, V2, V4 (with the D42 correction), V5, V6 (both rings), V7, V10, V12, V13, V14,
-V28, V30 — **plus the v0 additions** V43–V52, which cover the new sources and the
+V28, V30 — **plus the v0 additions** V43–V62, which cover the new sources and the
 biases found in [`20-verification-strategy.md`](./20-verification-strategy.md):
 corpus completeness against the source's own count, sort-order bias, stock vs flow,
 auction/tender price separation, metamorphic properties, percentile differential

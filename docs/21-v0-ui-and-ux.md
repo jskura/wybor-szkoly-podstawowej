@@ -19,11 +19,10 @@ evidence. So the design principle is not "show the data" but:
 A dashboard that makes you assemble the answer yourself has failed, even if every
 number on it is correct.
 
-## 1a. Settled (D59–D62)
-
-**Streamlit app**, not a notebook (D59). **Choropleth plus table** (D60). **Paste a
-listing URL** to check a plot (D61). The agree/disagree control is **withdrawn** —
-see §7, which is the most important section in this document.
+**Settled (D59–D63):** a **Streamlit app**, not a notebook. **Choropleth plus
+gmina table**. **Paste a listing URL** to check a plot. The agree/disagree control
+is **withdrawn** — see §7, which is the most important section here and worth
+reading before the surfaces it constrains.
 
 ## 2. Three surfaces, in priority order
 
@@ -183,8 +182,3 @@ else would notice except a coarse comparison against GUS.
 
 **That makes the GUS cross-check (V16) the most important single check in the
 system**, and it was previously treated as a sanity test. It is promoted.
-
-## 8. Resolved UI questions
-
-O28 → Streamlit (D59) · O29 → map plus table (D60) · O30 → URL paste (D61) ·
-O31 → withdrawn, replaced by the comparability control (D62/D63).

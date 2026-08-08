@@ -87,7 +87,7 @@ For a one-person system, alarms must be few and each must be actionable.
 | **Connector silent** | Zero items where the floor is higher (FR-6) | Check for site change; re-record fixtures |
 | **Schema drift** | Parse failure rate above threshold | Fix parser; re-parse from `raw_document` |
 | **Assertion failure** | Any Δ assertion fails | Aggregates not published; investigate before the next run |
-| **Pipeline overrun** | Runtime > 4 h | Check for a crawl loop or a missing index |
+| **Pipeline overrun** | Runtime beyond the per-scope budget in `10` §2.1 | Check for a crawl loop or a missing index |
 | **Backup failure** | Nightly dump missing or size anomalous | **Highest priority** — §1 |
 | **Disk > 80%** | | Prune `raw_document`, check snapshot growth |
 | **Cross-source divergence** | Offering below sales per powiat (V16) | Almost always a parser bug |

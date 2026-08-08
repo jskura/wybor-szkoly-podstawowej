@@ -106,7 +106,7 @@ earlier decisions where they conflict.
 | D40 | A1 crawl budget impossible | **List-page-first strategy**: list pages give price and active status for the whole corpus; detail pages fetched only for new or changed listings. The "<4 h daily" target is withdrawn and replaced with a per-scope budget |
 | D41 | A2 mix adjustment at gmina level is noise | **Mix adjustment computed at powiat level and above only.** Gmina-level series are plain medians with their spread, explicitly labelled as unadjusted |
 | D42 | A4 "never a point" contradicts `median` | Rule restated: **never a median without its range and n**. V17 is corrected; the `median` field stays |
-| D43 | A6 five-user testing programme | Replaced with checks the owner can actually run alone — see [`18-v0-scope.md`](./18-v0-scope.md) §6 |
+| D43 | A6 five-user testing programme | Replaced with checks the owner can actually run alone — see [`18-v0-scope.md`](./18-v0-scope.md) §7 |
 | D44 | A7 infrastructure does not fit | v0 needs **no VPS, no OSRM, no Nominatim**. Sizing is deferred until something needs hosting |
 
 ## Batch 11 — the buying situation (2026-08-07)
@@ -140,7 +140,8 @@ days. The honest arithmetic:
 | + gmina BIP notices (~50 gminas, each a different format) | +4–6 |
 | + parcels, buildings and the good-neighbour test (D50) | +3–4 |
 | + farmland purchasability flag (rides on the parcel work) | +1 |
-| **Total** | **~22–25 days** |
+| + Streamlit surface, map, URL paste (D59–D61) | +3.5 |
+| **Total** | **~26–29 days** |
 
 **Recommended split, not yet ratified (O15):** keep v0 at ~10–13 days with both
 rings, portals, KOWR and auctions — dropping **gmina BIP**, which is the highest
@@ -154,10 +155,62 @@ From [`20-verification-strategy.md`](./20-verification-strategy.md).
 
 | # | Question | Decision | Consequence |
 |---|---|---|---|
-| D55 | v0/v0.5 split? | **Everything at once** — the full ~22–25 days | No staged delivery. Closes O15. Trade-off recorded in [`18`](./18-v0-scope.md) §3: nothing usable until week 4–5, and no mid-point evidence to redirect the remaining work |
+| D55 | v0/v0.5 split? | **Everything at once** — the full ~26–29 days | No staged delivery. Closes O15. Trade-off recorded in [`18`](./18-v0-scope.md) §3: nothing usable until week 4–5, and no mid-point evidence to redirect the remaining work |
 | D56 | Stock or flow as headline? | **Flow is the headline**, stock alongside, neither ever unlabelled | Closes O20. Every aggregate specified before this was a stock measure |
-| D57 | Pre-register estimates for the known-plot check? | **No** | Closes O22. Replaced by **leave-one-out cross-validation** (V51) — automatic, repeatable, and tier A/B rather than tier C. Plus a zero-effort collapsed-verdict spot check (V51b) |
+| D57 | Pre-register estimates for the known-plot check? | **No** | Closes O22. Replaced by **leave-one-out cross-validation** (V51) — automatic, repeatable, and tier A/B rather than tier C. Plus comparability feedback (V51c) |
 | D58 | Which verification techniques? | **Metamorphic, differential, mutation.** Golden-corpus regression **not** selected | Closes O21. Leaves a drift-detection gap recorded as O26 |
+
+## Batch 13 — gap closure (2026-08-07)
+
+A decisive pass over every open item. Each is now **closed**, **closed with a
+proposal you can overturn**, or **genuinely blocked on you** — with no item left in
+the vague middle.
+
+| # | Was | Resolution |
+|---|---|---|
+| O1 | Which portals | **Proposed**: one portal for v0, chosen after O10. Candidates are the two large consumer portals; whichever permits crawling wins. If both do, pick the one with more land listings in the rings — measurable on day 1 |
+| O2 | RCN access research | **Out of v0.** v0's sales baseline is GUS BDL, which is free and guaranteed. RCN returns only if v0 shows powiat-level sales are too coarse to be useful |
+| O3 | Repo name | **Recommend `cena-ziemi`.** Awaiting your rename on GitHub; not blocking |
+| O4 | Access gate | **N/A for v0** — it runs locally (D44). Returns only if hosted |
+| O5 | GUS history depth | **Closed**: import everything BDL publishes. No reason to truncate free data |
+| O6 | Size adjustment | **Closed with a measurement plan.** No explicit adjustment in v0. Instead: fit and *report* size elasticity per ring, and let LOOCV (V51) reveal whether error correlates with plot size. Adjust only if the evidence says so — this replaces my guess with a measurement |
+| O7 | Standard-plot benchmark | **Adopted.** D48 makes it natural: report "what a 3000 m² buildable plot costs here" per gmina, as one comparable number across areas. Cheap once aggregates exist |
+| O8 | Digest cadence | **Out of v0** |
+| O9 | Notebook access mechanism | **Closed** — v0 is a local Streamlit app against a local database (D59) |
+| **O10** | **robots.txt** | **BLOCKED ON YOU.** Unreachable from here. Procedure: open each portal's `/robots.txt`, record the verbatim text and the date in `docs/evidence/`, and note whether listing and search paths are allowed for a generic agent. Everything on the offering-price side waits on this |
+| O11 | Valuation parameters | **Closed as provisional-and-measured.** Values stay as documented, marked `‡`, and V51 reports sensitivity so they are ratified from evidence rather than opinion |
+| O12 | 50 ha area cap | **Closed**: band widened to 300 m² – 200,000 m². Anything outside is **flagged and visible**, never silently dropped — the original cap would have discarded legitimate farmland |
+| O13 | Thin-data map rendering | **Proposed**: tiles below n=5 render hatched rather than solid, and the gmina label always carries `n`. In v0 the map sits beside the gmina table, which lowers the stakes |
+| O14 | Housing | **Proposed**: collect but do not surface. The same connector returns it at near-zero marginal cost, and it keeps your original "housing and land" framing alive without spending v0 days on it |
+| O15 | v0/v0.5 split | **Closed by D55** — everything at once |
+| O16 | Auction sources | **Proposed**: start with the central e-auction service for bailiff sales, since one integration covers many offices; add *Monitor Sądowy i Gospodarczy* for bankruptcy estates only if the first proves thin |
+| O17 | Building data coverage | **Closed**: EGiB buildings where the county publishes them, OSM buildings as a lower-confidence fallback, and **missing data yields `unknown`, never `unlikely`** (`19` §1.2) |
+| **O18** | Is it worth building at all | **BLOCKED ON YOU.** ~26–29 days against a six-month horizon. Framed in `18` §9; only you can answer it |
+| O19 | Price-kind taxonomy | **Closed by FR-64** — asking / auction_start / tender, never blended |
+| O20–O24 | Verification choices | **Closed by D56–D58** |
+| O25 | LOOCV thresholds | **Closed as procedure**: set from the first run's actuals, then treat regressions as failures. Guessing them now would be the same error the audit found |
+| O26 | Drift-detection gap | **Closed with a cheaper substitute.** Full golden-file regression was declined (D58), so instead each pipeline run prints an **aggregate diff report** — every gmina whose median moved more than a threshold since the last run, with its `n` before and after. Printed for review, not asserted in CI. Catches most silent drift at a fraction of the cost |
+| O27 | Flow window | **Proposed 90 days**, with V62's sensitivity check reporting 30 / 60 / 90 / 180 so the choice is evidence-based |
+
+### Items raised after batch 13
+
+| # | Raised by | Status |
+|---|---|---|
+| O28 | Delivery surface (`21` §1a) | **Closed by D59** — Streamlit app |
+| O29 | Map at this scale | **Closed by D60** — choropleth plus gmina table |
+| O30 | How to point at a plot | **Closed by D61** — paste a listing URL |
+| O31 | Keep agree/disagree | **Closed by D62/D63** — withdrawn, replaced by comparability feedback (V51c) |
+
+### Still blocked on you
+
+Only three, and only one blocks work:
+
+1. **O10 — `robots.txt`.** Blocks the entire offering-price path. Minutes to check.
+2. **O18 — whether this is worth building** given the timing. Not blocking, but worth answering before day 4 rather than day 20.
+3. **O3 — the repo rename.** Cosmetic.
+
+Everything else is decided or has a proposal you can overturn.
+
 
 ## Batch 14 — the interface, and a finding that outranks it (2026-08-07)
 
@@ -166,7 +219,8 @@ From [`20-verification-strategy.md`](./20-verification-strategy.md).
 | D59 | What surface? | **Streamlit app** (O28) | +2 days over a notebook. Reusable, shareable with the few friends (D1) |
 | D60 | Map at this scale? | **Yes, worth the day** (O29) | Choropleth over both rings, plus the gmina table |
 | D61 | How to point at a plot? | **Paste a listing URL** (O30) | Needs per-portal page parsing; +0.5 day, and it breaks when a portal changes |
-| D62 | Keep agree/disagree? | **"I will not be able to price the plots myself"** | See below — this is not a UI answer, it is a product-level finding |
+| D62 | Keep agree/disagree? | **Withdrawn** — "I will not be able to price the plots myself" | Not a UI answer; see D63 |
+| D63 | What follows from that? | **Tier C verification does not exist for this project** | Expanded below: the agree/disagree control is withdrawn, D54's safeguard cannot generally fire, and the tool is the only opinion rather than a second one |
 
 ### D63 — The user cannot verify the tool's output. This changes the project.
 
@@ -200,72 +254,3 @@ comparable set is the estimate. V51c replaces V51b on that basis.
 **Consequence for the interface:** where the tool is uncertain it must say so
 loudly and specifically, because you cannot supply the missing judgement yourself.
 See [`21`](./21-v0-ui-and-ux.md) §7.
-
-## Batch 13 — gap closure (2026-08-07)
-
-A decisive pass over every open item. Each is now **closed**, **closed with a
-proposal you can overturn**, or **genuinely blocked on you** — with no item left in
-the vague middle.
-
-| # | Was | Resolution |
-|---|---|---|
-| O1 | Which portals | **Proposed**: one portal for v0, chosen after O10. Candidates are the two large consumer portals; whichever permits crawling wins. If both do, pick the one with more land listings in the rings — measurable on day 1 |
-| O2 | RCN access research | **Out of v0.** v0's sales baseline is GUS BDL, which is free and guaranteed. RCN returns only if v0 shows powiat-level sales are too coarse to be useful |
-| O3 | Repo name | **Recommend `cena-ziemi`.** Awaiting your rename on GitHub; not blocking |
-| O4 | Access gate | **N/A for v0** — it runs locally (D44). Returns only if hosted |
-| O5 | GUS history depth | **Closed**: import everything BDL publishes. No reason to truncate free data |
-| O6 | Size adjustment | **Closed with a measurement plan.** No explicit adjustment in v0. Instead: fit and *report* size elasticity per ring, and let LOOCV (V51) reveal whether error correlates with plot size. Adjust only if the evidence says so — this replaces my guess with a measurement |
-| O7 | Standard-plot benchmark | **Adopted.** D48 makes it natural: report "what a 3000 m² buildable plot costs here" per gmina, as one comparable number across areas. Cheap once aggregates exist |
-| O8 | Digest cadence | **Out of v0** |
-| O9 | Notebook access mechanism | **Closed** — v0 *is* a local notebook against a local database |
-| **O10** | **robots.txt** | **BLOCKED ON YOU.** Unreachable from here. Procedure: open each portal's `/robots.txt`, record the verbatim text and the date in `docs/evidence/`, and note whether listing and search paths are allowed for a generic agent. Everything on the offering-price side waits on this |
-| O11 | Valuation parameters | **Closed as provisional-and-measured.** Values stay as documented, marked `‡`, and V51 reports sensitivity so they are ratified from evidence rather than opinion |
-| O12 | 50 ha area cap | **Closed**: band widened to 300 m² – 200,000 m². Anything outside is **flagged and visible**, never silently dropped — the original cap would have discarded legitimate farmland |
-| O13 | Thin-data map rendering | **Proposed**: tiles below n=5 render hatched rather than solid, and the gmina label always carries `n`. In v0 the map is secondary to the notebook, which lowers the stakes |
-| O14 | Housing | **Proposed**: collect but do not surface. The same connector returns it at near-zero marginal cost, and it keeps your original "housing and land" framing alive without spending v0 days on it |
-| O15 | v0/v0.5 split | **Closed by D55** — everything at once |
-| O16 | Auction sources | **Proposed**: start with the central e-auction service for bailiff sales, since one integration covers many offices; add *Monitor Sądowy i Gospodarczy* for bankruptcy estates only if the first proves thin |
-| O17 | Building data coverage | **Closed**: EGiB buildings where the county publishes them, OSM buildings as a lower-confidence fallback, and **missing data yields `unknown`, never `unlikely`** (`19` §1.2) |
-| **O18** | Is it worth building at all | **BLOCKED ON YOU.** ~22–25 days against a six-month horizon. Framed in `18` §9; only you can answer it |
-| O19 | Price-kind taxonomy | **Closed by FR-64** — asking / auction_start / tender, never blended |
-| O20–O24 | Verification choices | **Closed by D56–D58** |
-| O25 | LOOCV thresholds | **Closed as procedure**: set from the first run's actuals, then treat regressions as failures. Guessing them now would be the same error the audit found |
-| O26 | Drift-detection gap | **Closed with a cheaper substitute.** Full golden-file regression was declined (D58), so instead each pipeline run prints an **aggregate diff report** — every gmina whose median moved more than a threshold since the last run, with its `n` before and after. Printed for review, not asserted in CI. Catches most silent drift at a fraction of the cost |
-| O27 | Flow window | **Proposed 90 days**, with V62's sensitivity check reporting 30 / 60 / 90 / 180 so the choice is evidence-based |
-
-### Still blocked on you
-
-Only three, and only one blocks work:
-
-1. **O10 — `robots.txt`.** Blocks the entire offering-price path. Minutes to check.
-2. **O18 — whether this is worth building** given the timing. Not blocking, but worth answering before day 4 rather than day 20.
-3. **O3 — the repo rename.** Cosmetic.
-
-Everything else is decided or has a proposal you can overturn.
-
-## Open — not yet decided (historical; see batch 13 for current status)
-
-| # | Question | Blocks |
-|---|---|---|
-| O1 | Which listing portals specifically, and are land-specific boards worth adding for rural plots? | M1 connector work |
-| O2 | Outcome of the RCN access research (D5) — which of the ~70 powiats publish freely | M1 sales-price connector |
-| O3 | Final repo name (D24) | Cosmetic only |
-| O4 | Simple access gate for "a few friends" (D1) — shared password, IP allowlist, or none | M2 deployment |
-| O5 | Does "as far as free data allows" (D8) include GUS historical series behind bulk-download friction? | M1 baseline import |
-| O6 | **Size adjustment**: price per m² falls as plots get larger. D28 mandated only the buildability split. Do we also adjust for size, beyond the ±50% area band? Recommendation: yes — see [`05-analytics-methodology.md`](./05-analytics-methodology.md) §4 | Post-v0 valuation |
-| O7 | **Standard-plot benchmark**: express each area's price as "what a fixed reference plot would cost here" | Post-v0 |
-| O8 | Digest cadence and channel | Post-v0 |
-| O9 | Notebook access mechanism | Post-v0 |
-| **O10** | **Do the target portals' `robots.txt` permit crawling listing pages?** Unverifiable from this environment (audit C1). **Gates all offering-price work, including v0** | **v0 day 1** |
-| **O11** | **All valuation parameters are unratified** — comparable area band, recency window, minimum comparables, widening rungs, the IQR/min–max switch at n=5, strata bands, validity bands, quality targets, labelled sample sizes (audit B1). Provisional values are in use and marked as such | Post-v0 valuation |
-| **O12** | The **50 ha area cap** probably excludes legitimate agricultural parcels. Provisional; revisit if agricultural land matters (D37 suggests it may not) | Post-v0 |
-| **O13** | **A3 — thin-data map rendering.** Rule 6 says always show; a choropleth where most tiles rest on 1–3 listings may mislead in aggregate even when each tile is honestly labelled. Not resolved | When a map exists |
-| **O14** | Housing: the original request said "housing and land". Land is priority (D6, D37), but housing is currently deferred to the last milestone. Is that acceptable, or should housing be collected in v0? | v0 scope |
-| **O15** | **v0 no longer fits ten days** (D49 + D47 + D50 ⇒ ~22–25 days). Recommended split: v0 ≈ 10–13 days dropping gmina BIP; v0.5 adds parcels, good-neighbour and purchasability. **Needs ratifying** | v0 start |
-| **O16** | Which auction sources specifically — e-licytacje.komornik.pl, individual bailiff sites, Monitor Sądowy i Gospodarczy for bankruptcy estates? Each has a different access model | Auction connector |
-| **O17** | The good-neighbour test needs **building** geometry, not just parcels. County EGiB WFS coverage for buildings is uneven; where absent, fall back to OSM buildings with lower confidence, or decline to answer? | v0.5 |
-| **O27** | **Flow window length** — how recent is "recently listed"? 4 weeks, 8, 12? I introduced flow as the headline (D56) without defining it, which is another B1-class unratified parameter. V62 includes a sensitivity check so it can be chosen on evidence | Before aggregates ship |
-| **O25** | LOOCV thresholds (hit rate, error, tail) cannot be set honestly before the first run. Set from actuals, then treat regressions as failures | After first run |
-| **O26** | **Drift-detection gap** left by dropping golden-corpus regression (D58). Nothing in the selected suite notices aggregate output changing quietly over time. Adopt the golden corpus after all, or accept and rely on LOOCV metrics as the alarm | Before aggregation ships |
-| **O19** | **Price-kind taxonomy.** Auction starting prices, KOWR tender prices and portal asking prices are three different kinds of number. Rule 5 forbids mixing offering and sales; this needs a third category or explicit sub-types, settled **before** the auction connector is written | Auction connector |
-| **O18** | D45 (buying within 6 months) undercuts the value of the whole build. If the tool is not usable in time to inform the actual purchase, is it still worth building — as a market-learning exercise, or for a later purchase? Worth answering explicitly rather than discovering in month five | Whole project |

@@ -11,7 +11,7 @@ Epic: E1.1. Validation: V21, V25, V29, V39.
 
 ```
 ├── CLAUDE.md                  # project rules
-├── docs/                      # 00–16
+├── docs/                      # 00–21
 ├── config/
 │   ├── anchors.example.yml    # placeholders only — committed
 │   ├── anchors.yml            # real addresses — GITIGNORED (FR-22)
@@ -38,9 +38,10 @@ Epic: E1.1. Validation: V21, V25, V29, V39.
 │   │   └── log.py             # valuation_log writer           (V24)
 │   ├── model/                 # hedonic regression — feature values ONLY
 │   ├── api/                   # FastAPI, response models, boundary enforcement
+│   ├── app/                   # Streamlit surface for v0 (D59)
 │   ├── digest/
 │   └── ops/                   # pipeline orchestration, assertions, alarms
-├── frontend/                  # Next.js + MapLibre, Polish UI
+├── frontend/                  # Next.js + MapLibre — full plan only, not v0
 ├── tests/
 │   ├── unit/ integration/ architecture/ benchmarks/
 │   ├── fixtures/<source>/     # recorded, dated, scrubbed
@@ -118,8 +119,8 @@ test suite — they check production data, not code.
   fixed by [`12-glossary.md`](./12-glossary.md).
 - Database columns match the schema in [`15-database-schema.md`](./15-database-schema.md)
   exactly; no per-module renaming.
-- `parcel` = cadastral unit, `plot` = the thing being sold. Never interchanged
-  (`12`).
+- `parcel` and `plot` are distinct; see [`12-glossary.md`](./12-glossary.md) for the
+  definition and the case where one sale spans several parcels.
 - `price_type` is spelled identically everywhere — database, API, frontend — so it
   can be grepped as a single token when auditing rule 5.
 

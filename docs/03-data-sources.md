@@ -91,7 +91,7 @@ listing pages.** I planned the entire offering-price layer — and therefore mos
 the product — on the assumption that it does, and I could not verify it: the
 network egress proxy in my environment blocks both domains (403 on CONNECT).
 
-This is **day-one work in [`18-v0-scope.md`](./18-v0-scope.md) §4** and it gates
+This is **day-one work in [`18-v0-scope.md`](./18-v0-scope.md) §6, item 0** and it gates
 everything downstream:
 
 - If listing paths are **allowed**: proceed as planned.
@@ -140,15 +140,14 @@ given the sizes in play (D48), and it comes with the purchase-law questions in
 Gminas publish their own land sale notices in their public information bulletins.
 Genuinely off-portal supply, but roughly 50 gminas across the two rings, each with
 its own bulletin layout — the highest-effort source by a wide margin (4–6 days),
-which is why the recommended split defers it (O15).
+and the reason it is sequenced last (`18` §6 item 13).
 
-### Open question this raises
+### Three different kinds of number — settled
 
-**Auction starting prices, KOWR tender prices and portal asking prices are three
-different kinds of number.** Rule 5 already forbids mixing offering and sales
-prices; this suggests the taxonomy needs a third category, or explicit sub-types
-under `offering`. It must be settled before the auction connector is written, or
-the first aggregate that blends them will be quietly wrong.
+Auction starting prices, KOWR tender prices and portal asking prices are not
+comparable. **FR-64** gives each a distinct `price_kind`, and no aggregate may span
+kinds (V46). Settled before the auction connector is written, because the first
+aggregate that blended them would be quietly wrong.
 
 ## Listing portals (high-frequency layer)
 
@@ -176,9 +175,8 @@ it is the clearest evidence of bad faith, so we follow it.
 6. Keep v1 private and non-commercial. Publishing or monetizing triggers a fresh
    legal review — it is a different risk profile, not a bigger version of this one.
 
-**Alternative worth pricing:** commercial data providers sell structured
-Otodom/OLX feeds. If the budget allows, that removes most of the above risk and
-most of the maintenance burden of FR-5. This is open question #2 in the PRD.
+**Considered and rejected:** commercial data providers sell structured feeds, which
+would remove most of the above risk. Ruled out by **D2** — zero budget for data.
 
 ---
 

@@ -784,17 +784,6 @@ techniques that work where no oracle exists. Tier references are to `20` §2.
 - **Falsified by** Exclusions that do not recompute; a pattern of exclusions never
   feeding back into the selection rules.
 
-### V51b-old — original spot check (retained for reference)
-
-- **AC** The notebook presents a plot's data with the verdict **collapsed**, so an
-  impression forms before the answer is seen; one click records agree / disagree /
-  unsure. Every *disagree* is triaged as tool wrong, impression wrong, or
-  undecidable, and the outcome recorded.
-- **How** Manual, ad hoc, whenever the owner is looking at plots anyway.
-- **Against** The owner's in-the-moment judgement (tier C).
-- **Falsified by** A pattern of disagreements traced to a defect. Not a gate — a
-  bug-lead generator.
-
 ### V52 — Mutation testing of the numeric core (`20` §4.8, **in scope — D58**)
 
 - **AC** Deliberate faults injected into normalization, aggregation and estimation
@@ -894,15 +883,15 @@ techniques that work where no oracle exists. Tier references are to `20` §2.
 - **Falsified by** A material disagreement rate with no alarm — it would mean the
   cheap path is quietly wrong, and the cheap path is nearly the whole corpus.
 
-### V59 — Notebook honesty (FR-71)
+### V59 — v0 surface honesty (FR-71)
 
-- **AC** The notebook obeys `09` §1: no aggregate without `n` and spread; every
+- **AC** The Streamlit app obeys `09` §1: no aggregate without `n` and spread; every
   price labelled with **type and kind**; stock and flow always distinguished;
-  verdict collapsed by default (V51b); `unknown` rendered explicitly rather than
+  verdict collapsed by default (`21` §U5); `unknown` rendered explicitly rather than
   blank.
-- **How** Output-snapshot tests over the notebook's rendering helpers — the same
+- **How** Output-snapshot tests over the app's rendering helpers — the same
   assertions V35/V36 make of the full UI, applied to the surface v0 actually ships.
-- **Against** Rendered notebook cell outputs for each state, including thin data,
+- **Against** Rendered app outputs for each state, including thin data,
   no data, and stale data.
 - **Falsified by** A bare aggregate; an unlabelled price kind; a blank where
   `unknown` belongs.
@@ -956,8 +945,8 @@ the work plan changes.
 | 8 Auction connector | **V54**, V46 |
 | 9 Dedup (v0 form) | **V56**, V47 |
 | 10 Aggregates, stock + flow | V4, V45, V47, V48, **V62** |
-| 11 Notebook | **V59**, V51, V51b |
-| 12 Map view | **V59** (same helpers); V35–V37 apply if a real frontend arrives |
+| 11 Streamlit app | **V59**, V51, **V51c** |
+| 12 Choropleth + table | **V59** (same helpers); V35–V37 apply if a real frontend arrives |
 | 13 Gmina BIP | **V55** |
 | 14 Parcels + good-neighbour | **V60** (`19` §1.3) |
 | 15 Purchasability badge | **V61** (`19` §2.3) |
@@ -983,9 +972,9 @@ discovered later.
 | Comparable-set engine | FR-26, FR-36 | Needs a hand-picked "correct comparables" set for ~5 subject plots as ground truth, plus a test that exclusion recomputes |
 | Asking-vs-sales spread | FR-10 | Must show both sample sizes and both as-of dates; test that differing periods are not presented as simultaneous |
 | RCN connector | FR-31 → M4 | Method depends on V9's outcome |
-| Size adjustment | O6 | Blocked on the O6 decision. If adopted, needs a test that adjusted comparables reproduce a known elasticity |
-| Standard-plot benchmark | O7 | Blocked on the O7 decision |
-| Notebook query layer | FR-47, O9 | Needs a stability contract: which views are guaranteed, and what changing them requires |
+| Size adjustment | O6 — **closed**: measure elasticity, adjust only if LOOCV shows size-correlated error | Needs an elasticity-reporting check |
+| Standard-plot benchmark | O7 — **adopted**; rendered in `21` §2.2 | Needs an FR and a method |
+| Read-only query layer | FR-47 (post-v0) | Needs a stability contract: which views are guaranteed, and what changing them requires |
 | Digest generation | FR-47, O8 | Must test that data-quality events appear alongside market events — a silent pipeline failure must not read as a quiet market |
 | Saved searches and alerts | J4 | Needs stable listing identity across relistings |
 | Housing extraction | `06` §5 | Attribute list must be written before any housing extractor exists |
@@ -1027,3 +1016,10 @@ The mapping is the gate: an FR with no V entry cannot be implemented (rule 4).
 | FR-48..52 taxonomy & extraction | V25, V26, V27, V28 |
 | FR-53..55 geocoding | V29, V30, V31 |
 | FR-56..60 temporal | V32, V33, V34 |
+| FR-61..63 off-portal sources | V53, V54, V55 |
+| FR-64 price kinds | V46 |
+| FR-65..66 feasibility | V60, V61 |
+| FR-67 stock/flow | V45, V62 |
+| FR-68 list-page-first | V58 |
+| FR-69..70 acceptance, v0 dedup | V51, V56 |
+| FR-71..72 surface, raw payloads | V59, V57 |

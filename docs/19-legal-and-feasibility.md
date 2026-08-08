@@ -136,8 +136,8 @@ pursuing is:
 3. **Is the price fair?** — the original problem, and the one v0 addresses.
 
 I built the documentation in reverse order, and only reached 1 and 2 by asking what
-had not been discussed. Both belong in **v0.5**, immediately after price
-comparison works — see O15.
+had not been discussed. Both are in scope (D55), immediately after price
+comparison works.
 
 ## 4. Standing disclaimer
 
