@@ -991,7 +991,7 @@ AGGREGATE_LINE   = re.compile(r"n = \d+")
 RANGE_TOKEN      = re.compile(r"\d+–\d+")
 ALLOWLIST = (
     re.compile(r"^Sprawdzenie działki — \d\d\.\d\d\.\d{4}$"),          # dated title
-    re.compile(r"^Działka: [\d ]+ m² · .+$"),                     # area
+    re.compile(r"^Działka: [\d\u00a0]+ m² · .+$"),                     # area
     re.compile(r"^Cena z ogłoszenia: .+ · cena \w+ · \w+$"),           # listing price, typed+kinded
     re.compile(r"^Podobne oferty \((przepływ|stan)[^)]*\)$"),          # block heading
     re.compile(r"^Ceny transakcyjne · .+ · GUS \d{4}Q\d$"),            # quarter heading
@@ -1079,7 +1079,7 @@ def test_every_comparable_carries_its_nie_pasuje_control(tree):
 
 `test_every_comparable_is_listed_with_its_own_price_area_and_distance` asserts
 each `comparable` text matches
-`r"^\d+ zł/m² · [\d ]+ m² · gmina .+ · \d\d\.\d\d\.\d{4}$"` and carries both
+`r"^\d+ zł/m² · [\d\u00a0]+ m² · gmina .+ · \d\d\.\d\d\.\d{4}$"` and carries both
 label children.
 
 `test_ordering_survives_a_recompute` re-runs the first assertion on the tree
@@ -1308,14 +1308,14 @@ assert on codepoints, never on visual appearance.
 | Em dash (in sentences) | EM DASH | **U+2014** | `-`, `--` |
 
 ```python
-NBSP = " "
+NBSP = "\u00a0"
 
 def test_thousands_separator_is_a_non_breaking_space():
-    assert format_int(1234567) == f"1{NBSP}234{NBSP}567"
-    assert format_int(1234567) == "1 234 567"
     out = format_int(1234567)
-    assert " " not in out and " " not in out and " " not in out
-    assert "," not in out and "." not in out
+    assert out == f"1{NBSP}234{NBSP}567"
+    assert out == "1\u00a0234\u00a0567"
+    for forbidden in ("\u0020", "\u202f", "\u2009", ",", ".", "'"):
+        assert forbidden not in out
 ```
 
 ### 5.2 Integers
@@ -1324,12 +1324,12 @@ def test_thousands_separator_is_a_non_breaking_space():
 |---|---|---|
 | `0` | `0` | `"0"` |
 | `999` | `999` | `"999"` |
-| `1000` | `1 000` | `"1 000"` |
-| `3200` | `3 200` | `"3 200"` |
-| `12345` | `12 345` | `"12 345"` |
-| `454400` | `454 400` | `"454 400"` |
-| `1234567` | `1 234 567` | `"1 234 567"` |
-| `-1234` | `-1 234` | `"-1 234"` |
+| `1000` | `1 000` | `"1\u00a0000"` |
+| `3200` | `3 200` | `"3\u00a0200"` |
+| `12345` | `12 345` | `"12\u00a0345"` |
+| `454400` | `454 400` | `"454\u00a0400"` |
+| `1234567` | `1 234 567` | `"1\u00a0234\u00a0567"` |
+| `-1234` | `-1 234` | `"-1\u00a0234"` |
 
 ### 5.3 Decimals
 
@@ -1337,7 +1337,7 @@ def test_thousands_separator_is_a_non_breaking_space():
 |---|---|---|---|
 | `Decimal("118.5")` | 1 | `118,5` | `"118,5"` |
 | `Decimal("0.381")` | 1 | `0,4` | `"0,4"` |
-| `Decimal("1234.56")` | 2 | `1 234,56` | `"1 234,56"` |
+| `Decimal("1234.56")` | 2 | `1 234,56` | `"1\u00a0234,56"` |
 | `Decimal("104")` | 1 | `104,0` | `"104,0"` |
 
 `test_decimal_separator_is_a_comma` additionally asserts
@@ -1348,15 +1348,15 @@ asserted as an inequality so a locale-derived implementation fails loudly.
 
 | Call | Expected | Escaped |
 |---|---|---|
-| `format_ppm2(Decimal("142"))` | `142 zł/m²` | `"142 zł/m²"` |
-| `format_ppm2(Decimal("142.4999"))` | `142 zł/m²` | `"142 zł/m²"` |
-| `format_ppm2(Decimal("142.5"))` | `143 zł/m²` | `"143 zł/m²"` (ROUND_HALF_UP) |
-| `format_ppm2(Decimal("1180"))` | `1 180 zł/m²` | `"1 180 zł/m²"` |
-| `format_pln(454400)` | `454 400 zł` | `"454 400 zł"` |
-| `format_area(3200)` | `3 200 m²` | `"3 200 m²"` |
-| `format_area(1200)` | `1 200 m²` | `"1 200 m²"` |
+| `format_ppm2(Decimal("142"))` | `142 zł/m²` | `"142\u00a0zł/m²"` |
+| `format_ppm2(Decimal("142.4999"))` | `142 zł/m²` | `"142\u00a0zł/m²"` |
+| `format_ppm2(Decimal("142.5"))` | `143 zł/m²` | `"143\u00a0zł/m²"` (ROUND_HALF_UP) |
+| `format_ppm2(Decimal("1180"))` | `1 180 zł/m²` | `"1\u00a0180\u00a0zł/m²"` |
+| `format_pln(454400)` | `454 400 zł` | `"454\u00a0400\u00a0zł"` |
+| `format_area(3200)` | `3 200 m²` | `"3\u00a0200\u00a0m²"` |
+| `format_area(1200)` | `1 200 m²` | `"1\u00a0200\u00a0m²"` |
 | `format_range(96, 141)` | `96–141` | `"96–141"` |
-| `format_range(1600, 4800)` | `1 600–4 800` | `"1 600–4 800"` |
+| `format_range(1600, 4800)` | `1 600–4 800` | `"1\u00a0600–4\u00a0800"` |
 | `format_range(61, 240)` | `61–240` | `"61–240"` |
 | `format_ratio(Decimal("0.3814"))` | `0,4` | one decimal, never more |
 
@@ -1938,13 +1938,14 @@ def test_excluding_down_to_the_threshold_switches_to_the_out_of_depth_notice():
 ```
 
 The two-exclusion intermediate is asserted separately, because it is the case that
-distinguishes the two thresholds: removing `cmp_hi` and `cmp_01` leaves
-`[104, 112, 124, 138]`, n = 4 → median R-7 index 1.5 → `112 + 0.5·(124−112)` =
-**118.00**, `kind = "min_max"`, `zakres 104–138`, an
-`uncertainty_note` reading `Zakres szeroki — mało podobnych ofert`
-(ratio (138−104)/118 = 0.288 — **no**, 0.288 < 0.60, so the note is
-`Mało podobnych ofert — wynik orientacyjny`), and **no**
-`out_of_depth_notice`, because 4 ≥ 4.
+distinguishes the two thresholds. Removing `cmp_hi` and `cmp_01` leaves
+`[104, 112, 124, 138]`, n = 4:
+
+- median: R-7 index `3 · 0.5 = 1.5` → `112 + 0.5·(124 − 112)` = **118.00**
+- `n = 4 < 5` → `kind = "min_max"`, spread text `zakres 104–138`
+- ratio `(138 − 104) / 118` = **0.288** < 0.60 → the tight-and-thin cell of §3.10,
+  so the note reads `Mało podobnych ofert — wynik orientacyjny`
+- `n = 4 ≥ out_of_depth_min_comparables (4)` → **no** `out_of_depth_notice`
 
 `test_two_exclusions_do_not_yet_trigger_the_notice` pins exactly that: the
 interface gets less confident in steps, and the step where it admits defeat is a
