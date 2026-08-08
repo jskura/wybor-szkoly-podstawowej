@@ -117,11 +117,13 @@ execution. A failure here blocks a release.
 
 ### V6 — Administrative boundaries and TERYT import
 
-- **AC** All gminas of łódzkie (~177), mazowieckie (~314) and powiat elbląski +
-  m. Elbląg (~10) are present with valid, non-empty PostGIS geometries and correct
-  TERYT codes. Every gmina's `parent_teryt` resolves to an in-scope powiat. No
-  gmina geometry is invalid (`ST_IsValid`), and no two gmina geometries overlap by
-  more than a rounding tolerance.
+- **AC** Every gmina **in the two 25 km rings** (D64: any part of its boundary
+  within 25 km of an anchor) is present with a valid, non-empty PostGIS geometry
+  and correct TERYT code. The expected set is an **exact list in the fixture
+  manifest**, not an approximate count — "~177" is not falsifiable. The full
+  three-voivodeship extent belongs to the deferred full plan, not to v0.
+  Every gmina's `parent_teryt` resolves to its powiat, no geometry is invalid
+  (`ST_IsValid`), and no two gmina geometries overlap beyond a rounding tolerance.
 - **How** Integration test against the recorded PRG fixture: count per unit,
   `ST_IsValid` on every geometry, pairwise overlap check, parent resolution check.
   Independently: assert that the point for Budy Grabskie falls inside gmina
@@ -182,12 +184,14 @@ execution. A failure here blocks a release.
 ### V10 — Normalization and outlier quarantine (FR-12)
 
 - **AC** `price_per_m2 = price_pln / area_m2` for every accepted listing. Records
-  outside the accepted bands (land area 100–500 000 m², price 1–100 000 PLN/m²) are
-  quarantined with a reason, not dropped silently and not accepted. Area stated in
+  outside the accepted band (**land area 300–200 000 m²**, price 1–100 000 PLN/m²)
+  are **flagged and kept visible**, never silently dropped (FR-12 as amended by
+  O12). Records with no usable price or area are quarantined with a reason. Area stated in
   ares or hectares is converted correctly. Manual audit of a 200-record sample finds
   ≤1% surviving outliers (§5).
-- **How** (a) Unit tests per rule, including boundary values at exactly 100 m² and
-  500 000 m²; (b) a unit conversion test with ares and hectares fixtures;
+- **How** (a) Unit tests per rule, including boundary values at exactly 300 m² and
+  200 000 m², plus a guard test that fails if the superseded 100/500 000 figures
+  reappear; (b) a unit conversion test with ares and hectares fixtures;
   (c) `Δ` assertion that the quarantine table's reason field is never null and that
   the quarantine rate stays within a band — a sudden spike means upstream drift;
   (d) a documented manual audit script over 200 sampled records.
@@ -493,9 +497,13 @@ figures come out of the UI until resolved.
 ### V31 — Projections (FR-55, `07` §5)
 
 - **AC** Distances and areas are computed in EPSG:2180, storage is EPSG:4326, every
-  geometry column has a declared SRID.
-- **How** Known-answer test: the distance between two points of known separation
-  computed to within 1 m; a schema test asserting no geometry column lacks an SRID;
+  geometry column has a declared SRID. **Tolerance is scale-dependent**: ≤1 m at
+  good-neighbour scale (<1 km) and ≤0.1% of the measured distance at ring scale,
+  because the projection distorts by roughly a metre per kilometre — the flat
+  "within 1 m" criterion was unachievable at 25 km and has been replaced.
+- **How** Known-answer tests at both scales against an independent projection
+  library, plus a **control asserting that computing in degrees fails** the check —
+  otherwise a correct-looking test passes against a wrong projection; a schema test asserting no geometry column lacks an SRID;
   a test that a distance computed in degrees would fail the known-answer check.
 - **Against** Two points with an independently known separation.
 - **Falsified by** A distance off by the ~111 km/degree factor; an SRID-less column.

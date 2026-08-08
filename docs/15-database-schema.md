@@ -23,6 +23,7 @@ Epic: E1.3. Validation: V1, V2, V5, V12, V29, V31.
 
 ```sql
 CREATE TYPE price_type      AS ENUM ('offering','sales');
+CREATE TYPE price_kind      AS ENUM ('asking','auction_start','tender');  -- D65
 CREATE TYPE asset_class     AS ENUM ('land_building','land_recreational',
                                      'land_agricultural','land_forest_other',
                                      'house','flat');
@@ -33,6 +34,7 @@ CREATE TYPE utility_state   AS ENUM ('present','at_boundary','absent','unknown')
 CREATE TYPE road_access     AS ENUM ('public_paved','public_unpaved','easement','none','unknown');
 CREATE TYPE unit_level      AS ENUM ('voivodeship','powiat','gmina','obreb');
 CREATE TYPE range_kind      AS ENUM ('iqr','min_max');
+CREATE TYPE series_kind     AS ENUM ('stock','flow');                    -- D56, D66
 ```
 
 `buildability_source` deliberately has no `advert` value. FR-48 says advert text
@@ -48,6 +50,9 @@ CREATE TABLE admin_unit (
   name          TEXT NOT NULL,
   parent_teryt  TEXT REFERENCES admin_unit(teryt),
   geom          geometry(MultiPolygon, 4326) NOT NULL,
+  in_ring       TEXT[] NOT NULL DEFAULT '{}',   -- ring keys this unit belongs to (D64)
+  as_of         DATE NOT NULL,                  -- rule 6: boundaries are stored data
+  source_id     INT NOT NULL REFERENCES source(id),
   CONSTRAINT geom_valid CHECK (ST_IsValid(geom))
 );
 CREATE INDEX ON admin_unit USING GIST (geom);
@@ -63,6 +68,21 @@ CREATE TABLE anchor (            -- populated from gitignored config (FR-22)
 `anchor` holds no street address or house number — only a label and a point
 (FR-23). The mapping from address to point happens at load time, outside the
 database.
+
+**Ring membership (D64) — defined here, once.** A gmina belongs to a ring if
+**any part of its boundary lies within 25 km of the anchor point**:
+
+```sql
+UPDATE admin_unit u SET in_ring = array_append(u.in_ring, a.key)
+FROM anchor a
+WHERE u.level = 'gmina'
+  AND ST_DWithin(u.geom::geography, a.geom::geography, 25000);
+```
+
+Boundary-intersects rather than centroid-inside or seat-inside, because the three
+rules give materially different gmina sets and boundary-intersects is the inclusive
+one: a gmina half inside the ring is more useful shown with its `n` than silently
+excluded (rule 6). Every consumer reads `in_ring`; nothing recomputes it.
 
 ## 4. Ingestion
 
@@ -112,6 +132,7 @@ CREATE TABLE listing (
   price_per_m2        NUMERIC(12,2) GENERATED ALWAYS AS (price_pln / area_m2) STORED,
   price_type          price_type NOT NULL DEFAULT 'offering'
                         CHECK (price_type = 'offering'),        -- V1
+  price_kind          price_kind NOT NULL DEFAULT 'asking',     -- D65, FR-64
   area_source         TEXT NOT NULL CHECK (area_source IN ('register','structured','body','title')),
 
   asset_class         asset_class NOT NULL,
@@ -124,8 +145,8 @@ CREATE TABLE listing (
   attr_confidence     JSONB NOT NULL DEFAULT '{}',
 
   teryt_gmina         TEXT REFERENCES admin_unit(teryt),
-  parcel_id           BIGINT REFERENCES parcel(id),
-  plot_cluster_id     BIGINT REFERENCES plot_cluster(id),
+  parcel_id           BIGINT,      -- FK added by a later migration (A5)
+  plot_cluster_id     BIGINT,      -- FK added by a later migration (A5)
   seller_contact_hash TEXT,                                      -- salted hash only (FR-23)
   seller_type         TEXT,
   UNIQUE (source_id, external_id)
@@ -255,6 +276,36 @@ CREATE TABLE parcel_nature (
   as_of               DATE NOT NULL
 );
 
+CREATE TABLE parcel_building (            -- A4, FR-65
+  parcel_id      BIGINT NOT NULL REFERENCES parcel(id),
+  source         TEXT NOT NULL CHECK (source IN ('egib','osm')),
+  geom           geometry(MultiPolygon, 4326) NOT NULL,
+  distance_m     INT NOT NULL,
+  as_of          DATE NOT NULL,
+  PRIMARY KEY (parcel_id, source, geom)
+);
+
+CREATE TABLE building_coverage (          -- A4 — did we look, or is the map empty?
+  teryt_gmina    TEXT PRIMARY KEY REFERENCES admin_unit(teryt),
+  source         TEXT NOT NULL CHECK (source IN ('egib','osm','none')),
+  has_coverage   BOOLEAN NOT NULL,
+  checked_at     TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE parcel_wz_feasibility (      -- A4, FR-65
+  parcel_id       BIGINT PRIMARY KEY REFERENCES parcel(id),
+  verdict         TEXT NOT NULL CHECK (verdict IN ('likely','uncertain','unlikely','unknown')),
+  neighbour_found BOOLEAN,
+  shares_road     BOOLEAN,
+  coverage_source TEXT,                   -- NULL only when verdict='unknown'
+  computed_at     TIMESTAMPTZ NOT NULL,
+  -- The load-bearing constraint: 'unlikely' requires evidence that we actually
+  -- looked. Absence of mapped buildings is absence of data, not absence of
+  -- neighbours, so an unlikely verdict without coverage is unwritable.
+  CONSTRAINT unlikely_requires_coverage
+    CHECK (verdict <> 'unlikely' OR coverage_source IS NOT NULL)
+);
+
 CREATE TABLE parcel_access (
   parcel_id     BIGINT NOT NULL REFERENCES parcel(id),
   anchor_key    TEXT NOT NULL REFERENCES anchor(key),
@@ -301,6 +352,10 @@ CREATE TABLE metric_unit_month (
   asset_class   asset_class NOT NULL,
   buildability  buildability NOT NULL,
   price_type    price_type NOT NULL,                 -- part of the key (FR-8)
+  price_kind    price_kind NOT NULL,                 -- D65/D66 — never spans kinds
+  series_kind   series_kind NOT NULL,                -- D56/D66 — stock and flow are separate rows
+  area_band     TEXT NOT NULL,                       -- D66 — else bands collide
+  flow_window_days INT,                              -- NOT NULL when series_kind='flow' (O27)
   generation    INT NOT NULL DEFAULT 1,              -- versioned recomputation (08 §4)
 
   n             INT NOT NULL,
@@ -316,10 +371,19 @@ CREATE TABLE metric_unit_month (
   computed_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   source_ids    INT[] NOT NULL CHECK (array_length(source_ids,1) > 0),
 
-  PRIMARY KEY (teryt_unit, month, asset_class, buildability, price_type, generation),
-  CONSTRAINT range_kind_matches_n
-    CHECK ((n >= 5 AND range_kind = 'iqr') OR (n < 5 AND range_kind = 'min_max'))
+  PRIMARY KEY (teryt_unit, month, asset_class, buildability,
+               price_type, price_kind, series_kind, area_band, generation),
+  CONSTRAINT flow_states_its_window
+    CHECK ((series_kind = 'flow') = (flow_window_days IS NOT NULL)),
+  CONSTRAINT range_bounds_ordered
+    CHECK (min_ppm2 <= p25_ppm2 AND p25_ppm2 <= median_ppm2
+           AND median_ppm2 <= p75_ppm2 AND p75_ppm2 <= max_ppm2)
 );
+
+-- D67: the IQR/min–max switch is a **configuration** value, not a literal in the
+-- schema. O11 marks n=5 unratified, and a provisional parameter must not be frozen
+-- into a migration. The database enforces internal consistency (bounds ordered,
+-- flow states its window); the application enforces the threshold and V4 tests it.
 ```
 
 Three product rules made structural here: `price_type` in the key (never mixed),

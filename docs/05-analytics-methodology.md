@@ -253,7 +253,7 @@ snapshot gap is.
 |---|---|---|
 | **Calibration** | Share of realized prices falling inside the predicted range | Close to the range's nominal coverage — a 50% interval (p25–p75) should contain ~50% |
 | **Bias** | Median signed error of the estimate median | Near zero; persistent sign means systematic over- or under-estimation |
-| **MAPE** | Median absolute percentage error | Tracked as a trend, not against an absolute target |
+| **MAPE** | Median of \|realized − estimate **median**\| / realized. Not the range midpoint (`20` §6.1) | Tracked as a trend, not against an absolute target |
 | **Coverage** | Share of subjects we could estimate at all | Rising over time |
 | **Widening profile** | Distribution of widening steps | Mostly same-gmina; a shift outward means data thinning |
 

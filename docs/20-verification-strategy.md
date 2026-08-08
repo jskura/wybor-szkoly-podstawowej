@@ -194,7 +194,7 @@ This yields real, repeatable numbers:
 |---|---|---|
 | **Coverage** | Share of listings we can estimate at all | High and rising; low means comparables are too scarce |
 | **Hit rate** | Share whose actual price falls inside the predicted range | Near the range's nominal coverage — a p25–p75 range should contain roughly half |
-| **Median absolute % error** | Typical miss of the range's midpoint | Tracked as a trend, not against an absolute target |
+| **Median absolute % error** | Median of \|actual − estimate_median\| / actual. **Measured against the estimate median, not the range midpoint** — the two differ and were previously named inconsistently | Tracked as a trend, not against an absolute target |
 | **Tail** | Share missed by more than 2× | Near zero; each one is a bug lead |
 
 It runs in CI, it re-runs on every change to the comparable logic, and it is

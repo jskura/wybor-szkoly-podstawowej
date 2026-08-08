@@ -192,6 +192,19 @@ the vague middle.
 | O26 | Drift-detection gap | **Closed with a cheaper substitute.** Full golden-file regression was declined (D58), so instead each pipeline run prints an **aggregate diff report** — every gmina whose median moved more than a threshold since the last run, with its `n` before and after. Printed for review, not asserted in CI. Catches most silent drift at a fraction of the cost |
 | O27 | Flow window | **Proposed 90 days**, with V62's sensitivity check reporting 30 / 60 / 90 / 180 so the choice is evidence-based |
 
+## Batch 15 — gaps found by writing the tests (2026-08-07)
+
+From [`tdd/00-gap-analysis.md`](./tdd/00-gap-analysis.md). Six agents wrote TDD
+specifications in parallel; four independently found that the schema did not
+support features already specified as requirements.
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D64 | **What makes a gmina part of a 25 km ring?** Never defined anywhere, though the whole scope rests on it | **Any part of its boundary within 25 km of the anchor** | Inclusive at the edge: a gmina half inside is more useful shown with its `n` than silently excluded, which matches rule 6. Stated once in `15`; every consumer reads it from there |
+| D65 | Are auction and tender prices offering or sales? | **Offering** — nothing has been transacted. Distinguished by a new `price_kind ∈ {asking, auction_start, tender}` | Closes the FR-64 gap; rule 5 unaffected, `price_kind` is the finer axis inside `offering` |
+| D66 | `metric_unit_month` could not store stock and flow separately | **Key extended** with `area_band`, `series_kind`, `price_kind` | D56 made flow the headline; without this the two collide on insert |
+| D67 | n=5 was frozen into a database CHECK while O11 marks it unratified | **Threshold moves to configuration**; the CHECK enforces internal consistency only | A provisional parameter must not require a migration to change |
+
 ### Items raised after batch 13
 
 | # | Raised by | Status |

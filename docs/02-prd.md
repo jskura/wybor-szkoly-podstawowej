@@ -405,8 +405,10 @@ these are the requirements it must satisfy.
   (*syndyk*) land sales (D47). Source selection is O16.
 - **FR-63** **Gmina BIP connector** — municipal sale notices across the ~50 gminas
   in the two rings, each with its own bulletin layout (D47).
-- **FR-64** **Price-kind taxonomy** (resolves O19). `price_kind` is distinct from
-  `price_type`: an **asking** price, an **auction starting** price (a statutory
+- **FR-64** **Price-kind taxonomy** (resolves O19; schema in `15`, D65).
+  `price_kind ∈ {asking, auction_start, tender}` is distinct from `price_type`.
+  All three are `price_type = 'offering'` — nothing has been transacted (D65).
+  Concretely: an **asking** price, an **auction starting** price (a statutory
   floor derived from a valuation) and a **tender** price are three different
   quantities. No aggregate may span kinds. Blending them would drag medians down
   and read as a market movement.
@@ -418,7 +420,7 @@ these are the requirements it must satisfy.
 - **FR-66** **Farmland purchasability badge** (D51). Driven by the **register**
   land-use class, never the advert's claim. States *possible* restrictions, never
   certainty; never a filter; unknown class produces no badge **and** no reassurance.
-- **FR-67** **Stock and flow** (D56). Every aggregate is computed both ways —
+- **FR-67** **Stock and flow** (D56, keyed per D66). Every aggregate is computed both ways —
   stock (all active) and flow (first seen within the window) — each labelled, never
   blended. **Flow is the headline.** The flow window length is unratified (O27).
 - **FR-68** **List-page-first crawl** (D40). List pages supply price and active
