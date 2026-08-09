@@ -95,21 +95,21 @@ I planned the entire offering-price layer — and therefore most of the product 
 on the assumption that crawling is permitted, and could not verify it: the
 network egress proxy in my environment blocks these domains (403 on CONNECT).
 
-This is **day-one work in [`18-v0-scope.md`](./18-v0-scope.md) §6, item 0** and it gates
-everything downstream:
+This is **day-one work in [`18-v0-scope.md`](./18-v0-scope.md) §6, item 0**.
 
-- If listing paths are **allowed**: proceed as planned.
-- If **disallowed**: the offering-price layer is off the table under our own rules
-  (FR-2, §Operating rules below). What remains is GUS BDL and RCN — powiat-level,
-  quarterly, historical. That is a genuinely different and much smaller product,
-  and the decision to accept it or stop belongs to the owner, not to the plan.
-- If **partially allowed** (e.g. detail pages disallowed, search pages permitted):
-  the list-page-first strategy (D40) may still work for prices, but attribute
-  extraction would lose its source. Scope that case explicitly rather than
-  assuming around it.
+**It is no longer a binary gate.** Four outcomes, each with a route, are set out in
+[`22-source-access-options.md`](./22-source-access-options.md) — including the one
+the plan had missed: **`sitemap.xml` is published *for* crawlers**, carries
+`lastmod` for change detection, and is the sanctioned discovery mechanism whether
+or not search pages are permitted.
 
-Checking takes minutes from any ordinary browser. Nothing else in the offering-price
-path should be built first.
+Note the asymmetry that matters for design: the pages most likely to be
+**disallowed** are the search and list pages that the list-page-first strategy
+(D40) depends on, while **detail pages are the most likely to be allowed** — the
+opposite of what the plan assumed.
+
+Checking takes minutes from any ordinary browser. Nothing else in the
+offering-price path should be built first.
 
 ## Off-portal supply (D47) — new, and possibly the more valuable half
 

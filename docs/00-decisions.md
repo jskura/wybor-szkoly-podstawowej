@@ -205,6 +205,18 @@ support features already specified as requirements.
 | D66 | `metric_unit_month` could not store stock and flow separately | **Key extended** with `area_band`, `series_kind`, `price_kind` | D56 made flow the headline; without this the two collide on insert |
 | D67 | n=5 was frozen into a database CHECK while O11 marks it unratified | **Threshold moves to configuration**; the CHECK enforces internal consistency only | A provisional parameter must not require a migration to change |
 
+## Batch 16 — source access (2026-08-07)
+
+Prompted by "what can we do about robots.txt — it's a private tool for personal
+use?". Full analysis in [`22-source-access-options.md`](./22-source-access-options.md).
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D70 | Is O10 a binary gate? | **No — four outcomes, four routes** | The plan treated a disallow as fatal to the offering-price layer. It is not |
+| D71 | Preferred discovery mechanism | **`sitemap.xml` where available**, regardless of the robots outcome | It is published *for* crawlers, carries `lastmod` so change detection is better than paging search results, and is cheaper and more polite than the D40 list-page pass |
+| D72 | Fallback if a portal disallows automated fetching | **Browser-assisted capture** — you browse, the tool parses what your browser already fetched | `robots.txt` governs robots, not you. Costs the daily automated refresh, which D45 already demoted |
+| D73 | Evasion techniques | **Never** — no rotating agents, IP pools, CAPTCHA defeat, or claiming compliance while ignoring it | If we ever decide to crawl despite a disallow, that is recorded openly with FR-2 amended, not hidden behind a user-agent string |
+
 ### Items raised after batch 13
 
 | # | Raised by | Status |
