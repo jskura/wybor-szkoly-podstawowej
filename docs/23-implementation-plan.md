@@ -125,6 +125,26 @@ Each stage ends with a review and a commit. A stage is done when its tests pass
 | **S14** | Parcels, buildings, feasibility | V60, V66, V29, V31 | Missing building data yields `unknown`, never `unlikely`. A `likely` verdict from the road proxy carries its own disclaimer, and its wording differs from the confirmed-ownership wording (D114) |
 | **S15** | Purchase restrictions | V61, V63, V64 | Neither badge renders on the other class. One prompt **per regime** per session (D116). **The forest badge waits on the three `‡` claims in `19` §2a.1** |
 
+## 3a. What external data each stage needs, and what blocks it
+
+Written after building S1 to S5. Three stages turned out to need data no code can
+produce, and the plan above did not say which.
+
+| Needs | Stages | State |
+|---|---|---|
+| Nothing external | S1, S2, S5, S6, S7, S8, S9, S10 | Buildable now, and testable in full against synthetic data |
+| The national boundary register, clipped to the two rings | S3, S4 | **Blocked.** The clip gives the gmina and powiat lists every later stage keys off |
+| The BDL unit register | S4 | **Blocked.** Recorded as data (D97); the committed map is empty and refuses to load |
+| The portal `robots.txt` reading (O10) | S12 | **Blocked on you** |
+| The KOWR, auction and BIP `robots.txt` readings (Q9) | S13 | **Blocked on you** |
+| County building data, or OSM as the fallback | S14 | **Blocked** |
+| The two acts read against their consolidated text (O40) | S15 | **Blocked on you** |
+
+**A stage split by its data is recorded as split, never as done.** S3 and S4 each
+have a half that runs on synthetic geometry and a half that waits on a download.
+Marking either as finished would make the plan agree with itself and disagree
+with the repository.
+
 ## 4. Order, and why
 
 S1 to S4 depend on nothing external. They run now.
