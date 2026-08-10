@@ -89,6 +89,8 @@ Start with `18` (what we're building), then `17` (why it shrank).
 | [`docs/11-operations.md`](docs/11-operations.md) | Daily pipeline, backup, monitoring, recovery drills |
 | [`docs/12-glossary.md`](docs/12-glossary.md) | Polish ↔ code terminology |
 | [`docs/19-legal-and-feasibility.md`](docs/19-legal-and-feasibility.md) | The WZ good-neighbour test, and agricultural purchase restrictions |
+| [`docs/23-implementation-plan.md`](docs/23-implementation-plan.md) | **What to build, in what order** — repository layout, one file for every ratified parameter, 15 stages with a done condition each |
+| [`docs/22-source-access-options.md`](docs/22-source-access-options.md) | What to do if robots.txt says no — four outcomes, four routes |
 | [`docs/21-v0-ui-and-ux.md`](docs/21-v0-ui-and-ux.md) | **What you actually look at** — the plot check, the map, the coverage view, and the interaction rules that keep them honest |
 | [`docs/20-verification-strategy.md`](docs/20-verification-strategy.md) | **How we know it's right** — verification tiers, the silent-failure catalogue, metamorphic testing, cross-validation |
 | [`docs/13-scope.md`](docs/13-scope.md) | 26-epic work breakdown. **Retained as a menu, not the current plan** |

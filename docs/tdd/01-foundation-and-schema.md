@@ -67,14 +67,14 @@ later item's tests run inside.
 ### 1.1 Red–green sequence
 
 #### R1.1 `test_package_version_is_declared`
-- **Asserts** `import lpc; lpc.__version__ == "0.0.0"` — exact string equality.
-- **Green by** `pyproject.toml` with a src-layout package, `src/lpc/__init__.py`
+- **Asserts** `import dzialki; dzialki.__version__ == "0.0.0"` — exact string equality.
+- **Green by** `pyproject.toml` with a src-layout package, `src/dzialki/__init__.py`
   declaring `__version__`.
 - **Discharges** none. Structural precondition: until the package imports, no
   later test can be red for the right reason.
 
 #### R1.2 `test_v0_package_directories_exist_and_are_importable`
-- **Asserts** the set of importable submodules of `lpc` is **exactly**
+- **Asserts** the set of importable submodules of `dzialki` is **exactly**
   `{config, db, ingest, normalize, geo, metrics, valuation, app, ops}` — equality,
   not containment, so a stray or missing package fails. Each has an `__init__.py`.
 - **Green by** Creating those nine packages per `16` §1 (the v0 subset; `extract`,
@@ -106,12 +106,12 @@ later item's tests run inside.
   **not** inside Poland's bounding box (`14.0 ≤ lon ≤ 24.2`, `49.0 ≤ lat ≤ 55.0`).
   A real coordinate committed by accident fails on the bounding box even if
   somebody renames the label.
-- **Green by** The example file with sentinel values, plus `lpc.config.anchors`
+- **Green by** The example file with sentinel values, plus `dzialki.config.anchors`
   with a typed `Anchor` model.
 - **Discharges** **V7(c)**.
 
 #### R1.6 `test_anchor_loader_contains_no_coordinate_literals`
-- **Asserts** parsing `src/lpc/config/anchors.py` with `ast`, the set of numeric
+- **Asserts** parsing `src/dzialki/config/anchors.py` with `ast`, the set of numeric
   literals in the module contains **zero** floats inside Poland's bounding box
   (same box as R1.5), and zero string literals matching
   `r"\d+\s*[A-Za-zĄ-ż]"` (a house-number pattern).
@@ -122,7 +122,7 @@ later item's tests run inside.
 
 #### R1.7 `test_missing_anchors_config_raises_named_actionable_error`
 - **Asserts** `load_anchors(tmp_path / "absent.yml")` raises
-  `lpc.config.AnchorConfigMissing`; `str(exc)` contains the substring
+  `dzialki.config.AnchorConfigMissing`; `str(exc)` contains the substring
   `"config/anchors.example.yml"`; and the call does **not** return a value, does
   not raise `FileNotFoundError` (a bare OS error is not "actionable"), and does not
   emit a warning-and-default. Asserted by `pytest.raises(AnchorConfigMissing)` plus
@@ -146,7 +146,7 @@ later item's tests run inside.
   closing the gap are in §4.5.
 
 #### R1.9 `test_settings_require_explicit_database_url`
-- **Asserts** with `LPC_DATABASE_URL` unset, `Settings()` raises `lpc.config.ConfigError`;
+- **Asserts** with `DZIALKI_DATABASE_URL` unset, `Settings()` raises `dzialki.config.ConfigError`;
   with it set to `"postgresql://u:p@h:5432/db"`, `Settings().database_url` equals
   that exact string. No default, no `localhost` fallback.
 - **Green by** A settings object with a required field.
@@ -342,10 +342,10 @@ Tables in scope for the minimal schema (from `15`): the enum types, `admin_unit`
 - **Discharges** **V2(c)**.
 
 #### R2.14 `test_price_type_assertion_reports_zero_violations_on_a_clean_database`
-- **Asserts** `lpc.ops.assertions.price_type_complete()` returns a result with
+- **Asserts** `dzialki.ops.assertions.price_type_complete()` returns a result with
   `passed is True` and `observed == {"listing": 0, "transaction": 0, "metric_unit_month": 0}`
   — the exact dict, not a truthy check.
-- **Green by** The Δ assertion in `src/lpc/ops/assertions/`, plus the
+- **Green by** The Δ assertion in `src/dzialki/ops/assertions/`, plus the
   `assertion_run` table of `15` §11 to record it.
 - **Discharges** **V1(c)**.
 
@@ -519,7 +519,7 @@ extent). R3.15–R3.17 cannot be written until those are answered.
   `tests/fixtures/prg/manifest.json` — `{"voivodeship": V, "powiat": P, "gmina": G}`
   where V, P, G are the literal integers written into the manifest at recording
   time. Equality, per level.
-- **Green by** `lpc.ingest.official.prg.parse()`, pure, returning
+- **Green by** `dzialki.ingest.official.prg.parse()`, pure, returning
   `Iterator[AdminUnitRecord]` per the `16` §2 connector contract.
 - **Discharges** **V6** (the count limb, at fixture scale).
 - **Note** The manifest is the oracle, not this document. `04` V6's "~177", "~314",
@@ -563,7 +563,7 @@ extent). R3.15–R3.17 cannot be written until those are answered.
   equals the manifest's gmina count; `SELECT count(*) FROM admin_unit WHERE NOT
   ST_IsValid(geom)` equals `0`; `SELECT count(*) FROM admin_unit WHERE
   ST_IsEmpty(geom)` equals `0`; and `ST_SRID(geom)` equals `4326` for every row.
-- **Green by** `lpc.ingest.official.prg.emit()` writing `admin_unit`.
+- **Green by** `dzialki.ingest.official.prg.emit()` writing `admin_unit`.
 - **Discharges** **V6**.
 
 #### R3.6 `test_every_gmina_parent_resolves_to_an_in_scope_powiat`
@@ -598,7 +598,7 @@ extent). R3.15–R3.17 cannot be written until those are answered.
 - **Asserts** for **every** gmina in the fixture (not one known answer):
   `gmina_for_point(ST_PointOnSurface(g.geom))` returns `g.teryt`. The count of
   self-resolution failures equals `0`.
-- **Green by** `lpc.geo.gmina_for_point()`, a point-in-polygon against `admin_unit`
+- **Green by** `dzialki.geo.gmina_for_point()`, a point-in-polygon against `admin_unit`
   filtered to `level='gmina'`.
 - **Discharges** **V6**, **V30**. Property test over the whole fixture — see §5.3.
   It catches a CRS mix-up, an inverted polygon, and an off-by-one in the lookup,
@@ -641,8 +641,8 @@ extent). R3.15–R3.17 cannot be written until those are answered.
 - **Discharges** **V6**, **V30** for ring B.
 
 #### R3.13 `test_no_code_path_resolves_a_gmina_by_name`
-- **Asserts** an architecture test over `src/lpc/`: parsing every module with `ast`,
-  (a) no function in `lpc.geo` has a parameter named `gmina_name`, `name` or
+- **Asserts** an architecture test over `src/dzialki/`: parsing every module with `ast`,
+  (a) no function in `dzialki.geo` has a parameter named `gmina_name`, `name` or
   `nazwa` whose value reaches an `admin_unit` query; (b) no SQL string literal
   anywhere in `src/` matches
   `r"admin_unit[\s\S]{0,200}\bname\s*(=|ILIKE|LIKE)"` (case-insensitive); (c) the
@@ -656,7 +656,7 @@ extent). R3.15–R3.17 cannot be written until those are answered.
   distances computed in EPSG:2180 at fixture-recording time and written into the
   fixture — `boundary_risk(p_400) is True` and `boundary_risk(p_600) is False`.
   The threshold is 500 m per `07` §2.
-- **Green by** `lpc.geo.boundary_risk()` using `ST_Distance` in EPSG:2180 against
+- **Green by** `dzialki.geo.boundary_risk()` using `ST_Distance` in EPSG:2180 against
   `ST_Boundary` of the containing gmina.
 - **Discharges** **V30(c)**. Detector for **F4**.
 
@@ -664,7 +664,7 @@ extent). R3.15–R3.17 cannot be written until those are answered.
 
 #### R3.15 `test_distance_between_two_known_points_is_correct_within_one_metre`
 - **Asserts** for the point pair in the known-answers fixture,
-  `|lpc.geo.distance_m(p1, p2) − geod_inverse_distance(p1, p2)| <= 1.0` metre,
+  `|dzialki.geo.distance_m(p1, p2) − geod_inverse_distance(p1, p2)| <= 1.0` metre,
   where the reference is `pyproj.Geod(ellps="WGS84").inv()` — an implementation
   independent of PostGIS and of our code.
 - **Green by** `distance_m()` transforming to EPSG:2180 before measuring.

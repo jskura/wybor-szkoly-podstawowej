@@ -35,11 +35,11 @@ area cross-check and the per-reason quarantine baseline.
 | 4 | Touched silent failures have named detectors | ✅ F1, F2, F3, F9, F12 — mapped in §11 |
 | 5 | Fixtures exist, dated, scrubbed | ⛔ **Not yet.** §10 specifies them; they are created as step 0 of the red-green sequence |
 | 6 | Metamorphic properties listed (numeric core) | ✅ §7 |
-| — | Ambiguities resolved by asking, not assuming (rule 2) | ⛔ **Eight open questions in §12 block seven named tests.** They are asked before those tests are written, not decided here |
+| — | Ambiguities resolved by asking, not assuming (rule 2) | ✅ **All twelve questions are answered** — D78–D88 and D90. §12 lists them. No test in this work item is blocked |
 
-Criterion 5 is work, not a blocker. **Criterion "rule 2" is a hard gate**: the
-tests marked *blocked* in §12 are not written — and their behaviour is not
-implemented — until the corresponding question is answered.
+Criterion 5 is work, not a blocker. The rule-2 gate is open: the owner answered
+every question this work item raised. §12 states each settled rule with its
+D-number. No test carries a `blocked` marker any more.
 
 ## 1. The band amendment — read this before copying any constant
 
@@ -76,12 +76,24 @@ exists. Module paths follow [`16-repository-layout.md`](../16-repository-layout.
 
 | Module | Callable | Returns |
 |---|---|---|
-| `lpc.normalize.units` | `parse_area(text)` | `AreaParse(m2: Decimal \| None, unit: 'm2'\|'ar'\|'ha'\|None, is_approximate: bool, failure: AreaFailure \| None)` |
-| `lpc.normalize.units` | `parse_price(text)` | `PriceParse(pln: Decimal \| None, failure: PriceFailure \| None)` |
-| `lpc.normalize.area_authority` | `resolve_area(register, structured, body, title)` | `ResolvedArea(m2: Decimal, source: 'register'\|'structured'\|'body'\|'title', conflict: bool)` |
+| `lpc.normalize.units` | `parse_area(text, field)` | `AreaParse(m2: Decimal \| None, unit: 'm2'\|'ar'\|'ha'\|None, is_approximate: bool, confidence: 'high'\|'low'\|'unknown', failure: AreaFailure \| None)` |
+| `lpc.normalize.units` | `parse_price(text)` | `PriceParse(pln: Decimal \| None, confidence: 'high'\|'low'\|'unknown', failure: PriceFailure \| None)` |
+| `lpc.normalize.area_authority` | `resolve_area(register, structured, body, title)` | `ResolvedArea(m2: Decimal, source: 'register'\|'structured'\|'body'\|'title', conflict: bool, candidates: dict[str, Decimal \| None])` |
 | `lpc.normalize.bands` | `band_flags(area_m2, price_per_m2)` | `frozenset[Flag]` |
 | `lpc.normalize.pipeline` | `normalize(parsed_item, register_area=None)` | `NormalizedListing` **or** `QuarantinedRecord(reason: QuarantineReason, listing_ref: dict)` |
 | `lpc.dedup.exact` | `dedup_exact(listings)` | `DedupResult(clusters, n_before, n_after)` |
+
+Four of these fields come from the answered questions.
+
+- `field ∈ {"structured","title","body"}` is a required argument. D86 reads the
+  bare `a` abbreviation as ares only in a structured field or title, or in body
+  text within 40 characters of an area keyword. The parser cannot apply that rule
+  without knowing the field.
+- `confidence ∈ {"high","low","unknown"}` records how the value was recovered.
+  D80, D83, D86 and D90 all produce a `low` value that still enters the corpus.
+- `candidates` keeps every stated area, so the plot page can show the loser
+  (§4.3).
+- `PriceFailure` gains `NOT_A_TOTAL` and `UNSUPPORTED_CURRENCY`.
 
 Three contract-level rules, each with a test:
 
@@ -177,8 +189,27 @@ Additional named tests in the same module:
   single cheapest way to introduce a 100× error on an `ar`-stated plot.
 - `test_parse_area_rejects_empty_and_whitespace` — `""`, `"   "`, `"—"` →
   `AreaFailure.ABSENT`.
-- `test_parse_area_marks_approximate` — `parse_area("ok. 1200 m²").m2 ==
-  Decimal("1200")` and `.is_approximate is True`. **Blocked by O-N5.**
+- `test_parse_area_marks_approximate` — `parse_area("ok. 1200 m²", "body").m2 ==
+  Decimal("1200")`, `.is_approximate is True` and `.confidence == "low"` (D83).
+- `test_approximate_marker_reaches_the_interface` — D83 also requires the marker
+  to reach the interface. The record the app renders carries `is_approximate`, so
+  the reader sees that the figure is the seller's estimate.
+- `test_parse_area_sums_a_compound` — `parse_area("1 ha 25 a", "structured").m2
+  == Decimal("12500")`, `.confidence == "low"` (D90). A first-value rule reads
+  this as 10 000 m² and makes the zł/m² figure 25% too high.
+- `test_parse_area_quarantines_a_disagreeing_restatement` — `"1200 m² (15 arów)"`
+  → `AreaFailure.CONFLICTING_STATEMENTS` (D90). An agreeing restatement,
+  `"1200 m² (12 arów)"`, keeps `confidence == "high"`.
+- `test_parse_area_quarantines_a_range` — `"1200-1500 m²"` →
+  `AreaFailure.NOT_SINGLE_VALUED` (D82). A midpoint invents a number nobody wrote.
+- `test_parse_area_dot_separator` — `"1.200 m²"` →
+  `AreaFailure.AMBIGUOUS_SEPARATOR` (D79). The one carve-out is a dot followed by
+  exactly four digits with the unit `ha`, the parcel register's own format:
+  `"1.2500 ha"` → `Decimal("12500")`, `confidence == "low"`.
+- `test_bare_a_needs_a_field_or_a_nearby_keyword` — D86. `"12 a"` in a structured
+  field or a title parses as 1200 m². The same text in body prose parses only
+  within 40 characters of an area keyword. `"Dojazd 12 a nawet 15 minut"` yields
+  no area.
 - `test_parse_area_unknown_unit_fails_loudly` — `"12 morgów"` →
   `AreaFailure.UNKNOWN_UNIT`, never a silent m² reading.
 - `test_ar_and_ha_multipliers_are_exactly_100_and_10000` — asserts the constants
@@ -239,7 +270,12 @@ first, with the chosen source recorded in `area_source`
 | `test_advert_never_overrides_register_even_when_more_precise` | register `1450`, structured `1449.87` | `m2 == 1450`, `source == "register"` — precision is not authority |
 | `test_conflicting_areas_set_the_conflict_flag` | register `1450`, structured `1200` | `conflict is True` **and** the advert value is retained on the record, not discarded |
 | `test_agreeing_areas_do_not_set_the_conflict_flag` | register `1200`, structured `1200` | `conflict is False` |
-| `test_conflict_threshold_boundary` | register `1200`, structured `1200 * (1 ± t)` | **Blocked by O-N4** — the threshold `t` is not invented here |
+| `test_conflict_threshold_boundary` | register `1200`, structured `1260.00` and `1260.01` | D81: `conflict` is set when the relative difference is **more than 5%**. `1260.00` is exactly 5% and does not flag; `1260.01` flags |
+
+**The threshold is 5%, not 2%** (D81). The owner chose the looser value. The
+consequence is recorded here so a reader sees it: a real register-versus-advert
+mismatch below 5% passes unflagged. On a 1200 m² plot that is a gap of up to
+60 m².
 
 `test_conflicting_areas_set_the_conflict_flag` carries rule 7: the disagreement is
 kept and shown, in the same spirit as the `zoning_claim` / `buildability`

@@ -74,7 +74,7 @@ Three conftest files. Nothing else may create a database connection.
 
 | Fixture | Scope | Behaviour |
 |---|---|---|
-| `pg_container` | session | Asserts `LPC_TEST_DATABASE_URL` is set; refuses to run if the database name does not end in `_test` (a guard against pointing the suite at a real database and truncating it) |
+| `pg_container` | session | Asserts `DZIALKI_TEST_DATABASE_URL` is set; refuses to run if the database name does not end in `_test` (a guard against pointing the suite at a real database and truncating it) |
 | `migrated_db` | session | Drops and recreates the target database, then runs `alembic upgrade head` **as a subprocess**. Never builds the schema from SQLAlchemy metadata — a schema built by the helper would let a migration bug pass every constraint test in item 2 |
 | `conn` | function | A `psycopg.Connection` opened on `migrated_db` inside an explicit transaction, **rolled back** in teardown. `autocommit=False`. Every constraint test uses this |
 | `conn_as(role)` | function | Factory returning a connection authenticated as `app_read` / `app_write` / `app_pipeline`. Used only by R2.27–R2.29 |
@@ -537,20 +537,20 @@ the `conn` fixture and is rolled back.
 
 | Test | Exact input | Exact expected | Exception | Markers |
 |---|---|---|---|---|
-| R1.1 | `import lpc` | `lpc.__version__ == "0.0.0"` | — | `unit` |
-| R1.2 | `pkgutil.iter_modules(lpc.__path__)` | set equals `{"config","db","ingest","normalize","geo","metrics","valuation","app","ops"}` | — | `unit` |
+| R1.1 | `import dzialki` | `dzialki.__version__ == "0.0.0"` | — | `unit` |
+| R1.2 | `pkgutil.iter_modules(dzialki.__path__)` | set equals `{"config","db","ingest","normalize","geo","metrics","valuation","app","ops"}` | — | `unit` |
 | R1.3 | `git ls-files config/` | `sorted(out) == ["config/anchors.example.yml", "config/sources.yml"]` | — | `architecture` |
 | R1.4a | `git check-ignore -q config/anchors.yml` | returncode `0` | — | `architecture` |
 | R1.4b | write `config/anchors.yml`, run `git status --porcelain` | zero lines containing `anchors.yml`; file removed in teardown even on failure | — | `architecture` |
 | R1.5 | `load_anchors("config/anchors.example.yml")` | `sorted(keys) == ["A","B"]`; `A.label == "PLACEHOLDER_ANCHOR_A"`; `A.lat == 0.0`; `A.lon == 0.0`; for each anchor `re.search(r"\d", label) is None` and `not (14.0 <= lon <= 24.2 and 49.0 <= lat <= 55.0)` | — | `unit` |
 | R1.5-control | `load_anchors(fixtures/config/anchors_real_looking_2026-08-08.yml)` | the bbox predicate is `True` — i.e. R1.5's bbox limb is capable of failing | — | `unit` |
-| R1.6 | `ast.parse(Path("src/lpc/config/anchors.py").read_text())` | count of `ast.Constant` floats `f` with `14.0<=f<=24.2` or `49.0<=f<=55.0` equals `0`; count of `ast.Constant` strings matching `r"\d+\s*[A-Za-zĄ-ż]"` equals `0` | — | `architecture` |
-| R1.7 | `load_anchors(tmp_path/"absent.yml")` | raises; `"config/anchors.example.yml" in str(exc)`; `not issubclass(AnchorConfigMissing, OSError)`; no warning recorded via `recwarn` | `lpc.config.AnchorConfigMissing` | `unit` |
+| R1.6 | `ast.parse(Path("src/dzialki/config/anchors.py").read_text())` | count of `ast.Constant` floats `f` with `14.0<=f<=24.2` or `49.0<=f<=55.0` equals `0`; count of `ast.Constant` strings matching `r"\d+\s*[A-Za-zĄ-ż]"` equals `0` | — | `architecture` |
+| R1.7 | `load_anchors(tmp_path/"absent.yml")` | raises; `"config/anchors.example.yml" in str(exc)`; `not issubclass(AnchorConfigMissing, OSError)`; no warning recorded via `recwarn` | `dzialki.config.AnchorConfigMissing` | `unit` |
 | R1.8 | for each `street`/`house_number` value read from the gitignored `config/anchors.yml`: `git grep -F -- <v>` and `git log -p --all -S <v> --format=%H` | grep returncode `1` (no match); `git log` stdout is empty | — | `architecture`, `needs_git_history`, `needs_local_secrets` |
-| R1.9a | `LPC_DATABASE_URL` deleted via `monkeypatch.delenv`, then `Settings()` | raises | `lpc.config.ConfigError` | `unit` |
-| R1.9b | `LPC_DATABASE_URL="postgresql://u:p@h:5432/db"` | `Settings().database_url == "postgresql://u:p@h:5432/db"` | — | `unit` |
+| R1.9a | `DZIALKI_DATABASE_URL` deleted via `monkeypatch.delenv`, then `Settings()` | raises | `dzialki.config.ConfigError` | `unit` |
+| R1.9b | `DZIALKI_DATABASE_URL="postgresql://u:p@h:5432/db"` | `Settings().database_url == "postgresql://u:p@h:5432/db"` | — | `unit` |
 | R1.10a | `config/sources.yml`, entry `minimal_registry` | `enabled is False`; `robots_ok is False`; `rate_limit_rpm == 5` | — | `unit` |
-| R1.10b | `fixtures/config/sources_bad_kind_2026-08-08.yml` | raises; `"scraper" in str(exc)` and `"kind" in str(exc)` | `lpc.config.ConfigError` | `unit` |
+| R1.10b | `fixtures/config/sources_bad_kind_2026-08-08.yml` | raises; `"scraper" in str(exc)` and `"kind" in str(exc)` | `dzialki.config.ConfigError` | `unit` |
 | R1.11 | `SELECT current_setting('server_version_num')::int`, `postgis_lib_version()`, `SELECT extname FROM pg_extension` | `160000 <= v < 170000`; `lib.startswith("3.")`; `"postgis" in extnames` | — | `integration`, `needs_db` |
 | R1.12 | `alembic upgrade head` on a fresh database | `SELECT count(*) FROM alembic_version == 1`; `version_num == ScriptDirectory.get_heads()[0]`; `len(get_heads()) == 1` | — | `integration`, `needs_db` |
 | R1.13 | `alembic upgrade head` twice | `version_num` unchanged; `schema_digest()` byte-identical | — | `integration`, `needs_db` |
@@ -662,15 +662,15 @@ red against the schema as literally printed in `15` §9, and that is the point.
 #### R2.18b `test_range_kind_threshold_is_read_from_configuration` (D67)
 
 - **Layer** `unit`. No database.
-- **Input** `lpc.config.metrics.load()` over a temporary config file, plus
-  `lpc.metrics.ranges.range_kind_for(n)`.
+- **Input** `dzialki.config.metrics.load()` over a temporary config file, plus
+  `dzialki.metrics.ranges.range_kind_for(n)`.
 - **Expected** with `range_kind_min_n: 5` → `range_kind_for(1) == "min_max"`,
   `range_kind_for(4) == "min_max"`, `range_kind_for(5) == "iqr"`,
   `range_kind_for(1000) == "iqr"`. With `range_kind_min_n: 8` →
   `range_kind_for(5) == "min_max"`. The second case is the one that proves the
   threshold is not frozen: an implementation with `5` hardcoded passes the first
   four assertions and fails the fifth.
-- **Companion** an `architecture` test: `ast` over `src/lpc/metrics/` finds zero
+- **Companion** an `architecture` test: `ast` over `src/dzialki/metrics/` finds zero
   `ast.Constant` integers equal to `5` in any comparison against a name containing
   `n`. And a scan of `db/migrations/` for the string `range_kind_matches_n`,
   asserting `0` occurrences — D67 removed it and a re-introduction must fail.
@@ -711,7 +711,7 @@ assertion to bare `Exception`.
 | R2.25b | partition key column via `pg_get_partkeydef` | `"observed_at"` | — |
 | R2.25c | attached partition names | exactly `{f"listing_snapshot_2026_{m:02d}" for m in range(1,13)}` — **12**, deterministic, created by migration `0002` | — |
 | R2.25d | `pg_get_expr(relpartbound, oid)` of `listing_snapshot_2026_01` | `"FOR VALUES FROM ('2026-01-01 00:00:00+00') TO ('2026-02-01 00:00:00+00')"` under `TIME ZONE 'UTC'` | — |
-| R2.25e | `lpc.db.partitions.ensure_months(4)` then re-read names | a partition exists whose range contains `date_trunc('month', now())` and each of the next three months | — |
+| R2.25e | `dzialki.db.partitions.ensure_months(4)` then re-read names | a partition exists whose range contains `date_trunc('month', now())` and each of the next three months | — |
 | R2.26 | insert snapshot with `observed_at='2099-01-01'` | rejected; `'no partition of relation "listing_snapshot" found for row' in str(exc)` | `CheckViolation` (SQLSTATE `23514`) |
 | R2.27 | as `app_pipeline`, insert one `listing_snapshot` row | succeeds; `count(*) == 1` | — |
 | R2.28a | `has_table_privilege(r,'listing_snapshot',p)` for `r ∈ {app_read,app_write,app_pipeline}`, `p ∈ {UPDATE,DELETE}` | all six `False` | — |
@@ -729,7 +729,7 @@ computed rather than literal.
 
 | Test | Input | Expected | Exception |
 |---|---|---|---|
-| R2.14 | `lpc.ops.assertions.price_type_complete(conn)` on a clean migrated database | `result.passed is True`; `result.observed == {"listing": 0, "transaction": 0, "metric_unit_month": 0}` — exact dict equality, not truthiness | — |
+| R2.14 | `dzialki.ops.assertions.price_type_complete(conn)` on a clean migrated database | `result.passed is True`; `result.observed == {"listing": 0, "transaction": 0, "metric_unit_month": 0}` — exact dict equality, not truthiness | — |
 | R2.15 | inside `conn`'s transaction: `ALTER TABLE listing DROP CONSTRAINT listing_price_type_check`; insert `LISTING` with `price_type='sales'`; run the assertion | `result.passed is False`; `result.observed["listing"] == 1`; one row in `assertion_run` with `assertion='price_type_complete'`, `passed = false`, `blocked_publication = true` | — |
 
 R2.15 is the control that gives R2.14 meaning: with the constraint in place, the
@@ -758,7 +758,7 @@ must not open a database connection.
 | R3.11 | `known_points["skierniewice_city_centre"]` | `.teryt == expected_teryt_gmina`; `city.teryt != rural.teryt`; `city.name == rural.name == "Skierniewice"`; `city.parent_teryt != rural.parent_teryt` | — | `integration`, `needs_db` |
 | R3.11b | the **synthetic** `Testowo` pair (§3.3) | `gmina_for_point` at each interior point returns `9901011` and `9902011` respectively; names equal, teryts differ, parents differ | — | `integration`, `needs_db` |
 | R3.12 | `known_points["elblag_city_centre"]` | `.teryt == expected_teryt_gmina`; its `parent_teryt` differs from that of at least one gmina whose parent is `manifest["teryt"]["powiat_elblaski"]` | — | `integration`, `needs_db` |
-| R3.13 | `ast` over `src/lpc/`; regex over SQL string literals | (a) no `lpc.geo` function has a parameter named `gmina_name`/`name`/`nazwa` reaching an `admin_unit` query; (b) zero matches of `r"admin_unit[\s\S]{0,200}\bname\s*(=|ILIKE|LIKE)"` case-insensitively; (c) failure message names file and line | — | `architecture` |
+| R3.13 | `ast` over `src/dzialki/`; regex over SQL string literals | (a) no `dzialki.geo` function has a parameter named `gmina_name`/`name`/`nazwa` reaching an `admin_unit` query; (b) zero matches of `r"admin_unit[\s\S]{0,200}\bname\s*(=|ILIKE|LIKE)"` case-insensitively; (c) failure message names file and line | — | `architecture` |
 | R3.14 | `known_points["boundary_400m"]`, `["boundary_600m"]` | `boundary_risk(p400) is True`; `boundary_risk(p600) is False` | — | `integration`, `needs_db` |
 | R3.15a | `distance_m(dist_pair_short)` | `abs(d − 600.0) <= 1.0`; reference `Geod(ellps="WGS84").inv()` agrees to `1e-3` m | — | `unit` |
 | R3.15b | `distance_m(dist_pair_ring)` | `abs(d − 20000.0) <= 20.0` (0.1 %) | — | `unit` |
@@ -779,7 +779,7 @@ be asserted in CI; the synthetic fixture can, exactly.
 #### R3.19 `test_ring_membership_is_boundary_within_25km_not_centroid`
 - **Layer** `integration`, `needs_db`.
 - **Input** load `ring_membership.json` and its anchor `T`; run
-  `lpc.geo.rings.assign(conn, radius_m=25000)`.
+  `dzialki.geo.rings.assign(conn, radius_m=25000)`.
 - **Expected**
   - `set(teryt for row where 'T' = ANY(in_ring)) == {"9801011","9801021","9801041"}` —
     exact set equality against `manifest["expected"]["in_ring_T"]`
@@ -900,7 +900,7 @@ rather than decorative.
 | Job | Trigger | Selection | Needs |
 |---|---|---|---|
 | `fast` | every push, every PR | `pytest -m "unit or architecture" --deselect-marker needs_git_history --deselect-marker needs_local_secrets` | Python only. Target < 30 s |
-| `db` | every push, every PR | `pytest -m "integration and not slow"` | Postgres service container. `LPC_TEST_DATABASE_URL` pointing at a database whose name ends `_test` |
+| `db` | every push, every PR | `pytest -m "integration and not slow"` | Postgres service container. `DZIALKI_TEST_DATABASE_URL` pointing at a database whose name ends `_test` |
 | `db-slow` | every push to the default branch; nightly | `pytest -m "integration and slow"` | Same, plus the recorded PRG clip decompressed |
 | `history` | nightly, and as a **pre-push hook** | `pytest -m needs_git_history` | `actions/checkout` with `fetch-depth: 0`. **V7(b) cannot run in a shallow clone** — the default `fetch-depth: 1` makes `git log -p --all -S` scan one commit and pass vacuously |
 | `local-only` | pre-commit hook on the developer's machine | `pytest -m needs_local_secrets` | The gitignored `config/anchors.yml`. Never runs in CI, by construction |
