@@ -9,7 +9,12 @@ a plot's asking price can be judged against what comparable land actually costs.
 
 ## Status
 
-**Planning complete, scope deliberately reduced after an audit.** No code yet.
+**Planning complete. The tests are specified. No code yet.**
+
+Twelve TDD documents cover every part of the application — six specifications and
+six concrete test plans — and every open question they raised has an answer. The
+build order is in [`docs/23-implementation-plan.md`](docs/23-implementation-plan.md):
+fifteen stages, each with a condition that says when it is done.
 
 The full design — 26 epics, roughly **150–200 focused days** — is documented and
 retained, but the **plan of record is [`docs/18-v0-scope.md`](docs/18-v0-scope.md)**:
@@ -75,11 +80,11 @@ Start with `18` (what we're building), then `17` (why it shrank).
 | [`docs/18-v0-scope.md`](docs/18-v0-scope.md) | **The plan of record** — the ~26–29 day version, its work plan, its checks, and what it will teach us |
 | [`docs/17-assumption-audit.md`](docs/17-assumption-audit.md) | **Self-review** — contradictions, unasked questions, unverified facts |
 | [`CLAUDE.md`](CLAUDE.md) | Binding project rules. 1: Simplified Technical English. 2: ask with the AskUserQuestion tool. 3: PRD first. 4: TDD. 5: a validation method per feature. 6: two price types. 7: provenance. 8: the two-pass workflow |
-| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — D1–D63; open items O1–O31, all closed or assigned, 3 blocked on you |
+| [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — D1–D125 in 22 batches; open items O1–O40. Five remain: O10 and O18 blocked on you, O25 set from the first run, O39 the proxy wording, O40 the legal reading |
 | [`docs/01-user-journeys.md`](docs/01-user-journeys.md) | 12 journeys (J1–J8 buying, J9–J12 analytical) and the capability map |
-| [`docs/02-prd.md`](docs/02-prd.md) | Requirements FR-1..72, data model, architecture, milestones, risks |
+| [`docs/02-prd.md`](docs/02-prd.md) | Requirements FR-1..76, data model, architecture, milestones, risks |
 | [`docs/03-data-sources.md`](docs/03-data-sources.md) | Polish data sources, the `robots.txt` gate, scraping ground rules |
-| [`docs/04-validation.md`](docs/04-validation.md) | V1–V62 — how we know each feature works, plus a work-item → coverage table |
+| [`docs/04-validation.md`](docs/04-validation.md) | V1–V66 — how we know each feature works, plus a work-item → coverage table |
 | [`docs/05-analytics-methodology.md`](docs/05-analytics-methodology.md) | The valuation method — comparables, ranges, mix adjustment, scoring |
 | [`docs/06-taxonomy-and-extraction.md`](docs/06-taxonomy-and-extraction.md) | Asset classes, and how messy advert text becomes structured attributes |
 | [`docs/07-geocoding.md`](docs/07-geocoding.md) | Location resolution, precision tiers, and what each tier may be used for |
@@ -153,8 +158,34 @@ E24 Operations · E25 Quality harness · E26 Access control   (cross-cutting)
 Critical path: E1 → E2 → E4 → E5 → E7 → E11 → E15 → E16. v0 takes thin slices of
 E1–E6 and E11 only; see [`docs/13-scope.md`](docs/13-scope.md) §3a.
 
+## The test specifications
+
+Twelve documents, in `docs/tdd/`. Each pair covers one part of the application:
+a specification that says what to assert and why, and a test plan that gives the
+concrete cases, fixtures and expected values.
+
+| Pair | Covers |
+|---|---|
+| `01-foundation-and-schema` | Repository, configuration, migrations, the schema's constraints, boundaries and TERYT |
+| `02-connectors` | The three-stage connector contract, the HTTP client, robots, rate limits, and the six sources |
+| `03-normalization-and-dedup` | Units, price per m², area parsing, quarantine, the match key |
+| `04-aggregates-and-valuation` | Stock and flow, percentiles, the comparable estimator, the valuation log |
+| `05-feasibility` | The good-neighbour test, the 54-row truth table, purchase restrictions, both badges |
+| `06-surface` | The pure render layer and every rule that keeps the interface honest |
+
+`docs/tdd/00-gap-analysis.md` records what two review passes found in them.
+
 ## Next step
 
-Check `robots.txt` (O10), then start v0 day 1 following the rule-3 cycle:
-validation method → failing test → implementation → passing test. Definition of
-done is in [`docs/16-repository-layout.md`](docs/16-repository-layout.md) §6.
+Stage **S1** of [`docs/23-implementation-plan.md`](docs/23-implementation-plan.md):
+repository, Docker, Postgres with PostGIS, the migration harness and configuration
+loading. It depends on nothing external, so it runs before the `robots.txt`
+reading. Only S12, the portal connector, waits on that.
+
+Each stage follows the rule-4 cycle: validation method → failing test →
+implementation → passing test. Definition of done is in
+[`docs/16-repository-layout.md`](docs/16-repository-layout.md) §6.
+
+**Still needed from you:** the `robots.txt` reading (O10) before S12, the same
+reading for the KOWR, auction and BIP hosts before S13, the two legal acts (O40)
+before S15, and the repository rename to `ile-za-dzialke`.
