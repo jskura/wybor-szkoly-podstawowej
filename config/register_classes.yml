@@ -1,0 +1,129 @@
+# The EGiB register classes, and the purchase regime each one falls under.
+#
+# Data, never a branch. `src/dzialki/legal/` holds no class symbol at all, so a
+# class added here is covered on the day it is added (05 §10.1, D106, D117).
+#
+# `regime` has exactly three values: agricultural, forest, none. A boolean had
+# two, and the product has three outcomes: the farmland badge, the forest badge,
+# and no badge (D106).
+#
+# What this file does NOT carry: the EGiB classification regulation. No document
+# in this repository names it, so the field below reads ⟨RECORD⟩ rather than a
+# number somebody remembered. The regime column comes from the two documents each
+# row cites, not from the regulation.
+
+regulation: "⟨RECORD⟩"
+regulation_verified: false
+consolidated_text_date: null
+
+classes:
+  # --- agricultural: 8 rows -----------------------------------------------
+  - symbol: "R"
+    name: "grunty orne"
+    regime: agricultural
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "S"
+    name: "sady"
+    regime: agricultural
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Ł"
+    name: "łąki trwałe"
+    regime: agricultural
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Ps"
+    name: "pastwiska trwałe"
+    regime: agricultural
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  # One character from `B`, and a different regime.
+  - symbol: "Br"
+    name: "grunty rolne zabudowane"
+    regime: agricultural
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  # Two characters from `Ws`, and a different regime.
+  - symbol: "Wsr"
+    name: "grunty pod stawami"
+    regime: agricultural
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "W"
+    name: "grunty pod rowami"
+    regime: agricultural
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  # Wooded, and a użytek rolny, so the farmland rule governs it (D117).
+  - symbol: "Lzr"
+    name: "grunty zadrzewione i zakrzewione na użytkach rolnych"
+    regime: agricultural
+    source: "docs/19-legal-and-feasibility.md §2a.3 (D117)"
+
+  # --- forest: 1 row -------------------------------------------------------
+  # A different act and a different pre-emption holder, so its own badge (D106).
+  - symbol: "Ls"
+    name: "lasy"
+    regime: forest
+    source: "docs/19-legal-and-feasibility.md §2a.3 (D117)"
+
+  # --- none: 15 rows -------------------------------------------------------
+  # Wooded, outside the agricultural register. The risk of this ruling is
+  # recorded in 19 §2a.3: if the forest act does reach `Lz`, we show no badge
+  # where a pre-emption right exists.
+  - symbol: "Lz"
+    name: "grunty zadrzewione i zakrzewione"
+    regime: none
+    source: "docs/19-legal-and-feasibility.md §2a.3 (D117)"
+  - symbol: "B"
+    name: "tereny mieszkaniowe"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Ba"
+    name: "tereny przemysłowe"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Bi"
+    name: "inne tereny zabudowane"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Bp"
+    name: "zurbanizowane tereny niezabudowane"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Bz"
+    name: "tereny rekreacyjno-wypoczynkowe"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  # Lower-case symbol. Matching is case sensitive, so `DR` is unrecognised.
+  - symbol: "dr"
+    name: "drogi"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Tk"
+    name: "tereny kolejowe"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Ti"
+    name: "inne tereny komunikacyjne"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Tp"
+    name: "grunty przeznaczone pod budowę dróg i kolei"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Ws"
+    name: "wody powierzchniowe płynące"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Wp"
+    name: "wody powierzchniowe stojące"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Wm"
+    name: "morskie wody wewnętrzne"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  - symbol: "Tr"
+    name: "tereny różne"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"
+  # Often assumed agricultural. It is not, in this table.
+  - symbol: "N"
+    name: "nieużytki"
+    regime: none
+    source: "docs/tdd/plans/05-feasibility-test-plan.md §5.1"

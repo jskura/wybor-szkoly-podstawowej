@@ -1,0 +1,134 @@
+# The legal claims the purchase-restriction badges make, one entry per claim.
+#
+# The badge reads the act title and the pre-emption holder from this file. No
+# module under `src/` holds either string, so a render helper cannot name the
+# wrong act or the wrong authority (F16, 05 §12.2).
+#
+# D104 removed the expiry. This file therefore carries no `expires_at`, no
+# `max_age_days` and no `citation_max_age_days`. D105 puts the check where the
+# risk is: the application prompts for re-verification the first time a badge of
+# a regime appears in a session (FR-74, D116).
+#
+# `identity_ratified` answers one question: did the owner ratify this act title
+# and this pre-emption holder? It is not a claim that anybody read the act.
+#   agricultural — true. `19` §2.2 carries the copy, and D51 ratified it.
+#   forest       — false. `19` §2a.1 marks all three claims ‡ unverified (D122),
+#                  and the badge stays blocked until the owner checks them.
+# The loader refuses to serve an unratified regime, the same way the unit map
+# refuses to serve unverified entries. A badge that names the wrong authority is
+# worse than no badge, because the reader telephones the wrong office.
+#
+# Every claim below carries `verified_at: null`. Nobody on this project has read
+# either consolidated text (O40). While a threshold claim stays unverified, the
+# badge renders without it.
+#
+# ⟨RECORD⟩ marks a field no document in this repository states. Record the real
+# value when you read the act; do not fill it from memory.
+
+regimes:
+  - regime: agricultural
+    act_title: "ustawa o kształtowaniu ustroju rolnego"
+    preemption_holder: "KOWR"
+    identity_ratified: true
+    identity_source: "docs/19-legal-and-feasibility.md §2.2 — the ratified badge copy (D51)"
+    claims:
+      - claim_id: ukur_consent_threshold_ha
+        kind: threshold
+        value: "5 ha"
+        source: "docs/19-legal-and-feasibility.md §2.1"
+        dziennik_ustaw_reference: "⟨RECORD⟩"
+        consolidated_text_id: "⟨RECORD⟩"
+        text_as_of: null
+        source_url: "⟨RECORD⟩"
+        verified_at: null
+        verified_by: null
+        verification_note: >-
+          A secondary-source claim. `19` §2.1 says the sources disagree and the
+          law moved in 2026. Read the consolidated text before the badge states
+          this number.
+      - claim_id: ukur_threshold_effective_date
+        kind: threshold
+        value: "2026-04-30"
+        source: "docs/19-legal-and-feasibility.md §2.1"
+        dziennik_ustaw_reference: "⟨RECORD⟩"
+        consolidated_text_id: "⟨RECORD⟩"
+        text_as_of: null
+        source_url: "⟨RECORD⟩"
+        verified_at: null
+        verified_by: null
+        verification_note: >-
+          The date the threshold above took effect, from the same secondary
+          sources. Unread.
+      - claim_id: ukur_kowr_preemption_applies
+        kind: scope
+        value: "⟨RECORD⟩"
+        source: "docs/19-legal-and-feasibility.md §2.1"
+        dziennik_ustaw_reference: "⟨RECORD⟩"
+        consolidated_text_id: "⟨RECORD⟩"
+        text_as_of: null
+        source_url: "⟨RECORD⟩"
+        verified_at: null
+        verified_by: null
+        verification_note: >-
+          `19` §2.1 states that the pre-emption right can attach regardless of
+          the parcel size. The badge says the right is possible, and says no
+          more, until somebody reads the article that governs it.
+      - claim_id: ukur_resale_holding_period_years
+        kind: threshold
+        value: "⟨RECORD⟩"
+        source: "docs/19-legal-and-feasibility.md §2.1"
+        dziennik_ustaw_reference: "⟨RECORD⟩"
+        consolidated_text_id: "⟨RECORD⟩"
+        text_as_of: null
+        source_url: "⟨RECORD⟩"
+        verified_at: null
+        verified_by: null
+        verification_note: >-
+          `19` §2.1 mentions a holding period and states no number. Unverified,
+          and not even stated.
+
+  - regime: forest
+    act_title: "ustawa o lasach"
+    preemption_holder: "Lasy Państwowe"
+    identity_ratified: false
+    identity_source: "docs/19-legal-and-feasibility.md §2a.1 — three ‡ claims (D122)"
+    claims:
+      - claim_id: las_act_title
+        kind: identity
+        value: "ustawa o lasach"
+        source: "docs/19-legal-and-feasibility.md §2a.1"
+        dziennik_ustaw_reference: "⟨RECORD⟩"
+        consolidated_text_id: "⟨RECORD⟩"
+        text_as_of: null
+        source_url: "⟨RECORD⟩"
+        verified_at: null
+        verified_by: null
+        verification_note: >-
+          ‡ The assistant wrote this claim and nobody checked it (D122). Naming
+          the wrong act is the failure this entry blocks.
+      - claim_id: las_preemption_holder
+        kind: identity
+        value: "Lasy Państwowe"
+        source: "docs/19-legal-and-feasibility.md §2a.1"
+        dziennik_ustaw_reference: "⟨RECORD⟩"
+        consolidated_text_id: "⟨RECORD⟩"
+        text_as_of: null
+        source_url: "⟨RECORD⟩"
+        verified_at: null
+        verified_by: null
+        verification_note: >-
+          ‡ Unverified (D122). Doc 15's schema comment names the same holder.
+          That is a starting point for the reading, not the result of one.
+      - claim_id: las_preemption_scope
+        kind: scope
+        value: "⟨RECORD⟩"
+        source: "docs/19-legal-and-feasibility.md §2a.1"
+        dziennik_ustaw_reference: "⟨RECORD⟩"
+        consolidated_text_id: "⟨RECORD⟩"
+        text_as_of: null
+        source_url: "⟨RECORD⟩"
+        verified_at: null
+        verified_by: null
+        verification_note: >-
+          ‡ Unverified (D122). `19` §2a.1 states the right attaches regardless
+          of area, with exceptions for transfers inside a family.
