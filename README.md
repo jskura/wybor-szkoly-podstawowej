@@ -9,12 +9,16 @@ a plot's asking price can be judged against what comparable land actually costs.
 
 ## Status
 
-**Eleven of fifteen stages are built. 1 521 tests pass.**
+**All fifteen stages have their logic built. 1 929 tests pass.**
 
-The four that remain need data no code can produce: two register downloads, three
-`robots.txt` readings, county building data, and two acts read against their
-consolidated text. [`docs/23-implementation-plan.md`](docs/23-implementation-plan.md)
-§3a says which stage waits on what.
+What remains is not code. Four things need data nobody has yet: the register
+downloads, the `robots.txt` readings, the two acts read against their
+consolidated text, and a 20-parcel hand-labelled set that cannot be produced by
+tooling. Until each arrives the affected feature **refuses rather than guesses** —
+the unit map will not load, the forest badge will not render, and a verdict with
+no coverage evidence cannot be stored.
+[`docs/23-implementation-plan.md`](docs/23-implementation-plan.md) §3a says which
+stage waits on what.
 
 Twelve TDD documents cover every part of the application — six specifications and
 six concrete test plans — and every open question they raised has an answer. The
