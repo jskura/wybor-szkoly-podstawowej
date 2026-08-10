@@ -39,17 +39,17 @@ You have a listing or a plot in mind. You want a verdict.
 │  3 200 m² · gmina Skierniewice · 142 zł/m²              │
 │  cena ofertowa                                          │
 ├─────────────────────────────────────────────────────────┤
-│  ▸ WERDYKT                                    [rozwiń]  │   ← collapsed (§7)
-├─────────────────────────────────────────────────────────┤
 │  Podobne oferty (przepływ, ostatnie 90 dni)             │
-│    mediana 118 · zakres 96–141 · n = 23                 │
+│    mediana 118 · zakres międzykwartylowy 96–141 · n = 23│
 │  Podobne oferty (stan, wszystkie aktywne)               │
-│    mediana 127 · zakres 99–168 · n = 61                 │
+│    mediana 127 · zakres międzykwartylowy 99–168 · n = 61│
 │                                                          │
 │  Ceny transakcyjne · powiat skierniewicki · GUS 2025Q4  │
 │    średnia 104 · poziom powiatu, dane kwartalne         │
 │                                                          │
 │  ⚠ Nie sprawdzamy planu — nie wiemy, czy można budować  │
+├─────────────────────────────────────────────────────────┤
+│  ▸ WERDYKT                                    [rozwiń]  │   ← last, and shut (D98)
 └─────────────────────────────────────────────────────────┘
 ```
 

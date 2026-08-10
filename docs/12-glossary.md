@@ -102,3 +102,14 @@ them — see `07` §4.
 | plot cluster | One real plot advertised several times, collapsed (FR-13) |
 | location precision | How well we know where a listing is (`07` §1). Gates what it may be used for |
 | method_version | The valuation method that produced a logged prediction (`05` §9) |
+
+
+## Protected terms (D99)
+
+The terminology lint checks UI strings against this list. These terms are never
+loosely translated and never replaced with a synonym. This section is the only
+home for the list; other documents point here.
+
+`cena ofertowa` · `cena transakcyjna` · `działka` · `plan ogólny` · `MPZP` ·
+`wypis i wyrys` · `media` · `droga dojazdowa` · `zakres międzykwartylowy` ·
+`warunki zabudowy`

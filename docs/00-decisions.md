@@ -254,6 +254,19 @@ Answers to the open questions raised by the pass-2 normalization plan.
 | D92 | Q10 robots file with no readable group | **Allow** | Follows RFC 9309: a served file with no matching group permits access. Note the deliberate asymmetry with our stricter local rule that a **missing** file is not permission. Both rules are stated explicitly in code; neither is inferred from the other |
 | D93 | Q13 `Retry-After` longer than an hour | **End the run, publish nothing** | A crawl held open for a day cannot be told apart from a hang. Yesterday's data stays in place |
 
+## Batch 20 — connector thresholds and surface details (2026-08-07)
+
+| # | Item | Decision | Note |
+|---|---|---|---|
+| D94 | Q11 auction fraction tolerance | **1 zł** | Notices round to the whole złoty |
+| D95 | Q12 count-agreement tolerance | **The larger of 3 listings or 2%** | The absolute floor exists because 2% of a 20-result query is less than one listing |
+| D96 | Q15 approximate stated totals | **Report only, never block** | An alarm that cries wolf trains the reader to ignore it. Rounding is not a shortfall |
+| D97 | Q14 TERYT to BDL unit codes | **Record the mapping as data in config** | Never derive one code from the other by string surgery. That failure shows only as missing data |
+| D98 | OPEN-S1 screen order | **Comparables first, verdict below** — the rule wins, the sketch is redrawn | The collapsed verdict exists so the evidence is read first. The sketch contradicted its own purpose |
+| D99 | OPEN-S2 protected-terms list | **Move it to the glossary**; both documents point there | One home for terminology |
+| D100 | OPEN-S7 spread wording | **The precise Polish term everywhere** | Longer, but the range is a specific one and the short word does not say which |
+| D101 | OPEN-S5 container roles | **Add `section` and `header`** | Both are covered by the existing sweep that walks every role, which is the test that catches a dropped node |
+
 ### Items raised after batch 13
 
 | # | Raised by | Status |
