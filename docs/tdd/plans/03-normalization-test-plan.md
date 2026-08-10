@@ -1,13 +1,13 @@
 # Test plan — parse/normalize and v0 dedup (pass 2 detail)
 
-Pass 2, step 5 of the standard workflow ([`CLAUDE.md`](../../../CLAUDE.md) rule 7),
+Pass 2, step 5 of the standard workflow ([`CLAUDE.md`](../../../CLAUDE.md) rule 8),
 for [`03-normalization-and-dedup.md`](../03-normalization-and-dedup.md).
 
 Pass 1 named the tests and fixed their order. **This document is the data**: every
 input string, every expected value, every expected failure, every fixture row and
 the CI wiring that runs them. A developer should be able to type the tables in
 without a further decision — except where a table says ⛔, which means the decision
-is not ours to take (rule 2).
+is not ours to take (rule 3).
 
 Read with, not instead of, the pass-1 spec: the red-green order (§3 there), the
 contracts (§2 there) and the mutation list (§14 there) are not repeated here.
@@ -29,10 +29,10 @@ red-green sequence, and recorded in [`00-decisions.md`](../../00-decisions.md).
 | O-N5 | `"ok. 1200 m²"` | **Parse**, `is_approximate=True`, confidence `low`, marker reaches the UI | §1.4 rows |
 | O-N6 | The v0 cross-source exact-match key | **Triple + round-number guard** — see §5.3 | §5 |
 | O-N7 | Canonical record in a cluster | **Earliest `first_seen_at`, then lowest `source_id`, then lowest `external_id`** — a total order, so it is deterministic under permutation | §5.2 |
-| O-N8 | Out-of-band record in aggregates | **Excluded from aggregates, present in the corpus and on the plot page**, with the flag rendered. V47 requires that adding an out-of-band observation leaves the estimate unchanged, which forces exclusion; rule 6 forces visibility | §4 row B9 |
+| O-N8 | Out-of-band record in aggregates | **Excluded from aggregates, present in the corpus and on the plot page**, with the flag rendered. V47 requires that adding an out-of-band observation leaves the estimate unchanged, which forces exclusion; rule 7 forces visibility | §4 row B9 |
 | **O-N9** | Compound / multi-unit strings: `"1 ha 25 a"`, `"1200 m² (12 arów)"`, `"1200 m² (15 arów)"` | **Additive compound** (`1 ha 25 a`) → sum, confidence `low`. **Agreeing restatement** → the value, confidence `high`. **Disagreeing restatement** → quarantine `area_conflicting_statements` | §1.6 rows |
 | **O-N10** | The bare `a` abbreviation in free body prose — `"dojazd 12 a nawet 15 minut"` matches `12 a` | **Context-required**: `12a` / `12 a` is read as ares only in a structured field or title, or in body text within 40 characters of an area keyword (`powierzchnia`, `pow.`, `działka`, `grunt`). Otherwise no area | §1.3 rows `ar_abbrev_body_prose`, `ar_abbrev_body_far_from_keyword` |
-| **O-N11** | Does a `low`-confidence area enter aggregates, and how is it rendered? | **Enters**, flagged; rendered with the same "always show, always flag" treatment as a thin `n` (rule 6) | No parse test — blocks the surface test only |
+| **O-N11** | Does a `low`-confidence area enter aggregates, and how is it rendered? | **Enters**, flagged; rendered with the same "always show, always flag" treatment as a thin `n` (rule 7) | No parse test — blocks the surface test only |
 | **O-N12** | Does the band check read the exact `Decimal` quotient or the `NUMERIC(12,2)` value the generated column stores? | **The exact quotient**, so a record whose stored figure rounds back onto the edge is still flagged | §4 row B12 |
 
 **O-N6 first, O-N12 second.** O-N6 is the one V56 says can falsify v0 dedup;
@@ -43,7 +43,7 @@ O-N12 changes the answer for a whole thin class of records at the edge.
 - `test_every_blocked_marker_names_an_open_question` — the string in each `blocked`
   marker must match an entry in `00-decisions.md` **that has no recorded answer**.
   When a question is answered, CI fails until the marker is removed and the test
-  written. This is rule 2 made mechanical rather than remembered.
+  written. This is rule 3 made mechanical rather than remembered.
 
 ---
 
@@ -350,7 +350,7 @@ per-reason rates must be able to show it spiking on one source without the
 rent stored as a sale price is a plausible-looking number.
 
 `foreign_currency` is not converted. A conversion needs an FX rate with an as-of
-date (rule 6), which v0 does not carry.
+date (rule 7), which v0 does not carry.
 
 ---
 
@@ -753,7 +753,7 @@ scrubbed of seller names, phone numbers and addresses at capture (FR-23).
 
 - `test_every_fixture_file_has_a_capture_date` — parses `captured_at` from every
   file under `tests/fixtures/`; a fixture with no date is a fixture with no
-  provenance (rule 6).
+  provenance (rule 7).
 - `test_no_fixture_contains_a_phone_number_or_email` — regex sweep, run in CI, not
   at review time.
 
@@ -771,7 +771,7 @@ scrubbed of seller names, phone numbers and addresses at capture (FR-23).
 | `property` | every push | `pytest tests/property -m property --hypothesis-profile=ci` | blocking |
 | `integration` | every PR | `pytest tests/integration` with a `postgis/postgis:16` service | blocking |
 | `fixtures` | every PR | `pytest tests/unit/test_fixture_hygiene.py` (capture dates, PII sweep) | blocking |
-| `blocked-audit` | every push | `pytest -m blocked --collect-only` + `test_every_blocked_marker_names_an_open_question` | blocking — rule 2 |
+| `blocked-audit` | every push | `pytest -m blocked --collect-only` + `test_every_blocked_marker_names_an_open_question` | blocking — rule 3 |
 | `mutation` | nightly, and on the `mutation` PR label | `mutmut run --paths-to-mutate src/lpc/normalize,src/lpc/dedup` | blocking on the named-mutant list (pass-1 §14), advisory on the score |
 | `assertions-dryrun` | nightly | `ops/assertions` against the last run's data | advisory — the real gate is inside the pipeline |
 

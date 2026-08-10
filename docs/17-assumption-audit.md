@@ -1,6 +1,6 @@
 # Assumption audit — self-review of docs 00–16
 
-A critical review of my own planning work against `CLAUDE.md` rule 2: *resolve
+A critical review of my own planning work against `CLAUDE.md` rule 3: *resolve
 ambiguity by asking, not by assuming*. Written before challenging these with the
 owner, so the findings are not shaped by the answers.
 
@@ -44,7 +44,7 @@ noise, not a measurement.**
 Mix adjustment is viable at **powiat** (66 units, ~380 listings each) or
 voivodeship level, not gmina. I mandated it at the level where it cannot work.
 
-### A3 — Rule 6 and stratification interact badly on the map
+### A3 — Rule 7 and stratification interact badly on the map
 
 Because `metric_unit_month` is keyed by gmina × class × buildability, most cells
 hold n=1–5. "Always show, always flag" then produces a choropleth composed largely
@@ -53,7 +53,7 @@ tiles rest on one listing may be actively misleading in aggregate — the colour
 carries more visual weight than the caveat.
 
 I never resolved this. It is the strongest argument I can make *against* my own
-reading of rule 6, and it deserves a decision rather than my quiet assumption that
+reading of rule 7, and it deserves a decision rather than my quiet assumption that
 per-tile honesty is sufficient.
 
 ### A4 — "Never a point estimate" contradicts the `median` field
@@ -95,7 +95,7 @@ likely exceeds 160 GB once list pages, which change daily, are counted.
 
 ## B. Choices I made that were never yours
 
-Rule 2 says these should have been questions. Grouped by how much damage a wrong
+Rule 3 says these should have been questions. Grouped by how much damage a wrong
 default does.
 
 ### B1 — Metric definitions at the heart of the valuation (highest impact)
@@ -108,7 +108,7 @@ Every number below is mine, and the entire product output depends on them:
 | Comparable recency window | **12 months** | `05` §3 |
 | Minimum comparables before widening | **5** | `05` §3 |
 | Widening ladder rungs | gmina → 10 km → 25 km → powiat → powiat wide | `05` §3 |
-| IQR vs min–max switch | **n = 5** | rule 6 impl. |
+| IQR vs min–max switch | **n = 5** | rule 7 impl. |
 | Strata area bands | **<800 / 800–1500 / 1500–3000 / 3000–10k / >10k m²** | `05` §7 |
 | Land area validity band | **100 m² – 500,000 m²** | FR-12 |
 | Price validity band | **1 – 100,000 PLN/m²** | FR-12 |
@@ -211,7 +211,7 @@ verified. The coverage targets in PRD §5 are therefore aspirations I invented.
 finds RCN is mostly paid or per-county bureaucratic, sales data is **GUS powiat
 quarterly averages with no plot features** — from which no honest *per-plot*
 estimate can be derived. The API would return an `Estimate` shaped like the
-offering one but resting on something categorically weaker. Rule 5 says both price
+offering one but resting on something categorically weaker. Rule 6 says both price
 types are first-class; the data may simply not support that at plot level.
 
 ---

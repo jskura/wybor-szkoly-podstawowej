@@ -4,8 +4,8 @@ The interface between the backend and every consumer (frontend, digests,
 query layer). Two invariants are enforced **at this boundary** rather than trusted
 to callers, because this is the last place they can be checked:
 
-- **No price without `price_type`** (V3, rule 5)
-- **No aggregate without both `n` and a range** (V4, rule 6)
+- **No price without `price_type`** (V3, rule 6)
+- **No aggregate without both `n` and a range** (V4, rule 7)
 
 A response violating either is a server error, not a rendering problem.
 
@@ -34,7 +34,7 @@ Epic: E15. Validation: V3, V4, V38, V39.
 
 `price_type` is **required**. There is no representation of a price without it.
 
-### 2.2 `Aggregate` — the type that enforces rule 6
+### 2.2 `Aggregate` — the type that enforces rule 7
 
 ```jsonc
 {

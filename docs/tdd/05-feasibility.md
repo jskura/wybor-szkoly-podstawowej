@@ -13,7 +13,7 @@ The test plan for [`18-v0-scope.md`](../18-v0-scope.md) §6 work items **14**
 | **Silent-failure modes touched** ([`20`](../20-verification-strategy.md) §3) | F4 (wrong gmina), plus two new ones registered in §9 below: **F14 unmapped county read as empty countryside**, **F15 superseded legal threshold in shipped copy** |
 | **Status of this document** | Written before any code exists. Nothing in items 14–15 may be implemented until every test named here exists and fails for the right reason |
 
-Rule 3 ordering is the spine of this document: **PRD entry → validation method →
+Rule 4 ordering is the spine of this document: **PRD entry → validation method →
 failing test → implementation → passing test.** Steps 1 and 2 are already done
 (FR-65/FR-66 in [`02-prd.md`](../02-prd.md), V60/V61 in
 [`04-validation.md`](../04-validation.md) pointing at
@@ -279,7 +279,7 @@ later would hide a real error class behind a real limitation.
 | Test | Assertion |
 |---|---|
 | `test_parcel_identifier_pattern_is_parsed` | `146509_8.0201.12/3` → parts `(teryt=146509, R=8, obreb=0201, number=12/3)`; malformed inputs return `None`, never a partial guess (`07` §1) |
-| `test_uldk_response_parsed_to_multipolygon_2180` | Pure parse against a recorded fixture; no network in the unit layer (`16` §2 rule 1) |
+| `test_uldk_response_parsed_to_multipolygon_2180` | Pure parse against a recorded fixture; no network in the unit layer (`16` §2 rule 2) |
 | `test_uldk_lookup_failure_yields_no_parcel_not_an_empty_geometry` | A 404/empty ULDK response produces absence, not a zero-area polygon that would silently pass downstream area checks |
 | `test_parcel_geometry_beats_portal_pin` | FR-14 / `07` §2.1 — pin never overrides parcel |
 | `test_wz_not_computed_below_parcel_precision` | For `location_precision ∈ {address, pin, locality, gmina, none}` **no `wz_feasibility` row exists at all** — not `unknown`. Absent ≠ unknown (U7, V29) |
@@ -304,9 +304,9 @@ thin fetch behind `ingest/http.py`.
 | `test_radius_value_appears_in_rendered_reason_string` | `19` §1.2 requires *"w promieniu X m"* — the X must be the X actually used |
 | `test_building_on_the_subject_parcel_does_not_count_as_a_neighbour` | The condition is *neighbouring* development |
 | `test_egib_preferred_over_osm_when_both_available` | `signal.source == "egib"`, and the confidence recorded with it |
-| `test_coverage_record_carries_source_as_of_and_observation_count` | Rule 6 provenance on the evidence itself, not only on the verdict |
+| `test_coverage_record_carries_source_as_of_and_observation_count` | Rule 7 provenance on the evidence itself, not only on the verdict |
 | `test_stale_coverage_record_degrades_to_unknown` | A coverage record older than the configured max age cannot support `unlikely` (F8 applied to evidence) |
-| `test_building_count_is_reported_alongside_the_signal` | Rule 6 "always show, always flag": the verdict ships with `n` neighbours observed and the radius, never as a bare word |
+| `test_building_count_is_reported_alongside_the_signal` | Rule 7 "always show, always flag": the verdict ships with `n` neighbours observed and the radius, never as a bare word |
 
 **Sensitivity report, not a test:** `scripts/wz_radius_sensitivity.py` reports the
 verdict distribution across radii (50/75/100/150/200 m) over both rings, so the
@@ -362,7 +362,7 @@ not a score.
 | `test_unlikely_requires_positive_coverage_and_zero_neighbours` | The §1.1 rule restated at the composite seam |
 | `test_no_input_combination_produces_a_verdict_outside_the_table` | Exhaustive enumeration of the signal cross-product; every cell has a declared verdict and no cell falls through to a default |
 | `test_composite_contains_no_numeric_weights` | Static check: no float literals, no summation of signals. A weighted score would let two weak positives outvote a missing-data `unknown` |
-| `test_verdict_carries_its_reason_codes_and_evidence` | Every verdict ships with the signals that produced it, their sources and `as_of` (rule 6) |
+| `test_verdict_carries_its_reason_codes_and_evidence` | Every verdict ships with the signals that produced it, their sources and `as_of` (rule 7) |
 
 ### 6.3 Metamorphic properties of the composite
 
@@ -394,7 +394,7 @@ the lightest.
 | `test_unknown_renders_as_explicit_text_never_blank` | U6; and the reason code is rendered so the user learns *which* unknown |
 | `test_disclaimer_is_visible_in_the_collapsed_state` | U5 collapses the verdict; the collapsed row is often all that is read, so the disclaimer sits at the collapsed level, not behind the expander |
 | `test_every_render_helper_in_the_registry_emits_the_disclaimer` | **Structural.** Enumerates the module's exported render helpers rather than a hand-listed set, so a helper added in six months fails until it complies. This is the test that makes the rule durable |
-| `test_verdict_renders_with_n_source_and_as_of` | Rule 6 — the verdict is an aggregate of evidence and is shown like one |
+| `test_verdict_renders_with_n_source_and_as_of` | Rule 7 — the verdict is an aggregate of evidence and is shown like one |
 
 ---
 
@@ -470,7 +470,7 @@ The subtlest requirement in item 15: silence is not a clean bill of health
 | `test_badge_states_possibility_never_certainty` | Contains *"możliwe ograniczenia"* and *"możliwe prawo pierwokupu KOWR"*; contains none of `{"nie możesz kupić", "zakaz nabycia", "na pewno", "wymagana zgoda"}` — the determination is the notary's |
 | `test_badge_directs_to_a_notary` | Contains *"sprawdź u notariusza przed ofertą"* |
 | `test_badge_is_never_a_filter` | A badged plot appears in an unfiltered result set (D51 chose the badge over exclusion); plus an architecture check that no query predicate references the badge |
-| `test_badge_shows_area_and_its_source` | *"Grunt rolny — 3 400 m²"* with `area_source == "register"` and the parcel's `as_of` (rule 6, V28) |
+| `test_badge_shows_area_and_its_source` | *"Grunt rolny — 3 400 m²"* with `area_source == "register"` and the parcel's `as_of` (rule 7, V28) |
 | `test_badge_thresholds_come_from_the_citation_record` | No numeric threshold is constructed in the render helper (§11) |
 | `test_badge_renders_at_both_ends_of_the_d48_band` | 2 000 m² and 4 000 m² — the sizes that straddle the line `19` §2.1 flags. Both are badged; the *copy* about thresholds comes from §11, not from a rule of thumb baked into code |
 
@@ -509,12 +509,12 @@ until checked against the consolidated text.
 cadence, network-permitted. Fetches the ISAP consolidated-text identifier for the
 act and compares with `consolidated_text_id` + `text_as_of`. A change does not
 guess at the new content: it marks the entry stale, which trips §11.1's degradation
-path and raises an operator task. **Rule 4's "runs on a schedule, not once", applied
+path and raises an operator task. **Rule 5's "runs on a schedule, not once", applied
 to law rather than data.**
 
 ### 11.3 The manual verification procedure
 
-Recorded in `scripts/verify_legal_citations.md` (a written check, per rule 4's
+Recorded in `scripts/verify_legal_citations.md` (a written check, per rule 5's
 allowance): open the consolidated text at ISAP, locate the article, record the
 threshold, the effective date and the transitional provisions, and update
 `verified_at`/`verified_by`. **Item 15 is not done until this has been performed at
@@ -524,7 +524,7 @@ least once and the record reflects it** — no test can substitute for reading t
 
 ## 12. Assumptions and open questions — flagged, not absorbed
 
-Rule 2 forbids resolving ambiguity by assumption. These arose while writing this
+Rule 3 forbids resolving ambiguity by assumption. These arose while writing this
 spec and are **unresolved**; each needs an answer (and a decision-log entry) before
 the stage that depends on it. They are listed here rather than silently defaulted.
 
@@ -550,5 +550,5 @@ the stage that depends on it. They are listed here rather than silently defaulte
 | **FR-17** terminal `unknown` | §1.1, §6.1 (roads, land use, protection), §6.2 absorbing rule |
 | **FR-48** register over advert | §6.1, §10.3 |
 | **FR-14** parcel over pin | §4 |
-| **Rule 6** always show, always flag | §5 (`n` + radius with the signal), §7, §10.3 |
+| **Rule 7** always show, always flag | §5 (`n` + radius with the signal), §7, §10.3 |
 | **D58** mutation testing | §1.4 |

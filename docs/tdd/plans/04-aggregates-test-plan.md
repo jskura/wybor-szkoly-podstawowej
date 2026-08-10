@@ -244,7 +244,7 @@ symmetric leak leaves the median at 126.00 exactly. `n == 5`, `min == 96.00` and
 | `SPREAD_N10` | `[10,20,…,100]` | 10 | 32.50 | 55.00 | 77.50 | 10.00 | 100.00 | `iqr` | 32.50 | 77.50 |
 | `SPREAD_N100` | `[1, 2, …, 100]` | 100 | 25.75 | 50.50 | 75.25 | 1.00 | 100.00 | `iqr` | 25.75 | 75.25 |
 
-`SPREAD_N4` is `CLAUDE.md` rule 6's own example: *median 118, range 61–240, n=4*.
+`SPREAD_N4` is `CLAUDE.md` rule 7's own example: *median 118, range 61–240, n=4*.
 `SPREAD_N4` / `SPREAD_N5` are the exact-boundary pair for the `>=`→`>` mutant, and
 `SPREAD_N1`…`SPREAD_N100` are D5's no-suppression fixture.
 
@@ -585,7 +585,7 @@ Every row was computed by hand with §0.1 and confirmed against R-7. Comparison 
 
 Row 9 is worth its own assertion beyond the differential: at n=5 the switch chooses
 `iqr`, so the **displayed** range is `100.00–100.00` on data that spans 50–250. That
-is correct behaviour under `05` §3 and rule 6 requires min–max to remain stored and
+is correct behaviour under `05` §3 and rule 7 requires min–max to remain stored and
 reachable. Assert both — a zero-width IQR next to a stored 50–250 min–max.
 
 ### 4.2 The Hypothesis strategies
@@ -869,7 +869,7 @@ point — and it is a cleaner demonstration than pass 1's unattainable 1.0.
 
 ## 6. Price separation and price kinds — exact fixtures
 
-### 6.1 P1 · offering and sales, nothing between (V2, rule 5)
+### 6.1 P1 · offering and sales, nothing between (V2, rule 6)
 
 `tests/unit/metrics/test_price_separation.py`. One gmina (A), one band
 (`1500–3000`), so the only axis in play is `price_type`.

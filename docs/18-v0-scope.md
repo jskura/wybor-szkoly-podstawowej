@@ -32,7 +32,7 @@ repeated throughout the whole documentation set.
 | **Sales prices** | GUS BDL, powiat level, quarterly — free and guaranteed |
 | **Output** | A Streamlit app (D59), plus a choropleth and gmina table (D60) |
 | **Hosting** | Your machine. No VPS (D44) |
-| **How built** | I implement, you review each step (D53), TDD per rule 3 |
+| **How built** | I implement, you review each step (D53), TDD per rule 4 |
 | **Headline aggregate** | **Flow** — recently listed — with stock alongside, both labelled (D56) |
 | **Acceptance** | Leave-one-out cross-validation (V51), not pre-registered estimates (D57) |
 

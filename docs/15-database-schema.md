@@ -12,10 +12,10 @@ Epic: E1.3. Validation: V1, V2, V5, V12, V29, V31.
 
 | Rule | Mechanism |
 |---|---|
-| Every price has a type (rule 5) | `price_type` enum, `NOT NULL`, plus per-table CHECK pinning the allowed value |
+| Every price has a type (rule 6) | `price_type` enum, `NOT NULL`, plus per-table CHECK pinning the allowed value |
 | Offering and sales never mix (FR-8) | `price_type` is part of the primary key of `metric_unit_month` |
 | Snapshots are append-only (FR-3) | No `UPDATE`/`DELETE` grant on `listing_snapshot` for any application role |
-| Provenance everywhere (rule 6) | `as_of` and `source_ids` `NOT NULL` on every derived table |
+| Provenance everywhere (rule 7) | `as_of` and `source_ids` `NOT NULL` on every derived table |
 | `unknown` buildability is terminal (FR-17) | Enum value + a source column that cannot be `advert` |
 | Precision gates enrichment (FR-53) | Nature/parcel tables key off `parcel_id`, unreachable without `address`+ precision |
 
@@ -52,7 +52,7 @@ CREATE TABLE admin_unit (
   parent_teryt  TEXT REFERENCES admin_unit(teryt),
   geom          geometry(MultiPolygon, 4326) NOT NULL,
   in_ring       TEXT[] NOT NULL DEFAULT '{}',   -- ring keys this unit belongs to (D64)
-  as_of         DATE NOT NULL,                  -- rule 6: boundaries are stored data
+  as_of         DATE NOT NULL,                  -- rule 7: boundaries are stored data
   source_id     INT NOT NULL REFERENCES source(id),
   CONSTRAINT geom_valid CHECK (ST_IsValid(geom))
 );
@@ -83,7 +83,7 @@ WHERE u.level = 'gmina'
 Boundary-intersects rather than centroid-inside or seat-inside, because the three
 rules give materially different gmina sets and boundary-intersects is the inclusive
 one: a gmina half inside the ring is more useful shown with its `n` than silently
-excluded (rule 6). Every consumer reads `in_ring`; nothing recomputes it.
+excluded (rule 7). Every consumer reads `in_ring`; nothing recomputes it.
 
 ## 4. Ingestion
 
@@ -396,7 +396,7 @@ CREATE TABLE metric_unit_month (
 ```
 
 Three product rules made structural here: `price_type` in the key (never mixed),
-`n`/percentiles `NOT NULL` (no aggregate without its spread — rule 6), and
+`n`/percentiles `NOT NULL` (no aggregate without its spread — rule 7), and
 `range_kind_matches_n` (the IQR/min–max switch cannot be got wrong). `generation`
 means recomputation adds rows rather than rewriting history.
 

@@ -1,12 +1,12 @@
 # TDD gap analysis
 
-Pass 1, step 2 of the standard workflow ([`CLAUDE.md`](../../CLAUDE.md) rule 7).
+Pass 1, step 2 of the standard workflow ([`CLAUDE.md`](../../CLAUDE.md) rule 8).
 Six agents wrote TDD specifications for the whole application in parallel. Writing
 tests before implementation surfaced defects that reading the documents never did.
 
 **The headline: four of six agents independently hit the same wall — the schema
 does not support features that were already specified as requirements.** That is
-what a design pass is for, and it is why rule 7 puts a review between authoring and
+what a design pass is for, and it is why rule 8 puts a review between authoring and
 implementation.
 
 ---
@@ -24,11 +24,11 @@ mid-implementation instead:
 | **A3** | `metric_unit_month`'s primary key omits `area_band`, `series_kind` (stock/flow) and `price_kind` | **Stock and flow rows collide on insert.** D56 made flow the headline; the schema cannot store both | aggregates |
 | **A4** | No tables for buildings, building coverage, or the WZ verdict | FR-65 was written with nowhere to store its output | feasibility |
 | **A5** | `listing` carries foreign keys to `parcel` and `plot_cluster`, built in later work items | Item 2's migration cannot apply in the stated order | foundation |
-| **A6** | `admin_unit` has no `as_of` or source | Violates rule 6 — every stored number carries source and as-of, and boundaries are stored data | foundation |
+| **A6** | `admin_unit` has no `as_of` or source | Violates rule 7 — every stored number carries source and as-of, and boundaries are stored data | foundation |
 
 **A2 resolved:** an auction starting price and a tender price are **asks, not
 sales** — nothing has been transacted. So `price_type = 'offering'` for all three,
-distinguished by `price_kind ∈ {asking, auction_start, tender}`. Rule 5 is
+distinguished by `price_kind ∈ {asking, auction_start, tender}`. Rule 6 is
 unaffected; FR-64 is the finer axis inside `offering`.
 
 ## B. Validation methods that are wrong, not merely incomplete
@@ -87,7 +87,7 @@ Worth recording, because these are additions rather than corrections:
 
 | # | Decision |
 |---|---|
-| **D64** | **Ring membership** = a gmina is in a ring if **any part of its boundary lies within 25 km of the anchor point**. Chosen because it is inclusive at the edge: a gmina half in the ring is more useful shown with its `n` than silently excluded, which matches rule 6. The rule is stated once, in `15`, and every consumer reads it from there |
+| **D64** | **Ring membership** = a gmina is in a ring if **any part of its boundary lies within 25 km of the anchor point**. Chosen because it is inclusive at the edge: a gmina half in the ring is more useful shown with its `n` than silently excluded, which matches rule 7. The rule is stated once, in `15`, and every consumer reads it from there |
 | **D65** | **`price_kind`** added to the schema as an enum `{asking, auction_start, tender}`, non-null, with `price_type = 'offering'` for all three (A2). No aggregate may span kinds |
 | **D66** | **`metric_unit_month` key extended** with `area_band`, `series_kind` and `price_kind` (A3) |
 | **D67** | **n=5 moves to configuration**; the database CHECK enforces internal consistency between `range_kind` and `n`, not the literal 5 (D) |
@@ -114,7 +114,7 @@ defects that reading prose could not. Six plans, six agents, `docs/tdd/plans/`.
 | # | Defect | Fix |
 |---|---|---|
 | **H1** | **`price_kind` had no member a `sales` row could carry.** D65 defined `{asking, auction_start, tender}` — all offering-side — while U2 requires *every* price to show its kind. The GUS block could not satisfy a rule these documents impose on it, and the price-separation fixture could not be written | **D68**: `transaction` added, pinned by CHECK on the sales table |
-| **H2** | **GUS publishes no spread**, yet every aggregate must carry one (rule 6). As specified the sales block either broke the rule or raised an error on correct data | **D69**: `range_kind = 'unavailable'` with explicit copy. Showing the absence *is* rule 6; erroring on it is not |
+| **H2** | **GUS publishes no spread**, yet every aggregate must carry one (rule 7). As specified the sales block either broke the rule or raised an error on correct data | **D69**: `range_kind = 'unavailable'` with explicit copy. Showing the absence *is* rule 7; erroring on it is not |
 
 Two agents reaching the same conclusion from different directions turns a
 suspicion into a certainty. Both defects were mine, introduced in the pass-1 fix.
@@ -138,12 +138,12 @@ suspicion into a certainty. Both defects were mine, introduced in the pass-1 fix
 
 | # | Decision |
 |---|---|
-| **D68** | `price_kind` gains `transaction` for sales rows. Rule 5 unaffected; `price_type` still separates offering from sales, `price_kind` is the finer axis within each |
+| **D68** | `price_kind` gains `transaction` for sales rows. Rule 6 unaffected; `price_type` still separates offering from sales, `price_kind` is the finer axis within each |
 | **D69** | `range_kind` gains `unavailable`, for sources that publish a central value with no spread. Rendered as explicit copy, never as a missing field or an error |
 
 ## K. What pass 2 demonstrates about the workflow
 
-Rule 7 exists because of exactly this. Pass 1's specs were reviewed and looked
+Rule 8 exists because of exactly this. Pass 1's specs were reviewed and looked
 right. Pass 2 computed the numbers and found eleven arithmetic errors in one
 document alone, two logical holes that two agents hit independently, and a
 projection bug that is *invisible to the entire class of test* pass 1 had

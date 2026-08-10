@@ -82,7 +82,7 @@ switches between asking and transaction prices is the most dangerous screen in t
 product.
 
 - Gminas below n=5 render **hatched, not solid** (O13). The colour still appears —
-  rule 6 forbids hiding — but the hatch says "thin" without needing to be read.
+  rule 7 forbids hiding — but the hatch says "thin" without needing to be read.
 - "No listings at all" is visually distinct from "few listings". These are
   different facts and must not share a treatment.
 - Every gmina label carries `n` inline.
@@ -107,7 +107,7 @@ could mislead.
 
 | # | Rule | Why |
 |---|---|---|
-| U1 | No aggregate renders without `n` **and** its range, at equal prominence | Rule 6. Not a tooltip, not on hover |
+| U1 | No aggregate renders without `n` **and** its range, at equal prominence | Rule 7. Not a tooltip, not on hover |
 | U2 | Every price shows **type** (ofertowa/transakcyjna) and **kind** (asking/licytacja/przetarg) | FR-64. An auction start price next to an asking price without labels is actively misleading |
 | U3 | Flow and stock always both shown, always labelled, flow first | D56, FR-67 |
 | U4 | The flow window length appears next to every flow figure | O27/V62 — "mediana przepływu" means nothing without "ostatnie 90 dni" |
@@ -115,7 +115,7 @@ could mislead.
 | U6 | `unknown` renders as explicit text, never as blank or dash | A blank reads as "nothing to worry about" |
 | U7 | Absence states are distinguished: not-yet-crawled / no-listings / out-of-scope / too-few-comparables | Each implies a different action |
 | U8 | Stale data shows its age **on the number**, not in a corner | FR-8/V8 |
-| U9 | Every number is one click from source + as-of + method | Rule 6 |
+| U9 | Every number is one click from source + as-of + method | Rule 7 |
 
 ## 4. What v0's UI deliberately does not have
 

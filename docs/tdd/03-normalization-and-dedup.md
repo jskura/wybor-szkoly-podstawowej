@@ -7,7 +7,7 @@ Covers **v0 work-plan items 6 and 9** ([`18-v0-scope.md`](../18-v0-scope.md) §6
 | 6 | Parse + normalize: area units, zł/m², validity bands, quarantine | 1.5 | FR-11, FR-12, FR-48, FR-50, FR-51, FR-64 | V10, V25, V28, V50 |
 | 9 | Trivial dedup — exact/near-exact only | 0.5 | FR-13 (weakened), FR-70 | V56, V47 |
 
-This document is the **test plan written before implementation**, per rule 3. It
+This document is the **test plan written before implementation**, per rule 4. It
 names every test, pins every expected value, and states the order the tests are
 written in. It contains **no implementation code** — only contracts, inputs and
 expected outputs.
@@ -35,9 +35,9 @@ area cross-check and the per-reason quarantine baseline.
 | 4 | Touched silent failures have named detectors | ✅ F1, F2, F3, F9, F12 — mapped in §11 |
 | 5 | Fixtures exist, dated, scrubbed | ⛔ **Not yet.** §10 specifies them; they are created as step 0 of the red-green sequence |
 | 6 | Metamorphic properties listed (numeric core) | ✅ §7 |
-| — | Ambiguities resolved by asking, not assuming (rule 2) | ⛔ **Eight open questions in §12 block seven named tests.** They are asked before those tests are written, not decided here |
+| — | Ambiguities resolved by asking, not assuming (rule 3) | ⛔ **Eight open questions in §12 block seven named tests.** They are asked before those tests are written, not decided here |
 
-Criterion 5 is work, not a blocker. **Criterion "rule 2" is a hard gate**: the
+Criterion 5 is work, not a blocker. **Criterion "rule 3" is a hard gate**: the
 tests marked *blocked* in §12 are not written — and their behaviour is not
 implemented — until the corresponding question is answered.
 
@@ -95,7 +95,7 @@ Three contract-level rules, each with a test:
    ([`15-database-schema.md`](../15-database-schema.md) §5). A Python-side copy
    can drift from its inputs; the database column cannot.
    `assert not hasattr(normalized, "price_per_m2")`.
-3. **`parse` is pure** (repo layout §2 rule 1). `test_normalize_performs_no_io` —
+3. **`parse` is pure** (repo layout §2 rule 2). `test_normalize_performs_no_io` —
    run the whole normalize path with sockets and filesystem writes patched to
    raise; assert it completes.
 
@@ -241,7 +241,7 @@ first, with the chosen source recorded in `area_source`
 | `test_agreeing_areas_do_not_set_the_conflict_flag` | register `1200`, structured `1200` | `conflict is False` |
 | `test_conflict_threshold_boundary` | register `1200`, structured `1200 * (1 ± t)` | **Blocked by O-N4** — the threshold `t` is not invented here |
 
-`test_conflicting_areas_set_the_conflict_flag` carries rule 6: the disagreement is
+`test_conflicting_areas_set_the_conflict_flag` carries rule 7: the disagreement is
 kept and shown, in the same spirit as the `zoning_claim` / `buildability`
 disagreement (`06` §1). We record which source won *and* what the loser said.
 
@@ -391,7 +391,7 @@ after the unit test's fixture stops being representative.
 ## 9. `price_kind` separates asking, auction start and tender (`test_price_kind.py`, FR-64, F9, V46)
 
 `price_kind` is distinct from `price_type`. `price_type ∈ {offering, sales}`
-(rule 5). `price_kind ∈ {asking, auction_start, tender}`. An auction starting
+(rule 6). `price_kind ∈ {asking, auction_start, tender}`. An auction starting
 price is a statutorily-derived floor; a tender price is a third quantity. **No
 aggregate may span kinds.**
 
@@ -442,7 +442,7 @@ addresses are scrubbed at capture, not later (FR-23).
 
 Not addressed here, by design: F4–F8, F10, F11, F13 belong to other work items.
 
-## 12. Ambiguities — asked, not assumed (rule 2)
+## 12. Ambiguities — asked, not assumed (rule 3)
 
 Each blocks the named test. These are asked in one batch before step 1 of §3, and
 the answers are recorded in `00-decisions.md` before the blocked tests are written.

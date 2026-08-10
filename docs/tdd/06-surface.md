@@ -160,7 +160,7 @@ to register fails `test_registry_covers_every_render_module_export()` (§12.1).
   fixture returns equal trees.
 - `test_app_does_not_import_lpc_model()` — the v0 surface shows comparable-based
   numbers only; a `ModelEstimate` would need the `szacunek modelu` marker (`09` §1
-  rule 5) and is out of v0 scope. Mirrors V21.
+  rule 6) and is out of v0 scope. Mirrors V21.
 
 ## 5. One test per interaction rule
 
@@ -192,7 +192,7 @@ representative component, once as a sweep over `COMPONENT_REGISTRY × STATES`.
   an IQR label on `n=4`.
 - `test_thin_aggregate_still_renders_its_number()` — `AGG_THIN_N4` renders
   `mediana 118` plus `61–240` plus `n = 4`; asserts the string
-  `"za mało danych"` does **not** appear in place of the number (D17, rule 6).
+  `"za mało danych"` does **not** appear in place of the number (D17, rule 7).
 - `test_no_bare_aggregate_sweep()` — parametrized over
   `COMPONENT_REGISTRY × STATES`; every node whose `meta` carries a numeric
   aggregate has `sample_size` and `spread` siblings outside hover. The sweep is the
@@ -377,7 +377,7 @@ and the user does not have one (D63).
   `"za mało danych, żeby ocenić — to jest orientacja, nie wycena"`.
   Falsified by any estimate node preceding it.
 - `test_no_confident_band_is_presented_below_the_threshold()` — no `verdict` node
-  at `prominence == "primary"`; the estimate still renders (rule 6 — nothing is
+  at `prominence == "primary"`; the estimate still renders (rule 7 — nothing is
   hidden) but demoted beneath the notice with its `n` and range.
 - `test_out_of_depth_threshold_is_read_from_config()` — raising the threshold makes
   a previously-confident fixture produce the notice.
@@ -450,7 +450,7 @@ a number with its qualifiers stripped off.
   `MixedPriceTypeError`. "The most dangerous screen in the product" is made
   unrepresentable rather than merely discouraged.
 - `test_gmina_below_n5_renders_hatched_and_still_coloured()` — `pattern ==
-  "hatch"` **and** `fill is not None` (O13 + rule 6: the hatch says thin, the
+  "hatch"` **and** `fill is not None` (O13 + rule 7: the hatch says thin, the
   colour is not withheld).
 - `test_the_four_absence_reasons_and_thin_have_pairwise_distinct_treatments()` —
   over `{thin, not_yet_crawled, no_listings, out_of_scope, too_few_comparables}`,
@@ -560,7 +560,7 @@ a number with its qualifiers stripped off.
 `tests/unit/app/test_url_paste.py`, `tests/unit/app/portals/test_<portal>.py`
 
 Parsing runs against **recorded fixture pages**, never the network; the parser is
-pure, per the connector contract (`16` §2 rule 1).
+pure, per the connector contract (`16` §2 rule 2).
 
 ### 9.1 Dispatch
 

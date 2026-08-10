@@ -4,7 +4,7 @@ Foundation (repo, Docker, migrations, config) · minimal schema with `price_type
 CHECK constraints · PRG/TERYT import for both anchor rings.
 
 Covers [`18-v0-scope.md`](../18-v0-scope.md) §6 items **1**, **2** and **3**.
-Written per `CLAUDE.md` rule 3 (tests before implementation) and rule 4 (a
+Written per `CLAUDE.md` rule 4 (tests before implementation) and rule 5 (a
 validation method before implementation), and per
 [`20-verification-strategy.md`](../20-verification-strategy.md) §8 entry criteria.
 
@@ -38,7 +38,7 @@ Every test below states four things:
 | 6. Metamorphic properties listed | §5.1 | §5.2 | §5.3 |
 
 Entry criterion 2 is **not fully met for item 1** and criterion 4 is **not met for
-item 2** until the open items in §4 are answered. Per rule 1 and rule 4 those are
+item 2** until the open items in §4 are answered. Per rule 2 and rule 5 those are
 resolved before the first test is written, not during.
 
 ### 0.2 Test layout
@@ -536,7 +536,7 @@ extent). R3.15–R3.17 cannot be written until those are answered.
   stated as behaviour.
 - **Note** The two codes above are the expected values to write into the test; if
   the recorded TERC fixture disagrees, **the fixture wins and the test is corrected**
-  (`04` fixtures policy rule 1 — fixtures are never edited to make a test pass).
+  (`04` fixtures policy rule 2 — fixtures are never edited to make a test pass).
 
 #### R3.3 `test_prg_teryt_codes_and_names_agree_with_the_terc_register`
 - **Asserts** for every gmina record from the PRG fixture, the pair
@@ -742,16 +742,16 @@ extent). R3.15–R3.17 cannot be written until those are answered.
 
 ## 4. Blocked, ambiguous, or missing — resolve before the first test
 
-Per `CLAUDE.md` rule 2 these are asked, not assumed. Each blocks a specific test.
+Per `CLAUDE.md` rule 3 these are asked, not assumed. Each blocks a specific test.
 
-### 4.1 Item 1 has no validation method of its own (rule 4 gap)
+### 4.1 Item 1 has no validation method of its own (rule 5 gap)
 `04`'s coverage table assigns item 1 to "V7 (anchor privacy); migrations covered by
 V1's constraint-existence test". But R1.11–R1.15 — engine version, migration
 head/idempotence/reversibility, schema-digest symmetry — are discharged by **no V
-entry**. Rule 4 says a validation method precedes implementation.
+entry**. Rule 5 says a validation method precedes implementation.
 **Ask:** add a validation entry (proposed **V63 — environment and migration
 reproducibility**) to `04-validation.md`, or record explicitly that these are
-preconditions exempt from rule 4. **Blocks** R1.11–R1.15.
+preconditions exempt from rule 5. **Blocks** R1.11–R1.15.
 
 ### 4.2 `listing.parcel_id` and `listing.plot_cluster_id` reference future tables
 `15` §5 gives `listing` foreign keys to `parcel` (item 14) and `plot_cluster`
@@ -773,7 +773,7 @@ retrofit. **Blocks** the final form of `listing`, `transaction` and
 This is the most consequential of the open items.
 
 ### 4.4 `admin_unit` carries no provenance
-`15` §3 gives `admin_unit` no `as_of` and no `source_id`, while rule 6 and V5
+`15` §3 gives `admin_unit` no `as_of` and no `source_id`, while rule 7 and V5
 require source and as-of on stored data, and PRG is re-published periodically.
 **Ask:** add `as_of DATE NOT NULL` and `source_id INT NOT NULL REFERENCES source(id)`.
 **Blocks** a `test_admin_unit_rows_carry_as_of_and_source` in item 3 — it cannot be

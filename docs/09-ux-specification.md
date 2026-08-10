@@ -9,7 +9,7 @@ Decision: D34. Validation: [`04-validation.md`](./04-validation.md) §V35–V37.
 
 ## 1. Rules that apply to every screen
 
-These are not style preferences; they are rule 5 and rule 6 made concrete, and
+These are not style preferences; they are rule 6 and rule 7 made concrete, and
 each is testable.
 
 1. **No bare number.** Every aggregate appears with its sample size and its range,
@@ -37,7 +37,7 @@ each is testable.
 - Gminas with no matching supply are visibly distinct from gminas with thin
   supply — these are different facts and must not share a colour.
 - **Thin-data rendering**: gminas below n=5 are hatched rather than solid. The
-  number is still available on click (rule 3 above); the hatch signals that the
+  number is still available on click (rule 4 above); the hatch signals that the
   colour is weakly supported. This is the visual half of D18.
 - Side panel per gmina: median, range, n, mix-adjusted 12-month change, both price
   types side by side, and the asking-vs-sales gap.
@@ -114,5 +114,5 @@ Terms never to translate loosely: *plan ogólny*, *MPZP*, *wypis i wyrys*,
 ## 5. Deferred
 
 Mobile layout, saved searches and alert digests (J4, M5), and the notebook access
-surface (O9) are not specified here. Per rule 4, each needs its validation method
+surface (O9) are not specified here. Per rule 5, each needs its validation method
 before implementation.

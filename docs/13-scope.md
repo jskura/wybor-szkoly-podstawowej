@@ -39,7 +39,7 @@ Traceability: FR numbers → [`02-prd.md`](./02-prd.md), V numbers →
 | Anchor rings | Budy Grabskie 25 km, Elbląg 25 km — deeper enrichment and QA (D7, D11) |
 | Land classes | budowlana, rekreacyjna, rolna, leśna/inne (D6) |
 | Housing | Collected from M1, surfaced only in J6/J7 (E23) |
-| Price types | Offering **and** sales, always separate (rule 5, D3) |
+| Price types | Offering **and** sales, always separate (rule 6, D3) |
 | Users | Owner plus a few known people; single shared gate (D1, O4) |
 | Data cost | Zero — free sources only (D2) |
 | Runtime | Docker Compose on one small VPS (D16) |
@@ -431,7 +431,7 @@ Not touched: E8, E10, E12–E15, E17–E26.
 | **M4 Sales depth** | E3.5–3.7, E11.4–11.6, E20 | `L` | J5, J7, J11; mix adjustment validated |
 | **M5 Extend** | E13, E14, E22, E23 | `XL` | J10, J12, J4, J6 |
 
-**Assumption, flagged (rule 2):** milestone sizes assume part-time solo work and
+**Assumption, flagged (rule 3):** milestone sizes assume part-time solo work and
 no parallelism. They are ranges for sequencing discussion, not a schedule.
 
 ## 6. Dependency risks

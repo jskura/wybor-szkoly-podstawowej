@@ -200,12 +200,12 @@ one band matches. *Why*: a gap in the ladder silently drops a whole size segment
 Asserts `Aggregate(median_ppm2=...)` alone raises `TypeError`, and that
 `fields(Aggregate)` shows no default for `n`, `p25_ppm2`, `p75_ppm2`, `min_ppm2`,
 `max_ppm2`, `range_kind`, `as_of`, `source_ids`.
-*Why*: V4 and rule 6, made structural. A bare number must be **unconstructible**,
+*Why*: V4 and rule 7, made structural. A bare number must be **unconstructible**,
 not merely untested. Lives in `tests/architecture/`.
 
 **C2 · `test_aggregate_carries_full_provenance`**
 Asserts every returned aggregate has non-null `as_of`, non-empty `source_ids`,
-`price_type`, `price_kind`, `series_kind` and `n` (rule 6, V5).
+`price_type`, `price_kind`, `series_kind` and `n` (rule 7, V5).
 
 **C3 · `test_aggregate_groups_by_gmina_and_band`**
 Fixture: C1–C5 in `TERYT_GMINA_A` plus one 2 000 m² observation at 300.00 ppm2 in
@@ -431,7 +431,7 @@ fail for each. A surviving mutant here is a suite defect, not a code defect.
 
 ---
 
-## 6. Offering and sales never mix (rule 5, V2, V20, FR-8, FR-37)
+## 6. Offering and sales never mix (rule 6, V2, V20, FR-8, FR-37)
 
 `tests/unit/metrics/test_price_separation.py`.
 
@@ -677,7 +677,7 @@ it in three places (the config constant, the `range_kind_matches_n` CHECK, and t
 UI). D3 and D4 exist precisely so that ratifying it is a bounded change rather than
 an archaeology exercise.
 
-## 10. Questions that must be answered before implementation (rule 2)
+## 10. Questions that must be answered before implementation (rule 3)
 
 These are **not** resolved by a sensible default in this document. Each blocks the
 step named.

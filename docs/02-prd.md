@@ -2,7 +2,7 @@
 
 Status: **draft v0.3** · Owner: jskura · Date: 2026-08-07
 Inputs: [`00-decisions.md`](./00-decisions.md) (D1–D63) · [`01-user-journeys.md`](./01-user-journeys.md)
-Validation methods: [`04-validation.md`](./04-validation.md) — required before any implementation ([`CLAUDE.md`](../CLAUDE.md) rule 4)
+Validation methods: [`04-validation.md`](./04-validation.md) — required before any implementation ([`CLAUDE.md`](../CLAUDE.md) rule 5)
 
 > ## ⚠ Read this first — scope changed after the audit
 >
@@ -54,7 +54,7 @@ determines value, and presents the result as a map you explore, a verdict on a
 single plot, and a side-by-side board — with source, as-of date, sample size and
 spread behind every number.
 
-### 2.1 The two price types (rule 5)
+### 2.1 The two price types (rule 6)
 
 This is the product's spine, not an implementation detail.
 
@@ -79,9 +79,9 @@ first-class feature (J5) rather than a discrepancy to reconcile away.
 - G2 — For any plot in scope, produce a price-per-m² verdict against a transparent
   comparable set, plus buildability, nature and risk attributes. *(J2, J3)*
 - G3 — **Both price types available** for every target area at the finest
-  granularity the free sources allow, always labelled. *(J5, J7, rule 5)*
+  granularity the free sources allow, always labelled. *(J5, J7, rule 6)*
 - G4 — Every number is auditable: source, as-of date, sample size, spread, method.
-  Nothing suppressed, nothing shown bare. *(J8, rule 6)*
+  Nothing suppressed, nothing shown bare. *(J8, rule 7)*
 - G5 — Coverage of ≥90% of gminas in the two 25 km anchor rings with at least one
   land observation per month, and ≥70% of all in-scope gminas per quarter.
 
@@ -219,7 +219,7 @@ they disagree, both are shown, labelled by type, and the gap is the feature.
 - **FR-6** Source health record per connector: last success, item count, schema-drift
   alarm. A connector silently returning zero items must alarm, not flatten a median.
 
-### 8.2 Price types (rule 5)
+### 8.2 Price types (rule 6)
 
 - **FR-7** Every price-bearing row carries a non-null `price_type ∈ {offering, sales}`.
   Enforced as a database constraint, not a convention.
@@ -278,7 +278,7 @@ they disagree, both are shown, labelled by type, and the gap is the feature.
 
 - **FR-24** Aggregates per (gmina × asset class × price type × month): count,
   median, p25, p75, min, max, mean.
-- **FR-25** **Always show, always flag** (rule 6, D13/D17/D18). No aggregate is
+- **FR-25** **Always show, always flag** (rule 7, D13/D17/D18). No aggregate is
   suppressed. Every aggregate is returned and rendered with its sample size **and**
   its spread — IQR normally, min–max when n < 5. An aggregate without both is a
   bug, enforced at the API boundary.
@@ -323,7 +323,7 @@ these are the requirements it must satisfy.
 - **FR-36** The comparable set is fully **enumerable and editable** — every
   contributing plot is listed, and excluding one recomputes the estimate.
 - **FR-37** Both `expected_offering` and `expected_sales` are produced and shown
-  **separately**, with the gap (rule 5, D29). A missing sales estimate renders as
+  **separately**, with the gap (rule 6, D29). A missing sales estimate renders as
   absent, never filled from the offering estimate.
 - **FR-38** The verdict is expressed **relative to the range** — below / within /
   above — not as a percentage deviation from the median.
@@ -536,8 +536,8 @@ Invariants worth stating explicitly, because the validation doc tests each one:
   drive times to anchors precomputed offline.
 - **Deployment** — Docker Compose on a cheap VPS (D16), daily cron. A simple access
   gate for the handful of users is open question O4.
-- **Testing** — pytest, with fixtures recorded from real sources. Per rule 3, tests
-  precede implementation; per rule 4, each feature's validation method precedes its
+- **Testing** — pytest, with fixtures recorded from real sources. Per rule 4, tests
+  precede implementation; per rule 5, each feature's validation method precedes its
   tests.
 
 ## 12. Legal, ethical and operating constraints
@@ -598,8 +598,8 @@ rename) are the other two still with you.
 | **J10 Feature values** | **FR-39, 40, 45** |
 | **J11 Real move or mix shift** | **FR-41, 42, 43, 56, 59** |
 | **J12 Digest** | **FR-47, 6** |
-| Rule 5 (two price types) | FR-7, 8, 9, 10, 24, 27, 37 |
-| Rule 6 (always show, always flag) | FR-25, 32, 35 |
+| Rule 6 (two price types) | FR-7, 8, 9, 10, 24, 27, 37 |
+| Rule 7 (always show, always flag) | FR-25, 32, 35 |
 
 ## Appendix — document map
 

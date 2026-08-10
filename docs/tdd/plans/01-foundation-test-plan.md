@@ -396,7 +396,7 @@ rest of the tree.
 
 ### 3.9 Values this document cannot determine, and what is needed
 
-Stated explicitly per `CLAUDE.md` rule 2 rather than guessed.
+Stated explicitly per `CLAUDE.md` rule 3 rather than guessed.
 
 | Value | Why it cannot be fixed here | What is needed |
 |---|---|---|
@@ -645,7 +645,7 @@ R2.9 uses `'asking'` deliberately: it is a valid `price_kind` label and an inval
 | R2.13 | re-insert the R2.12 offering row verbatim | rejected | `UniqueViolation`, `diag.constraint_name == "metric_unit_month_pkey"` |
 | R2.18a-1 | `min_ppm2=200.00` (above `p25=100.00`) | rejected | `CheckViolation`, `diag.constraint_name == "range_bounds_ordered"` |
 | R2.18a-2 | `p75_ppm2=90.00` (below `median=120.00`) | rejected | `CheckViolation`, `range_bounds_ordered` |
-| R2.18a-3 | all five equal to `Decimal("120.00")`, `n=1`, `range_kind='min_max'` | **succeeds** — the degenerate n=1 row rule 6 requires | — |
+| R2.18a-3 | all five equal to `Decimal("120.00")`, `n=1`, `range_kind='min_max'` | **succeeds** — the degenerate n=1 row rule 7 requires | — |
 | R2.18c **(new)** | `series_kind='flow'`, `flow_window_days=None` | rejected | `CheckViolation`, `flow_states_its_window` |
 | R2.18d **(new)** | `series_kind='stock'`, `flow_window_days=90` | rejected | `CheckViolation`, `flow_states_its_window` |
 | R2.18e **(new)** | `series_kind='flow'`, `flow_window_days=90` | **succeeds** | — |
@@ -931,7 +931,7 @@ only in the `history` and `local-only` jobs.
 R1.11–R1.15 are discharged by no V entry. Either add **V63 — environment and
 migration reproducibility** to `04-validation.md`, or record them as rule-4-exempt
 preconditions. Until one of those is done these five tests are written but their
-validation method is missing, which is a rule 4 violation, not a gap in this plan.
+validation method is missing, which is a rule 5 violation, not a gap in this plan.
 
 ---
 
@@ -939,7 +939,7 @@ validation method is missing, which is a rule 4 violation, not a gap in this pla
 
 | Item | Status |
 |---|---|
-| §4.1 — item 1 has no validation method of its own | **Open.** Blocks R1.11–R1.15 under rule 4. Proposed V63 |
+| §4.1 — item 1 has no validation method of its own | **Open.** Blocks R1.11–R1.15 under rule 5. Proposed V63 |
 | §4.2 — `listing` FKs to future tables | **Closed** by A5: plain `BIGINT`, FKs later, pinned by R2.30 |
 | §4.3 — `price_kind` | **Closed** by D65. Tests R2.1b, R2.9b–d, R2.12b, R2.6 second limb |
 | §4.4 — `admin_unit` provenance | **Closed** by A6. Test R3.24 |

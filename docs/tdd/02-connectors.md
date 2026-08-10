@@ -3,8 +3,8 @@
 Covers [`18-v0-scope.md`](../18-v0-scope.md) §6 work items **4** (GUS BDL),
 **5** (portal), **7** (KOWR), **8** (auctions) and **13** (gmina BIP).
 
-Rules in force: [`CLAUDE.md`](../../CLAUDE.md) rule 3 (PRD → validation method →
-failing test → implementation → passing test) and rule 4 (a validation method
+Rules in force: [`CLAUDE.md`](../../CLAUDE.md) rule 4 (PRD → validation method →
+failing test → implementation → passing test) and rule 5 (a validation method
 before implementation). The methods already exist — V8, V13, V14, V43, V44, V46,
 V53, V54, V55, V57, V58 — so this document is the layer between them and the
 keyboard: **the order the tests are written in, and the exact assertion each one
@@ -48,7 +48,7 @@ Everything that does not depend on a **recorded fixture from a real portal**:
 
 Writing these against invented markup would be worse than not writing them: a
 green test against a fixture that does not resemble the source is the false green
-[`04-validation.md`](../04-validation.md) §Fixtures policy rule 4 exists to
+[`04-validation.md`](../04-validation.md) §Fixtures policy rule 5 exists to
 prevent.
 
 ### 0.3 The three branches, and what each does to this document
@@ -102,13 +102,13 @@ Location: `tests/architecture/test_connector_contract.py`,
 |---|---|---|---|
 | 1.1 | `test_registry_lists_every_connector` | `set(registry) == {"gus_bdl","portal","kowr","auction","gmina_bip"}` — a new connector must be registered or this fails, which is what keeps 1.2–1.9 exhaustive | contract |
 | 1.2 | `test_connector_satisfies_protocol[<name>]` | The class has `name`, `kind ∈ {portal,registry,api}`, and `fetch`/`parse`/`emit` with the signatures in `16` §2 | contract |
-| 1.3 | `test_parse_performs_no_io[<name>]` | Under the `no_network` autouse fixture (patches `socket.socket` to raise `AssertionError`) **and** a DB session double whose every attribute access raises, `parse(fixture_doc)` returns the expected item count. No exception ⇒ no I/O | V57, `16` §2 rule 1 |
+| 1.3 | `test_parse_performs_no_io[<name>]` | Under the `no_network` autouse fixture (patches `socket.socket` to raise `AssertionError`) **and** a DB session double whose every attribute access raises, `parse(fixture_doc)` returns the expected item count. No exception ⇒ no I/O | V57, `16` §2 rule 2 |
 | 1.4 | `test_parse_is_deterministic_and_clock_free[<name>]` | `parse(doc)` called twice, under two different frozen clocks (`2026-01-01` and `2027-06-30`), returns **equal** item lists. Catches a `datetime.now()` inside `parse`, which would make re-parsing (V42/V57) irreproducible | V57 |
-| 1.5 | `test_parse_accepts_only_bytes_from_raw_document[<name>]` | `parse` takes a `RawDocument`; passing a URL string raises `TypeError`. A parser that can be handed a URL will eventually fetch it | `16` §2 rule 1 |
-| 1.6 | `test_only_the_shared_http_module_imports_an_http_library` | AST walk over `src/lpc/`: the names `httpx`, `requests`, `urllib.request`, `aiohttp`, `selenium`, `playwright` appear **only** in `src/lpc/ingest/http.py`. Asserted as `offending_modules == []`, printing the offenders | V14, `16` §2 rule 2 |
+| 1.5 | `test_parse_accepts_only_bytes_from_raw_document[<name>]` | `parse` takes a `RawDocument`; passing a URL string raises `TypeError`. A parser that can be handed a URL will eventually fetch it | `16` §2 rule 2 |
+| 1.6 | `test_only_the_shared_http_module_imports_an_http_library` | AST walk over `src/lpc/`: the names `httpx`, `requests`, `urllib.request`, `aiohttp`, `selenium`, `playwright` appear **only** in `src/lpc/ingest/http.py`. Asserted as `offending_modules == []`, printing the offenders | V14, `16` §2 rule 3 |
 | 1.7 | `test_no_connector_constructs_a_client` | No `Client(`/`Session(` construction outside `ingest/http.py`; every connector receives its client by injection (constructor parameter present in 1.2's signature check) | V14 |
-| 1.8 | `test_connector_never_writes_metric_or_valuation_tables` | AST/text scan of `src/lpc/ingest/`: the tokens `metric_unit_month`, `metric_index`, `valuation_log` do not occur | `16` §2 rule 4 |
-| 1.9 | `test_connector_does_not_decide_its_own_health[<name>]` | The connector class has **no** `is_healthy`/`should_publish` attribute; `IngestResult` carries `items_emitted`, `parse_failures`, `parse_failure_rate`, `stated_total`, `alarms` | V8, `16` §2 rule 3 |
+| 1.8 | `test_connector_never_writes_metric_or_valuation_tables` | AST/text scan of `src/lpc/ingest/`: the tokens `metric_unit_month`, `metric_index`, `valuation_log` do not occur | `16` §2 rule 5 |
+| 1.9 | `test_connector_does_not_decide_its_own_health[<name>]` | The connector class has **no** `is_healthy`/`should_publish` attribute; `IngestResult` carries `items_emitted`, `parse_failures`, `parse_failure_rate`, `stated_total`, `alarms` | V8, `16` §2 rule 4 |
 
 ### 1.2 The zero-item rule (V8) — the one that must never be skipped
 
@@ -455,7 +455,7 @@ tests/unit/ingest/portal/test_sort_order.py
 
   test_the_comparison_reports_both_medians_and_both_n
     assert the report carries (median, n, p25, p75) for each arm — never a bare
-    verdict (rule 6)
+    verdict (rule 7)
 ```
 
 ### 4.8 Stock and flow at ingestion time (F7, feeds V45)
@@ -632,7 +632,7 @@ item 3, which 7.1 asserts against.
 ## 8. Fixture inventory — structural variants required
 
 Every variant named in the brief, mapped to the connector that must handle it.
-[`04-validation.md`](../04-validation.md) §Fixtures policy rule 3 requires at
+[`04-validation.md`](../04-validation.md) §Fixtures policy rule 4 requires at
 least one fixture per variant; this is that list, made explicit.
 
 | Variant | GUS BDL | Portal | KOWR | Auction | BIP |
@@ -670,7 +670,7 @@ and a fixture older than two quarters fails
 | 5. Fixtures exist and are scrubbed | ✓ (recordable now) | **blocked O10** | ✓ | **blocked O16** | ✓ |
 | 6. Metamorphic properties listed | §10 | §10 | §10 | §10 | §10 |
 
-Item 5 and item 8 therefore **fail criterion 5 today**. Per rule 3 their tests may
+Item 5 and item 8 therefore **fail criterion 5 today**. Per rule 4 their tests may
 be written; they may not be greened against invented fixtures.
 
 ## 10. Metamorphic properties that apply at the connector layer
@@ -693,7 +693,7 @@ arguments.
 
 ## 11. Open questions that block a green suite
 
-Per rule 2 these are asked, not assumed. Each one currently prevents a test in
+Per rule 3 these are asked, not assumed. Each one currently prevents a test in
 this document from being written truthfully.
 
 | # | Question | Blocks | Note |
@@ -702,7 +702,7 @@ this document from being written truthfully.
 | **Q2** | O1 — which portal, once O10 answers | §4 fixtures | Downstream of Q1 |
 | **Q3** | O16 — which auction source(s) | §6 fixtures | Proposal on the table (`00` O16) |
 | **Q4** | **`price_kind` does not exist in [`15-database-schema.md`](../15-database-schema.md).** FR-64 and V46 require it as an enum, a column on `listing`, and part of `metric_unit_month`'s primary key. Work item 2's schema must add it | 5.1, 5.12, 5.13, 6.7, 6.14, 7.12 | A real documentation gap, not an implementation detail — V46's architecture test has nothing to assert against until it lands |
-| **Q5** | What `price_type` does a tender or auction-start row carry? `listing.price_type` is CHECK-pinned to `offering`, and neither a tender floor nor a statutory starting price is an ask or a recorded sale. Options: (a) `offering` + `price_kind`, (b) a third `price_type`, (c) a separate table | 5.1, 6.7 | Rule 5 makes this a first-class question. **No test below assumes an answer** |
+| **Q5** | What `price_type` does a tender or auction-start row carry? `listing.price_type` is CHECK-pinned to `offering`, and neither a tender floor nor a statutory starting price is an ask or a recorded sale. Options: (a) `offering` + `price_kind`, (b) a third `price_type`, (c) a separate table | 5.1, 6.7 | Rule 6 makes this a first-class question. **No test below assumes an answer** |
 | **Q6** | Where do KOWR/BIP/auction records live? `listing` requires non-null `price_pln` and `area_m2`, which the price-range and no-area notices (5.6, 5.7) cannot satisfy — they quarantine correctly, but a notice with a price *and* an area still needs a home with a `notice_date` and an `auction_at` | 5.2, 6.8 | |
 | **Q7** | GUS BDL variable IDs for the land-price series are marked **verify** in `03`. 3.1 reads them from config; the actual IDs must be recorded in `docs/evidence/` before 3.2 can pin values | 3.2, 3.12 | |
 | **Q8** | Thresholds: V43 churn tolerance, V58 disagreement rate, V44 divergence bound, V8 parse-failure rate and zero-item floor. Per O25 these are set from first-run actuals | Their tests pin *behaviour given a threshold*, never a number | Recorded so the numbers are chosen deliberately rather than drifted into |

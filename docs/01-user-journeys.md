@@ -14,7 +14,7 @@ Anchor areas (priority for enrichment and QA, 25 km rings — D7, D11):
 Priority asset class: **land (działki)** — budowlana → rekreacyjna → rolna →
 leśna/inne (D6). Housing is secondary.
 Both **offering prices** and **actual sales prices** are carried throughout
-([`CLAUDE.md`](../CLAUDE.md) rule 5, D3).
+([`CLAUDE.md`](../CLAUDE.md) rule 6, D3).
 
 These journeys are the input to the PRD. Each one states the trigger, the steps a
 user takes, the data the product must already hold to serve those steps, and what

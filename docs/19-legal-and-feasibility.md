@@ -56,7 +56,7 @@ Mandatory presentation rules, in the spirit of FR-17's terminal `unknown`:
   (O17). Absence of observed buildings in a poorly-mapped county is absence of
   data, not absence of neighbours.
 
-### 1.3 Validation (required before implementation, rule 4)
+### 1.3 Validation (required before implementation, rule 5)
 
 - **AC** For 10 hand-checked parcels — 5 with obvious built neighbours, 5 clearly
   isolated — the computed signal matches visual inspection on an orthophoto. No

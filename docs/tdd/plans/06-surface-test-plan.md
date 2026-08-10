@@ -1,6 +1,6 @@
 # Test plan — the v0 surface (pass 2, detail)
 
-Pass 2, step 5 of the standard workflow ([`CLAUDE.md`](../../../CLAUDE.md) rule 7),
+Pass 2, step 5 of the standard workflow ([`CLAUDE.md`](../../../CLAUDE.md) rule 8),
 detailing [`06-surface.md`](../06-surface.md). Pass 1 gave the sequence; this gives
 the literal cases a developer types in.
 
@@ -910,7 +910,7 @@ section[primary,always] "Sprawdzenie działki"
     verdict[secondary,expander] "WERDYKT"
 ```
 
-The estimate still renders — rule 6, nothing is hidden — but demoted beneath the
+The estimate still renders — rule 7, nothing is hidden — but demoted beneath the
 notice, with its `n` and range intact.
 
 **Fails** — `dishonest/confident_thin.py`
@@ -2021,7 +2021,7 @@ def test_the_four_absence_reasons_and_thin_have_pairwise_distinct_treatments(mod
 def test_gmina_below_n5_renders_hatched_and_still_coloured(model):
     f = feature(model, "Nowy Kawęczyn")
     assert f.meta["pattern"] == "hatch"
-    assert f.meta["fill"] is not None            # rule 6: the colour is not withheld
+    assert f.meta["fill"] is not None            # rule 7: the colour is not withheld
 
 def test_every_gmina_label_carries_n_inline(model):
     for f in nodes_by_role(model, "map_feature"):
@@ -2070,7 +2070,7 @@ table_row[equal,always] "gmina Skierniewice"
 
 ## 10. Open items this detail pass surfaced
 
-Flagged rather than assumed, per [`CLAUDE.md`](../../../CLAUDE.md) rule 2. Each
+Flagged rather than assumed, per [`CLAUDE.md`](../../../CLAUDE.md) rule 3. Each
 blocks the step named.
 
 | # | Item | Proposal | Blocks |

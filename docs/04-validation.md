@@ -1,7 +1,7 @@
 # Validation methods
 
-Per [`CLAUDE.md`](../CLAUDE.md) rule 4, **no feature is implemented before its
-validation method is written here**. Rule 3 then orders the work: PRD entry →
+Per [`CLAUDE.md`](../CLAUDE.md) rule 5, **no feature is implemented before its
+validation method is written here**. Rule 4 then orders the work: PRD entry →
 validation method → failing test → implementation → passing test.
 
 Each entry states four things:
@@ -12,7 +12,7 @@ Each entry states four things:
 - **Falsified by** — the specific observation that means it is broken
 
 Entries are grouped by milestone. `Δ` marks a **data assertion** — it runs on every
-pipeline execution, not once (rule 4). `⏱` marks a scheduled check.
+pipeline execution, not once (rule 5). `⏱` marks a scheduled check.
 
 ---
 
@@ -39,7 +39,7 @@ These are not features; they are properties that must hold at all times. Each ha
 a test that runs on every commit **and** an assertion that runs on every pipeline
 execution. A failure here blocks a release.
 
-### V1 — Every price carries a price type (FR-7, rule 5)
+### V1 — Every price carries a price type (FR-7, rule 6)
 
 - **AC** Every row in `listing`, `transaction` and `metric_unit_month` has a
   non-null `price_type ∈ {offering, sales}`. `listing.price_type` is always
@@ -53,7 +53,7 @@ execution. A failure here blocks a release.
 - **Falsified by** Any insert with a null or out-of-domain `price_type` succeeding;
   any non-zero count from the assertion.
 
-### V2 — Offering and sales prices are never mixed (FR-8, rule 5)
+### V2 — Offering and sales prices are never mixed (FR-8, rule 6)
 
 - **AC** No aggregate is computed across both price types. `metric_unit_month` is
   keyed including `price_type`, so a single row can only ever draw on one type. No
@@ -84,7 +84,7 @@ execution. A failure here blocks a release.
 - **Against** The full API response-model set and rendered component snapshots.
 - **Falsified by** A single price field reachable without an accompanying type.
 
-### V4 — Always show, always flag (FR-25, rule 6, D17/D18)
+### V4 — Always show, always flag (FR-25, rule 7, D17/D18)
 
 - **AC** No aggregate is ever suppressed or hidden, **and** no aggregate is ever
   returned or rendered without both its sample size `n` and its spread. Spread is
@@ -101,7 +101,7 @@ execution. A failure here blocks a release.
 - **Falsified by** Any aggregate returned as a bare number; any "insufficient data"
   string appearing anywhere; any spread rendered only on hover.
 
-### V5 — Provenance on every number (rule 6)
+### V5 — Provenance on every number (rule 7)
 
 - **AC** Every derived row carries `as_of` and its source identifiers, and every
   displayed number is one click from source, as-of date, sample size and method.
@@ -234,7 +234,7 @@ execution. A failure here blocks a release.
 - **Falsified by** Any mutation of a snapshot row; a price change not recoverable
   from the series; a delisting that removes history.
 
-### V13 — GUS BDL sales-price baseline (FR-5, rule 5)
+### V13 — GUS BDL sales-price baseline (FR-5, rule 6)
 
 - **AC** For every in-scope powiat, the land transaction price series is imported,
   labelled `price_type = sales`, with the correct unit level, as-of date and source.
@@ -279,7 +279,7 @@ execution. A failure here blocks a release.
 - **Falsified by** The coverage page showing a figure that the assertion suite does
   not produce; a shortfall not surfaced.
 
-### V16 — Cross-source agreement (rule 4, data assertion)
+### V16 — Cross-source agreement (rule 5, data assertion)
 
 - **AC** `Δ⏱` Our offering-price median per powiat is compared against the GUS BDL
   sales figure for the same powiat. Offering prices are expected to sit *above*
@@ -343,7 +343,7 @@ execution. A failure here blocks a release.
 - **Falsified by** An estimate whose recorded step does not match the data it used;
   a rendered estimate with no visible basis.
 
-### V20 — Offering and sales estimates stay separate (FR-37, rule 5)
+### V20 — Offering and sales estimates stay separate (FR-37, rule 6)
 
 - **AC** `expected_offering` and `expected_sales` are computed from disjoint inputs
   and shown separately. Where sales comparables are absent, the sales estimate is
@@ -548,7 +548,7 @@ figures come out of the UI until resolved.
 
 ## M2+ — Platform (docs 09–11)
 
-### V35 — No bare numbers, anywhere (`09` §1, rule 6)
+### V35 — No bare numbers, anywhere (`09` §1, rule 7)
 
 - **AC** Every aggregate rendered anywhere in the UI is accompanied by its sample
   size and range at equal prominence — not in a tooltip, not on hover.
@@ -966,7 +966,7 @@ valuation is actually right — which no v0 method can reach.
 
 ## Deferred — method required before implementation
 
-These have no validation method yet. Per rule 4, one must be written here before
+These have no validation method yet. Per rule 5, one must be written here before
 any of them is implemented — they are listed so the gap is explicit rather than
 discovered later.
 
@@ -1005,7 +1005,7 @@ discovered later.
 ## Coverage of requirements
 
 Every FR in [`02-prd.md`](./02-prd.md) §8 maps to at least one validation method.
-The mapping is the gate: an FR with no V entry cannot be implemented (rule 4).
+The mapping is the gate: an FR with no V entry cannot be implemented (rule 5).
 
 | FR range | Validation |
 |---|---|

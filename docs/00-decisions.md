@@ -3,7 +3,7 @@
 Decisions taken with the product owner, newest batch last. Every decision here is
 binding on the PRD; if a decision changes, the PRD changes in the same commit.
 
-Per [`CLAUDE.md`](../CLAUDE.md) rule 2, these were resolved by asking, not by
+Per [`CLAUDE.md`](../CLAUDE.md) rule 3, these were resolved by asking, not by
 assuming. Items marked **ASSUMPTION** were not asked about and must be confirmed
 before the affected work starts.
 
@@ -13,7 +13,7 @@ before the affected work starts.
 |---|---|---|---|
 | D1 | Who uses it, is it published? | **Private + a few friends** | No public launch, no auth beyond a simple gate; scraping stays low-volume and non-commercial (PRD §12) |
 | D2 | Budget for paid data? | **Zero — free sources only** | No commercial listing feed. Conflicts with D3; resolved by D5 |
-| D3 | Sales prices vs asking prices | **Both equally first-class from the start** | Promoted to `CLAUDE.md` rule 5. Transaction data is not a later milestone |
+| D3 | Sales prices vs asking prices | **Both equally first-class from the start** | Promoted to `CLAUDE.md` rule 6. Transaction data is not a later milestone |
 | D4 | Stack | **Python + PostgreSQL/PostGIS** (my choice, delegated) | FastAPI backend, MapLibre frontend, Docker |
 
 ## Batch 2 — scope (2026-08-07)
@@ -47,7 +47,7 @@ before the affected work starts.
 
 | # | Question | Decision | Consequence |
 |---|---|---|---|
-| D17 | Suppression vs always-show conflict | **Rewrite `CLAUDE.md` rule 6 — always show, always flag** | No aggregate is ever hidden; uncertainty is mandatory instead |
+| D17 | Suppression vs always-show conflict | **Rewrite `CLAUDE.md` rule 7 — always show, always flag** | No aggregate is ever hidden; uncertainty is mandatory instead |
 | D18 | How is uncertainty displayed? | **Range — IQR or min–max**, alongside the median | Every aggregate carries a spread, not just a point estimate |
 | D19 | Travel time to where? | **Three specific addresses**: Niemcewicza (Warszawa), Kamienna (Elbląg), Budy Grabskie 53 | Point-to-point routing against personal anchors, not city centroids |
 | D20 | Plots with no zoning data | **Explicit "unknown — check at the gmina"** | Never inferred, never guessed, never silently treated as buildable |
@@ -74,10 +74,10 @@ before the affected work starts.
 
 | # | Question | Decision | Consequence |
 |---|---|---|---|
-| D29 | Valuation target | **Both asking and sales, shown separately** | Two estimates per plot, never blended (rule 5) |
+| D29 | Valuation target | **Both asking and sales, shown separately** | Two estimates per plot, never blended (rule 6) |
 | D30 | Estimator | **Comparable-set median, transparent** | Every estimate is traceable to the specific plots behind it |
 | D31 | What-if forms to support | **All four**: price a hypothetical plot; same plot in a different place; value of each feature; value if it became buildable | Valuation is a general function of (features × place), not just a listing lookup |
-| D32 | How uncertainty is expressed | **Always a range, never a point** | Consistent with rule 6. Range width *is* the confidence signal |
+| D32 | How uncertainty is expressed | **Always a range, never a point** | Consistent with rule 7. Range width *is* the confidence signal |
 
 ## Batch 9 — model governance, documentation, evaluation (2026-08-07)
 
@@ -124,7 +124,7 @@ reasoning I had repeated throughout the documents.
 | D50 | Estimate WZ feasibility? | **Yes — compute the "dobre sąsiedztwo" test** | Requires parcel geometry **and** building data, both of which v0 had excluded |
 | D51 | Flag farmland purchasability? | **Yes, as a risk badge** | New legal layer: who may buy, and KOWR pre-emption. See [`19-legal-and-feasibility.md`](./19-legal-and-feasibility.md) |
 | D52 | What is the real constraint, if not budget? | **Knowing whether the price is fair** | Confirms the original framing. Budget filtering is not built; distributions are shown instead |
-| D53 | How do we build it? | **I implement, you review each step** | TDD cycle per rule 3, reviewed incrementally rather than in one lump |
+| D53 | How do we build it? | **I implement, you review each step** | TDD cycle per rule 4, reviewed incrementally rather than in one lump |
 | D54 | What would make you distrust it? | **A number you know is wrong** | Makes the known-plot check the **primary** acceptance test, not a secondary one |
 
 ### Effort consequence of D49 + D47 + D50
@@ -200,8 +200,8 @@ support features already specified as requirements.
 
 | # | Question | Decision | Consequence |
 |---|---|---|---|
-| D64 | **What makes a gmina part of a 25 km ring?** Never defined anywhere, though the whole scope rests on it | **Any part of its boundary within 25 km of the anchor** | Inclusive at the edge: a gmina half inside is more useful shown with its `n` than silently excluded, which matches rule 6. Stated once in `15`; every consumer reads it from there |
-| D65 | Are auction and tender prices offering or sales? | **Offering** — nothing has been transacted. Distinguished by a new `price_kind ∈ {asking, auction_start, tender}` | Closes the FR-64 gap; rule 5 unaffected, `price_kind` is the finer axis inside `offering` |
+| D64 | **What makes a gmina part of a 25 km ring?** Never defined anywhere, though the whole scope rests on it | **Any part of its boundary within 25 km of the anchor** | Inclusive at the edge: a gmina half inside is more useful shown with its `n` than silently excluded, which matches rule 7. Stated once in `15`; every consumer reads it from there |
+| D65 | Are auction and tender prices offering or sales? | **Offering** — nothing has been transacted. Distinguished by a new `price_kind ∈ {asking, auction_start, tender}` | Closes the FR-64 gap; rule 6 unaffected, `price_kind` is the finer axis inside `offering` |
 | D66 | `metric_unit_month` could not store stock and flow separately | **Key extended** with `area_band`, `series_kind`, `price_kind` | D56 made flow the headline; without this the two collide on insert |
 | D67 | n=5 was frozen into a database CHECK while O11 marks it unratified | **Threshold moves to configuration**; the CHECK enforces internal consistency only | A provisional parameter must not require a migration to change |
 

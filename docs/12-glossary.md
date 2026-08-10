@@ -19,7 +19,7 @@ Decision: D34.
 | widełki / zakres | `range`, `low`/`high` | The range every estimate is expressed as (D32) |
 
 Never translate *cena ofertowa* as "market price" or *cena transakcyjna* as
-"price" unqualified. Rule 5 exists because these get conflated.
+"price" unqualified. Rule 6 exists because these get conflated.
 
 ## Land and property
 

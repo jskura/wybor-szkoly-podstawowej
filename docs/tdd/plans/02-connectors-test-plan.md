@@ -1,6 +1,6 @@
 # Test plan — the ingestion connectors (pass 2)
 
-Pass 2, step 5 of [`CLAUDE.md`](../../../CLAUDE.md) rule 7, for
+Pass 2, step 5 of [`CLAUDE.md`](../../../CLAUDE.md) rule 8, for
 [`02-connectors.md`](../02-connectors.md). Pass 1 gave the ordered red-green
 sequence; this document gives **the detail a developer types straight in**:
 literal fixture contents, the harness interfaces, exact inputs and exact expected
@@ -25,7 +25,7 @@ in §9.
 ## 1. The fixture tier rule, stated once
 
 Pass 1 §0.2 forbids inventing portal markup, and
-[`04-validation.md`](../../04-validation.md) §Fixtures policy rule 1 forbids
+[`04-validation.md`](../../04-validation.md) §Fixtures policy rule 2 forbids
 hand-editing fixtures. Neither forbids hand-writing a fixture **whose content we
 are the author of**. The distinction that governs every fixture below:
 
@@ -535,7 +535,7 @@ the fixture can detect the failure it is aimed at.
 ### 2.7 Scrubbing and fixture hygiene
 
 Personal data is scrubbed **at capture, before the first commit** (FR-23,
-fixtures policy rule 2), by `scripts/scrub_fixture.py`, which replaces phone
+fixtures policy rule 3), by `scripts/scrub_fixture.py`, which replaces phone
 numbers with `+48 000 000 000` and seller names with `Jan Testowy` and prints a
 diff for review. The scrub is enforced, not trusted:
 
@@ -1387,7 +1387,7 @@ the highest-risk arithmetic in the connector layer.
 
 ## 10. New questions this pass raised
 
-Per rule 2, asked rather than assumed. O-numbers are allocated only in
+Per rule 3, asked rather than assumed. O-numbers are allocated only in
 [`00-decisions.md`](../../00-decisions.md), so these carry local Q-numbers until
 they are.
 

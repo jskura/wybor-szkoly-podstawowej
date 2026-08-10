@@ -122,11 +122,11 @@ test suite — they check production data, not code.
 - `parcel` and `plot` are distinct; see [`12-glossary.md`](./12-glossary.md) for the
   definition and the case where one sale spans several parcels.
 - `price_type` is spelled identically everywhere — database, API, frontend — so it
-  can be grepped as a single token when auditing rule 5.
+  can be grepped as a single token when auditing rule 6.
 
 ## 6. Definition of done
 
-A work item is done when all of these hold — this is rules 3 and 4 made operational:
+A work item is done when all of these hold — this is rules 4 and 5 made operational:
 
 1. Its PRD requirement exists ([`02-prd.md`](./02-prd.md)).
 2. Its validation method exists ([`04-validation.md`](./04-validation.md)).

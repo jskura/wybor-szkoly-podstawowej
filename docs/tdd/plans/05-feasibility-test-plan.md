@@ -459,7 +459,7 @@ been recorded. It must carry, per pair:
 | `separation_m` | The independently known distance |
 | **`separation_kind`** | **`grid` or `geodesic`.** Missing today, and the fixture is unusable without it: at 300 m the two differ by 0.21 m — a fifth of the tier-G budget — and at 25 km by 14 m |
 | `orientation` | `north_south` or `east_west`; §3.3 requires at least one of each |
-| `source`, `tool`, `tool_version`, `retrieved_at` | Rule 6 provenance |
+| `source`, `tool`, `tool_version`, `retrieved_at` | Rule 7 provenance |
 
 `test_known_separation_fixture_declares_its_separation_kind` fails the suite while
 the field is absent, so the gap cannot be papered over by picking whichever
@@ -567,7 +567,7 @@ def test_disclaimer_characters_are_the_declared_ones():
 | `test_unlikely_is_phrased_as_an_observation` | Contains the rendered `WZ_UNLIKELY_TEMPLATE` with `{radius}` substituted by the value actually used; contains none of `{"nie można budować", "odmowa", "nie da się", "niemożliwe"}` |
 | `test_radius_in_the_string_equals_the_radius_used` | Render P2 at radius 100 → the string contains `w promieniu 100 m`; re-render at 150 → `150`. A hardcoded `100` in the template passes the first and fails the second |
 | `test_disclaimer_is_visible_in_the_collapsed_state` | The collapsed row's text contains `WZ_DISCLAIMER`; not only the expanded panel |
-| `test_verdict_renders_with_n_source_and_as_of` | The rendered block contains the neighbour count, the radius, the source (`egib`/`osm`) and the `as_of` date (rule 6) |
+| `test_verdict_renders_with_n_source_and_as_of` | The rendered block contains the neighbour count, the radius, the source (`egib`/`osm`) and the `as_of` date (rule 7) |
 | `test_seeded_dishonest_render_tree_is_caught` | A deliberately non-compliant render module — disclaimer removed from `likely` only — makes the suite fail. Without it, the sweep above could be vacuous |
 
 ---
@@ -658,7 +658,7 @@ EM DASH, and the area formatted by one declared formatter.
 | `test_badge_contains_all_four_lines` | Each of the three constants present verbatim, plus a line-1 match |
 | `test_badge_states_possibility_never_certainty` | Contains the three constants; contains none of `{"nie możesz kupić", "zakaz nabycia", "na pewno", "wymagana zgoda", "nie kupisz"}`, case-insensitively |
 | `test_badge_directs_to_a_notary` | `BADGE_NOTARY_LINE` present in **every** badge render, including the degraded one of §6.4 |
-| `test_badge_shows_area_and_its_source` | Area from the register, `area_source == "register"`, parcel `as_of` rendered (rule 6, V28) |
+| `test_badge_shows_area_and_its_source` | Area from the register, `area_source == "register"`, parcel `as_of` rendered (rule 7, V28) |
 | `test_badge_is_driven_by_register_class_not_advert_claim` | Advert `działka budowlana` + register `R` → badge. Advert `rolna` + register `B` → no badge (FR-48, V25) |
 | `test_badge_is_never_a_filter` | A badged plot appears in an unfiltered result set; plus an architecture check that no SQL predicate references the badge (D51) |
 | `test_badge_renders_at_both_ends_of_the_d48_band` | 2 000 m² and 4 000 m² both badged, with **identical copy** — the band's ends differ in legal consequence but the badge makes no numeric claim, so its text must not vary (§6) |
@@ -802,7 +802,7 @@ obvious built neighbours and 5 clearly isolated.
 | `nearest_building_distance_band` | `<50` · `50–100` · `100–250` · `>250` m. A band, not a number: an orthophoto cannot support a metre, and a fabricated precision would be worse than none |
 | `orthophoto_layer`, `orthophoto_tile_id`, `orthophoto_acquisition_date` | Which imagery, from when. Imagery older than the buildings it should show is the obvious way this ground truth goes wrong |
 | `cadastral_map_date` | The parcel boundary's own as-of |
-| `inspector`, `inspected_at` | Rule 6 applied to ground truth |
+| `inspector`, `inspected_at` | Rule 7 applied to ground truth |
 | `justification` | One line, e.g. "two houses with outbuildings on the parcel directly east, both fronting the same road" |
 | `draw_seed`, `draw_index` | §7.2 — proof the parcel was drawn, not chosen |
 | `building_layer_hidden` | Boolean, must be `true` — §7.3 |
@@ -890,7 +890,7 @@ substance. `parcel_wz_feasibility` holds `verdict`, `neighbour_found`,
 |---|---|---|
 | 1 | **No `reason_code` column** | The `unknown_carries_reason_code` constraint of `05` §1.3 cannot be written, and blocks 4/5/6 of §2 — 27 of 54 cells — collapse into one indistinguishable `unknown`. §4.1's four `unknown` sentences cannot be selected |
 | 2 | **No land-use or protection column** | Two of the table's four axes, plus modifier M2, are not stored. `test_verdict_carries_its_reason_codes_and_evidence` cannot pass; the verdict cannot be re-derived from the row |
-| 3 | **`coverage_source TEXT`, not an evidence reference** | Cannot carry `n`, the control radius, the source's `as_of`. Rule 6 requires the verdict to display its `n`, so the number would have to be recomputed at render time from data the row does not point at |
+| 3 | **`coverage_source TEXT`, not an evidence reference** | Cannot carry `n`, the control radius, the source's `as_of`. Rule 7 requires the verdict to display its `n`, so the number would have to be recomputed at render time from data the row does not point at |
 | 4 | **No radius, no nearest-building distance** | `test_radius_value_appears_in_rendered_reason_string` renders a radius the row does not record. Re-rendering an old verdict after a config change silently restates it with the new radius |
 | 5 | **`parcel_building.distance_m INT`** | Truncates to whole metres. §1.6's tier-S assertions need 0.001 m; an `INT` makes `30.000` and `30.4` indistinguishable, and the mm tolerance untestable through the database |
 | 6 | **`parcel_building` PK includes `geom`** | A refetch with different vertex order or coordinate precision inserts a duplicate building. Needs a source-side building identifier or a normalised geometry hash |

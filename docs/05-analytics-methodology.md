@@ -38,7 +38,7 @@ estimate(features, place, price_type, as_of) → { low, median, high, n, basis }
 
 `features` = area, buildability, utilities, road access, nature attributes.
 `place` = a gmina, or a point with a radius.
-`price_type` ∈ {offering, sales} — **never blended** (rule 5, D29).
+`price_type` ∈ {offering, sales} — **never blended** (rule 6, D29).
 
 The return is **always a range** (D32). Precisely — and this is the D42 correction,
 because the earlier wording contradicted itself — the rule is:
@@ -76,7 +76,7 @@ Given a subject (real plot or hypothetical feature bundle):
 |---|---|---|
 | Buildability | **Exact match** (D28) | The dominant price determinant. A buildable plot is never compared to farmland |
 | Asset class | Exact match | budowlana ≠ rekreacyjna ≠ rolna |
-| Price type | Exact match | Rule 5 |
+| Price type | Exact match | Rule 6 |
 | Area | Within **±50%** ‡ of subject | Price per m² varies systematically with size (§4) |
 | Recency | Observed within **12 months** ‡ | Older observations are a different market |
 | Geography | Same gmina; widen by **10 km** ‡ rings if under the minimum count | Local markets are local |
@@ -100,7 +100,7 @@ widening step reached, and the full list of contributing plots.
 
 - `median` → the expectation
 - `p25–p75` → the range shown when n ≥ 5
-- `min–max` → the range shown when n < 5 (rule 6)
+- `min–max` → the range shown when n < 5 (rule 7)
 
 ## 4. Size adjustment — closed as measure-then-decide (O6)
 
@@ -127,7 +127,7 @@ expected_asking = estimate(features, place, 'offering')
 expected_sales  = estimate(features, place, 'sales')
 ```
 
-Displayed as two separate lines, never combined (rule 5, D29):
+Displayed as two separate lines, never combined (rule 6, D29):
 
 ```
 Cena ofertowa:     142 zł/m²

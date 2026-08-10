@@ -1,7 +1,7 @@
 # Verification strategy
 
 How we establish that a feature is *correctly implemented*, not merely that it
-runs. Written before the TDD cycle begins, as rule 4 requires.
+runs. Written before the TDD cycle begins, as rule 5 requires.
 
 [`04-validation.md`](./04-validation.md) lists per-feature methods. This document
 is the layer above it: **why those methods are the right ones**, what we can and
@@ -249,7 +249,7 @@ Stated so it is not discovered later as a surprise:
 ## 8. Entry criteria for the TDD cycle
 
 Before writing the first test for any v0 work item, all of these must hold —
-this operationalises rules 3 and 4:
+this operationalises rules 4 and 5:
 
 1. The item has a PRD requirement or a `18-v0-scope.md` work-plan entry.
 2. It has a validation method in `04-validation.md`.
