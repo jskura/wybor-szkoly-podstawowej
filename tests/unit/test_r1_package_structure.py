@@ -26,6 +26,9 @@ V0_PACKAGES = {
     "geo",
     "metrics",
     "valuation",
+    # `render` is pure and returns a node tree; `app` maps that tree to
+    # Streamlit. They are siblings so the boundary between them is real.
+    "render",
     "app",
     "ops",
 }
