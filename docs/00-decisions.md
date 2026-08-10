@@ -267,6 +267,29 @@ Answers to the open questions raised by the pass-2 normalization plan.
 | D100 | OPEN-S7 spread wording | **The precise Polish term everywhere** | Longer, but the range is a specific one and the short word does not say which |
 | D101 | OPEN-S5 container roles | **Add `section` and `header`** | Both are covered by the existing sweep that walks every role, which is the test that catches a dropped node |
 
+## Batch 21 — feasibility, valuation parameters, naming (2026-08-07)
+
+The last of the 35 open items from the test plans.
+
+| # | Item | Decision | Note |
+|---|---|---|---|
+| D102 | O34 good-neighbour radius | **Configurable, with a sensitivity report** | The law gives no number. The 20-parcel labelled set arbitrates |
+| D103 | O35 coverage-probe values | **Configurable, the labelled set decides** | These values separate "genuinely isolated" from "nobody mapped this". Getting them wrong reproduces the exact error the `unknown` verdict exists to prevent |
+| D104 | O36 legal verification staleness | **No expiry** | Combined with D105 below, because on its own nothing would tell us the law had changed |
+| D105 | Follow-up to D104 | **Re-verify when the badge is first shown in a session** | Puts the check where the risk is, at no standing cost |
+| D106 | O37 forest land | **Its own badge** | Forest sale falls under a different act with a different pre-emption holder. Needs its own FR, its own legal verification and its own tests. About +1 day |
+| D107 | O27 flow window | **90 days** | Long enough for a usable sample in a thin gmina, short enough to mean "recent" |
+| D108 | O11 comparable size band | **±50%** | Ratifies the provisional value |
+| D109 | O11 minimum comparables before widening | **3** | Looser than the 5 proposed. **Consequence recorded:** a median of three plots is close to noise. Rule 7 makes it honest, not strong — it always ships with its `n` and its range |
+| D110 | O11 comparable recency | **12 months** | Ratifies the provisional value |
+| D111 | O16 auction sources | **The central service and the bankruptcy gazette together** | Fuller coverage from the start. About +1 day over the central service alone |
+| D112 | O33 Python package name | **`dzialki`** | **Deliberate exception to D15** (Polish UI, English code). Recorded so a later reader does not "fix" it |
+| D113 | O13 thin map tiles | **Faded, not hatched** | Simpler to draw. Fading can read as "less of something" rather than "less certain", so the count on the label carries the meaning |
+
+**Every open item from the six test plans is now answered.** The remaining open
+items are O10 (robots.txt, needs you), O25 (thresholds set from first-run
+actuals) and the two new ones below.
+
 ### Items raised after batch 13
 
 | # | Raised by | Status |
