@@ -245,6 +245,15 @@ Answers to the open questions raised by the pass-2 normalization plan.
 | D88 | O-N12 band check | **The exact quotient**, not the stored rounded value | A record that rounds back onto the edge is still flagged |
 | D89 | O-N9 compound areas | **Re-opened** — see O35 | The chosen answer produces a 20% error on `1 ha 25 a` |
 
+## Batch 19 — compound areas, notice storage, crawl behaviour (2026-08-07)
+
+| # | Item | Decision | Note |
+|---|---|---|---|
+| D90 | O-N9 compound areas (**re-asked**) | **Sum a compound; keep an agreeing restatement; quarantine a disagreeing one** | Supersedes the answer in batch 18. `1 ha 25 a` now reads 12 500 m², not 10 000. The first-value rule would have made every such price per m² 25% too high |
+| D91 | Q6 where notices live | **A separate notice table** | KOWR, auction and BIP records carry a notice date and an auction date. `listing` has neither and requires a non-null price and area. Keeps that constraint intact |
+| D92 | Q10 robots file with no readable group | **Allow** | Follows RFC 9309: a served file with no matching group permits access. Note the deliberate asymmetry with our stricter local rule that a **missing** file is not permission. Both rules are stated explicitly in code; neither is inferred from the other |
+| D93 | Q13 `Retry-After` longer than an hour | **End the run, publish nothing** | A crawl held open for a day cannot be told apart from a hang. Yesterday's data stays in place |
+
 ### Items raised after batch 13
 
 | # | Raised by | Status |
