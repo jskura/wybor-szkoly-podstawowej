@@ -15,8 +15,8 @@ import pytest
 
 pytestmark = [pytest.mark.unit]
 
-# `16-repository-layout.md` §1, the v0 subset. `extract`, `dedup`, `enrich`,
-# `model`, `api`, `digest` and `frontend` arrive with their own work items.
+# `16-repository-layout.md` §1, the v0 subset. `extract`, `model`, `api`,
+# `digest` and `frontend` arrive with their own work items.
 V0_PACKAGES = {
     "config",
     "db",
@@ -26,18 +26,27 @@ V0_PACKAGES = {
     "geo",
     "metrics",
     "valuation",
+    # S14. Parcels, buildings and the WZ good-neighbour test. It computes
+    # verdicts and never fetches: the ingest packages hand it geometry.
+    "enrich",
     # `render` is pure and returns a node tree; `app` maps that tree to
     # Streamlit. They are siblings so the boundary between them is real.
     "render",
     "app",
     "ops",
+    # S15. The purchase-restriction badges, their register-class table and their
+    # citation record. A sibling of `render` because refusing to render
+    # unratified legal content is a decision, not a presentation rule.
+    "legal",
 }
 
-# S15 adds register_classes.yml (D117). Each stage edits this list on purpose,
-# which is the point of asserting equality rather than containment.
+# Each stage edits this list on purpose, which is the point of asserting
+# equality rather than containment.
 TRACKED_CONFIG_FILES = [
     "config/anchors.example.yml",
+    "config/legal_citations.yml",
     "config/params.yml",
+    "config/register_classes.yml",
     "config/sources.yml",
     "config/teryt_bdl.yml",
 ]
