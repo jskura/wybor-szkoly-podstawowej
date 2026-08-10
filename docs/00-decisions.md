@@ -217,6 +217,15 @@ use?". Full analysis in [`22-source-access-options.md`](./22-source-access-optio
 | D72 | Fallback if a portal disallows automated fetching | **Browser-assisted capture** — you browse, the tool parses what your browser already fetched | `robots.txt` governs robots, not you. Costs the daily automated refresh, which D45 already demoted |
 | D73 | Evasion techniques | **Never** — no rotating agents, IP pools, CAPTCHA defeat, or claiming compliance while ignoring it | If we ever decide to crawl despite a disallow, that is recorded openly with FR-2 amended, not hidden behind a user-agent string |
 
+## Batch 17 — sequencing and naming (2026-08-07)
+
+| # | Question | Decision | Consequence |
+|---|---|---|---|
+| D74 | How to handle the open questions from the test plans? | **Ask all of them** | About 35 items, most with a proposed answer. Nine batches |
+| D75 | Start work before the robots.txt answer? | **Yes — items 1 to 4, plus the off-portal connectors** | Caveat: the connector code can be written, but KOWR and BIP **fixtures** also need robots evidence (Q9). Those parts stall with the portal |
+| D76 | Can the tool exist in time? | **Build it, accept the risk** | 26 to 29 days against a six-month horizon. Recorded so it is a known cost |
+| D77 | Repository name | **`ile-za-dzialke`** | The rename needs your action on GitHub. Document references are updated. The Python package name is O34 |
+
 ### Items raised after batch 13
 
 | # | Raised by | Status |

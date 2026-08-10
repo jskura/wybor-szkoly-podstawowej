@@ -1,11 +1,11 @@
-# Land price comparison — Budy Grabskie & Elbląg areas
+# ile-za-dzialke — land price comparison for the Budy Grabskie and Elbląg areas
 
 A tool for comparing **land prices** in Poland — both **offering prices** (asking
 prices from listings) and **actual sales prices** (recorded transactions) — so that
 a plot's asking price can be judged against what comparable land actually costs.
 
-> ⚠️ The repository is still named `wybor-szkoly-podstawowej` from an earlier
-> project. A rename is agreed (D24); candidates are at the bottom.
+> ⚠️ The repository name on GitHub is still `wybor-szkoly-podstawowej`. The agreed
+> name is **`ile-za-dzialke`** (D77). The rename needs an action on GitHub.
 
 ## Status
 
@@ -150,19 +150,6 @@ E24 Operations · E25 Quality harness · E26 Access control   (cross-cutting)
 
 Critical path: E1 → E2 → E4 → E5 → E7 → E11 → E15 → E16. v0 takes thin slices of
 E1–E6 and E11 only; see [`docs/13-scope.md`](docs/13-scope.md) §3a.
-
-## Candidate repo names (D24)
-
-| Name | Reading |
-|---|---|
-| `cena-ziemi` | "price of land" — plain, descriptive, Polish |
-| `ile-za-dzialke` | "how much for a plot" — the actual question |
-| `grunt-radar` | *grunt* = land/ground; suggests monitoring over time |
-| `dzialkometr` | "plot-meter" — memorable, slightly playful |
-| `parcela` | short, neutral, unambiguous |
-
-`cena-ziemi` is the safest, `ile-za-dzialke` the most descriptive. Say which and
-I'll update every reference.
 
 ## Next step
 
