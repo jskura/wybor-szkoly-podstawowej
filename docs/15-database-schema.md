@@ -431,7 +431,11 @@ CREATE TABLE metric_unit_month (
 
   as_of         DATE NOT NULL,
   computed_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  source_ids    INT[] NOT NULL CHECK (array_length(source_ids,1) > 0),
+  -- COALESCE, not a bare comparison: array_length('{}', 1) is NULL, and a
+  -- CHECK treats NULL as satisfied. Written the obvious way, this
+  -- constraint let an empty source list through and rule 7 with it.
+  source_ids    INT[] NOT NULL
+                  CHECK (COALESCE(array_length(source_ids,1), 0) > 0),
 
   PRIMARY KEY (teryt_unit, month, asset_class, buildability,
                price_type, price_kind, series_kind, area_band, generation),
