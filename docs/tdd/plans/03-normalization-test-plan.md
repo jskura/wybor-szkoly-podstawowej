@@ -505,8 +505,11 @@ differs because of the threshold alone.
 boundary rows below are recomputed: 2% of 1200 is 24 m², 5% of 1200 is 60 m², so
 the edge moves from 1224 to 1260.
 
-The relative difference divides by the **register area**, the authoritative value.
-Every row states register `1200`.
+The relative difference divides by the **register area** (D120), the authoritative
+value. The choice is deliberate and it is asymmetric: an advert 5% under and one 5%
+over are both measured against the same figure. At the boundary the base changes
+the verdict — 1260.01 is 5.0008% of the register 1200 but 4.76% of itself. Every
+row states register `1200`.
 
 | Case | structured | relative Δ | `conflict` |
 |---|---|---|---|

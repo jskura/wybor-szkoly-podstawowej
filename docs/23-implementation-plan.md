@@ -21,7 +21,8 @@ ile-za-dzialke/
 │   ├── anchors.yml         real addresses, gitignored (FR-22)
 │   ├── sources.yml         per-source rate limit, cadence, enabled flag
 │   ├── params.yml          every ratified parameter (§2)
-│   └── teryt_bdl.yml       TERYT to BDL unit map, as data (D97)
+│   ├── teryt_bdl.yml       TERYT to BDL unit map, as data (D97)
+│   └── register_classes.yml  register class → regime, one row each (D117)
 ├── src/dzialki/
 │   ├── config/             loading, validation, the missing-file error
 │   ├── db/                 models, migrations, roles
@@ -75,14 +76,27 @@ aggregates:
   flow_window_days: 90       # D107
   iqr_switch_n: 5            # D67 — configuration, never a database CHECK
 validation:
-  area_min_m2: 300           # D-O12
+  area_min_m2: 300           # O12
   area_max_m2: 200000
   conflict_threshold_pct: 5  # D81
+  conflict_threshold_base: register   # D120 — the register area is the denominator
 crawl:
   fraction_tolerance_pln: 1  # D94
   count_tolerance: {abs: 3, pct: 2}   # D95
   retry_after_max_s: 3600    # D93
+feasibility:
+  good_neighbour_radius_m: 100        # D102 — the labelled set arbitrates
+  coverage_probe_radius_m: 500        # D103 — separates "isolated" from "unmapped"
+  coverage_probe_min_buildings: 3     # D103
+surface:
+  thousands_sep: " "    # D125 — non-breaking, so a number never breaks
 ```
+
+Three of these are **configurable because the evidence has not arrived yet**, not
+because someone may want to change them. D102 and D103 name the 20-parcel labelled
+set as their arbiter, and V60 scores the shipped value against it. A wrong
+coverage probe reproduces the exact error the `unknown` verdict exists to prevent:
+it reads an unmapped county as an empty one.
 
 Why this matters: the audit found nine documents hard-coding one unratified
 threshold. A single file makes a change one edit, and makes the current value
@@ -95,8 +109,8 @@ Each stage ends with a review and a commit. A stage is done when its tests pass
 
 | Stage | Builds | Tests first | Done when |
 |---|---|---|---|
-| **S1** | Repo, Docker, Postgres with PostGIS, migration harness, config loading | V7 in full | `docker compose up` gives an empty working system. Anchors load from the gitignored file. A missing file gives a named error, not a crash |
-| **S2** | The schema | V1, V2, V4 database limbs | Every CHECK exists. A bad `price_type` cannot be inserted. Stock and flow rows do not collide |
+| **S1** | Repo, Docker, Postgres with PostGIS, migration harness, config loading | V7, V65 | `docker compose up` gives an empty working system. Anchors load from the gitignored file. A missing key gives a named error, not a crash. No ratified value appears outside `params.yml`. V7(b) runs as a pre-push hook, never in CI (D124) |
+| **S2** | The schema | V1, V2, V4 database limbs | Every CHECK exists. A bad `price_type` cannot be inserted. A listing cannot carry a `transaction` price kind (D115). Stock and flow rows do not collide |
 | **S3** | Boundaries and TERYT for both rings | V6, V30, V31 | Budy Grabskie resolves to gmina Skierniewice. The ring set matches the fixture manifest exactly. Distances hold at both scales, and the degrees control fails |
 | **S4** | GUS sales client | V13, V16 | Every in-scope powiat has a sales series. The unit map is read from config |
 | **S5** | Connector contract, HTTP client, robots, rate limit | V14, V57, V58, contract tests | `parse` is pure under a blocked socket. Only `http.py` imports an HTTP library. Rate limit holds over 500 requests |
@@ -108,8 +122,8 @@ Each stage ends with a review and a commit. A stage is done when its tests pass
 | **S11** | Streamlit app and map | V59, V51c | URL paste works and fails loudly. Excluding a comparable recomputes and logs |
 | **S12** | Portal connector | V43, V44, and the S5 tests | **Blocked on the robots.txt reading.** Corpus count agrees with the source's own total |
 | **S13** | KOWR, auctions, BIP | V53, V54, V55 | Every gmina is covered or explicitly listed as uncovered. Auction fractions parse |
-| **S14** | Parcels, buildings, feasibility | V60, V29, V31 | Missing building data yields `unknown`, never `unlikely` |
-| **S15** | Purchase restrictions | V61, V63, V64 | Neither badge renders on the other class. One prompt per session |
+| **S14** | Parcels, buildings, feasibility | V60, V66, V29, V31 | Missing building data yields `unknown`, never `unlikely`. A `likely` verdict from the road proxy carries its own disclaimer, and its wording differs from the confirmed-ownership wording (D114) |
+| **S15** | Purchase restrictions | V61, V63, V64 | Neither badge renders on the other class. One prompt **per regime** per session (D116). **The forest badge waits on the three `‡` claims in `19` §2a.1** |
 
 ## 4. Order, and why
 

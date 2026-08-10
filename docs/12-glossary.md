@@ -112,4 +112,9 @@ home for the list; other documents point here.
 
 `cena ofertowa` · `cena transakcyjna` · `działka` · `plan ogólny` · `MPZP` ·
 `wypis i wyrys` · `media` · `droga dojazdowa` · `zakres międzykwartylowy` ·
-`warunki zabudowy`
+`warunki zabudowy` · `służebność przejazdu` · `klasa gruntu`
+
+The last two joined the list in D118. Both have a tempting loose rendering:
+`służebność przejazdu` reads wrongly as *dojazd*, and `klasa gruntu` as
+*jakość gleby*. The first is a legal instrument, the second drives the farmland
+pre-emption rule, so neither survives a synonym.

@@ -307,6 +307,8 @@ actuals) and the two new ones below.
 | O36 | Legal verification staleness | **Closed by D104/D105** — no expiry, re-verify on first display in a session |
 | O37 | Forest land | **Closed by D106** — its own badge |
 | O38 | Schema tables the feasibility spec needed (`tdd/05` §1.3) | **Closed** — `parcel_building`, `building_coverage` and `parcel_wz_feasibility` exist in `15` |
+| O39 | The D114 proxy needs its own disclaimer, and `likely` needs a marker naming the evidence behind it | **Open, raised by D114.** A `likely` verdict from a proxy must not read like one from confirmed ownership. Blocks nothing until the `likely` cell is implemented |
+| O40 | The legal specifics in `19` §2.1 and the three forest claims in `19` §2a.1 are unverified | **Open, needs you.** Secondary sources disagree and the law moved in 2026. A reading task against the consolidated acts, not a decision. Blocks stage S15 from shipping, nothing earlier |
 
 ### Still blocked on you
 
@@ -318,6 +320,29 @@ Only three, and only one blocks work:
 
 Everything else is decided or has a proposal you can overturn.
 
+## Batch 22 — what the reconciliation found (2026-08-10)
+
+Six agents reconciled the twelve TDD documents with batches 18 to 21. Each one
+found something the answers did not cover. These are those eleven points, plus one
+formatting choice I settled myself.
+
+| # | Item | Decision | Consequence |
+|---|---|---|---|
+| D114 | Free EGiB data gives no ownership, so `road_public_status` is `unknown` for every road and the one `likely` cell of 54 is unreachable | **Accept a proxy**: register class `dr` plus an OSM highway class is evidence of a public road | `likely` ships, as a lower-confidence verdict. It needs its own disclaimer and its own rows in the 20-parcel labelled set. The proxy can be wrong on a private access road carrying both marks |
+| D115 | D91 moved notices out of `listing`, leaving `price_kind` with no CHECK there | **`asking` only** — `CHECK (price_kind = 'asking')` | Mirrors the `price_type = 'offering'` CHECK on the same table. Every auction and tender price lives in `notice`. Rule 6's separation is now enforced, not assumed |
+| D116 | D106 added a second regime, so V64's one prompt per session left the forest act unverified | **Once per regime per session** | At most two prompts. The two acts change independently, so one check cannot stand for both |
+| D117 | Does the forest act reach `Lz` and `Lzr`? | **`Lz` regime `none`, `Lzr` regime `agricultural`** | `Lzr` is a *użytek rolny*, so the farmland rule governs it. **Risk recorded:** if the forest act does reach `Lz`, we show no badge where a pre-emption right exists |
+| D118 | Two terms were lint-protected in an earlier draft but never reached the glossary | **Both join the list** — `służebność przejazdu` and `klasa gruntu` | Twelve protected terms. Both have a tempting loose rendering: *dojazd* and *jakość gleby* |
+| D119 | D111 split the auction source in two, and the names appear in the registry, in fixture paths and in the coverage view | **`auction_central` and `auction_gazette`** | English per D15. Names what each source is, not the institution, which can be renamed |
+| D120 | D81 fixed 5% but not the denominator. At the boundary the choice changes the verdict | **The register area** | The register is the authority, so it is the base. Asymmetric by design: an advert 5% under and one 5% over are measured against the same figure |
+| D121 | V60's 20-parcel labelled set can mean two things, and D102 and D103 now let it choose two shipped parameters | **Signal only** — the labels record what the surroundings look like, never whether building is permitted | Honest about what a layperson can label. D63 already removed the judgement the verdict reading would need |
+| D122 | `19` has no forest section at all, so D106 has no act, no holder and no Polish copy | **I write it, you ratify** | All three legal claims are marked unverified. The stage that renders the forest badge stays blocked until you check them against the act |
+| D123 | A plot can straddle a gmina boundary, and a 50/50 split had no rule and no test | **Lowest TERYT wins** | Arbitrary but total, so the answer is stable across runs. The plot page names both gminas and says which one the figures come from |
+| D124 | R1.11–R1.15 had no validation method (rule 5), and V7(b) scans git history for your anchor addresses, which cannot run in CI | **V65 covers config loading. V7(b) becomes a local pre-push hook** | The hook reads the addresses from the gitignored file. CI keeps V7(a), which asserts that file is absent from the tree. No address ever enters CI |
+| D125 | The badge needed one thousands separator, and three were plausible | **U+00A0**, the non-breaking space, as one hashed constant | Polish typography uses a space. The non-breaking form stops a line break inside a number. Settled by me, not asked — it is a typographic fact, not a product choice |
+
+**New open items.** D114 creates one: the proxy needs its own disclaimer copy, and
+`likely` needs a confidence marker that says which evidence produced it (O39).
 
 ## Batch 14 — the interface, and a finding that outranks it (2026-08-07)
 

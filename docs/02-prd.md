@@ -450,10 +450,27 @@ these are the requirements it must satisfy.
   farmland badge never renders on forest, and the forest badge never renders on
   farmland. Naming the wrong act and the wrong authority is worse than saying
   nothing.
-- **FR-74** **Legal verification prompt** (D104, D105). The legal content of
+- **FR-74** **Legal verification prompt** (D104, D105, D116). The legal content of
   FR-66 and FR-73 carries no expiry date. Instead the application prompts for
-  re-verification the first time a purchase-restriction badge appears in a
-  session. This puts the check where the risk is, at no standing cost.
+  re-verification the first time a purchase-restriction badge of a given **regime**
+  appears in a session. One prompt per regime, each naming its own act. This puts
+  the check where the risk is, at no standing cost.
+
+### 8.10b Configuration and the public-road proxy
+
+- **FR-75** **One file holds every ratified parameter.** `config/params.yml`
+  carries each value the owner ratified, with its decision number. No ratified
+  parameter appears as a literal in code or in a migration. Loading a malformed or
+  incomplete file raises a named error at startup. The audit found nine documents
+  hard-coding one unratified threshold; a single file makes a change one edit and
+  makes the current value readable without a search.
+- **FR-76** **Public-road evidence is a proxy, and says so** (D114). Free EGiB data
+  carries no ownership, so the tool infers a public road from register class `dr`
+  plus an OSM highway class. A `likely` buildability verdict resting on that
+  inference renders with its own disclaimer and a marker naming the evidence. It
+  never uses the wording reserved for confirmed ownership. The proxy can be wrong
+  on a private access road that carries both marks, and the interface must not hide
+  that.
 
 ### 8.11 Research spikes
 

@@ -793,38 +793,49 @@ triggers the prompt. That leaves a residue: a session that shows a farmland badg
 first and a forest badge later prompts **only for the farmland act**. The forest
 act's verification date never reaches the reader in that session.
 
-Two answers are defensible. Prompt once per session, as V64 says, and accept the
-gap. Or prompt once per **regime** per session, at most twice. **I do not know which
-you want, and I have not chosen.** The tests above encode V64 as written, once per
-session. §14 carries the question.
+**Settled: once per regime per session (D116).** At most two prompts, each naming
+its own act. The two acts change independently, so a check on one cannot stand for
+the other. The tests above are written to that rule: two farmland badges in one
+session give one prompt, and a farmland badge followed by a forest badge gives two
+prompts naming two different acts.
 
 ---
 
 ## 14. Assumptions and open questions — flagged, not absorbed
 
-Rule 2 forbids resolving ambiguity by assumption. Batch 21 answered six of the seven
-questions this spec raised. The answers and their consequences are recorded first;
-the questions that remain follow.
+Rule 2 forbids resolving ambiguity by assumption. Batch 21 answered six of the
+seven questions this spec raised. Batch 22 answered the rest. One item remains, and
+it is a reading task, not a decision.
 
 ### 14.1 Answered by batch 21
 
-| Was | Question | Answer | Where it lands in this document |
+| # | Question | Answer | Where it lands in this document |
 |---|---|---|---|
-| **O28** | Good-neighbour radius | **D102** — configuration, with a sensitivity report; the 20-parcel labelled set arbitrates the shipped value | §5.1's parameter table and its four tests; §0 records the label set's new role |
-| **O29** | Coverage-probe values | **D103** — configuration, decided by the same labelled set | §1.2's boxed warning and §5.1. Getting these wrong reproduces the exact error `unknown` exists to prevent, so the warning sits next to the first test, not in an appendix |
-| **O30** | Citation max age | **D104** — there is no expiry | §11.1a. The build-failing age test is deleted, and `test_citation_record_declares_no_expiry` stops it coming back |
+| **O34** | Good-neighbour radius | **D102** — configuration, with a sensitivity report; the 20-parcel labelled set arbitrates the shipped value | §5.1's parameter table and its four tests; §0 records the label set's new role |
+| **O35** | Coverage-probe values | **D103** — configuration, decided by the same labelled set | §1.2's boxed warning and §5.1. Getting these wrong reproduces the exact error `unknown` exists to prevent, so the warning sits next to the first test, not in an appendix |
+| **O36** | Citation max age | **D104** — there is no expiry | §11.1a. The build-failing age test is deleted, and `test_citation_record_declares_no_expiry` stops it coming back |
 | — | What replaces the expiry? | **D105** — prompt on the first badge in a session | §13, and FR-74 in the PRD |
+| **O37** | Does the badge apply to forest? | **D106** — forest gets **its own** badge, its own act, its own holder, its own verification | §12 in full, F16 in §9, FR-73/V63 |
 | **O38** | Missing schema tables | Closed — `parcel_building`, `building_coverage` and `parcel_wz_feasibility` now exist in doc 15 | §1.3, which also corrects pass 1's biconditional to the implication the schema ships, and records `distance_mm` |
-| **O33** | Does the badge apply to forest? | **D106** — forest gets **its own** badge, its own act, its own holder, its own verification | §12 in full, F16 in §9, FR-73/V63 |
 
-### 14.2 Still open
+### 14.2 Answered by batch 22
+
+| Question | Answer | Where it lands |
+|---|---|---|
+| Is `dr` + an OSM highway class acceptable evidence of a public road? Without it the only `likely` cell of 54 is unreachable | **D114 — accept the proxy.** `likely` ships as a lower-confidence verdict with its own disclaimer and an evidence marker | `19` §1.1, FR-76, V66. The labelled set gains parcels whose only road evidence is the proxy. The disclaimer copy is O39 |
+| Does the prompt fire once per session, or once per regime? | **D116 — once per regime per session** | §13.1, V64 |
+| Do `Lz` and `Lzr` fall under the forest act? | **D117 — `Lz` regime `none`, `Lzr` regime `agricultural`** | §12's class table, `19` §2a.3. The accepted risk is recorded there |
+| `19` has no forest section | **D122 — written, and marked unverified** | `19` §2a. The three legal claims carry `‡`; R11 stays blocked until the owner checks them |
+| Do the V60 labels record a verdict or a signal? | **D121 — signal only** | §7 throughout, V60 |
+| Which thousands separator? | **D125 — U+00A0** | §12.4's hashed constant |
+| Is a 50/50 gmina straddle a tie the majority rule cannot resolve? | **D123 — lowest TERYT wins** | §1.3. A total order, so the answer is stable across runs. The plot page names both gminas |
+
+### 14.3 Still open
 
 | # | Question | Blocks | Provisional treatment |
 |---|---|---|---|
-| **O31** | **`19` §2.1's legal specifics are unverified.** The 1 ha → 5 ha change and the 30 April 2026 date come from secondary sources that `19` itself says disagree | Item 15 shipping | Treated as unverified throughout §11; no test in this document asserts those values as true |
-| **new** | **`19` has no forest section.** D106 needs the act, the holder and the Polish copy written down where the farmland ones live | R11 | §12.2 proposes the copy and marks it unratified. Entry criterion 7 stays unmet until doc 19 carries it |
-| **new** | **Do `Lz` and `Lzr` fall under the forest act?** `Lz` is wooded land outside the agricultural register; `Lzr` is wooded land on farmland and is a *użytek rolny* | R11 | The table keeps `Lz` at regime `none` and `Lzr` at `agricultural`. Both are provisional and both are part of §11.3's manual reading of the forest act |
-| **new** | **Does the prompt fire once per session, or once per regime per session?** | R12 | §13.1. The tests encode V64 as written: once per session |
+| **O40** | **`19` §2.1's legal specifics are unverified.** The 1 ha → 5 ha change and the 30 April 2026 date come from secondary sources that `19` itself says disagree. The three forest claims in `19` §2a.1 are unverified for the same reason | Stage S15 shipping | Treated as unverified throughout §11 and §12; no test in this document asserts those values as true. This is a reading task, not a decision |
+| **O39** | The D114 proxy needs its own disclaimer copy, and `likely` needs a marker naming the evidence behind it | The `likely` cell rendering | V66 asserts the two wordings differ. The words themselves are not written yet |
 
 ---
 

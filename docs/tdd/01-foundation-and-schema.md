@@ -42,11 +42,9 @@ Every test below states four things:
 | 5. Fixtures exist, dated, scrubbed | §3.1 | §3.2 | §3.3 |
 | 6. Metamorphic properties listed | §5.1 | §5.2 | §5.3 |
 
-Entry criterion 2 is **not fully met for item 1**: R1.11–R1.15 still have no V
-entry (§4.1). Criterion 4 is now met for item 2, because D65 to D69 put
-`price_kind`, `series_kind` and the range rule into `15-database-schema.md`. Per
-rule 3 and rule 5 the remaining open item is resolved before the first test is
-written, not during.
+Every entry criterion is now met. D124 gave item 1 the V entry it lacked (**V65**,
+§4.1). D65 to D69 and D115 put `price_kind`, `series_kind` and the range rule into
+`15-database-schema.md`, which meets criterion 4 for item 2.
 
 ### 0.2 Test layout
 
@@ -293,11 +291,17 @@ migration. Overturn this and R2.5b moves to item 7.
 - **Asserts** exactly one row in `pg_constraint` for relation `listing` with
   `contype='c'` whose `pg_get_constraintdef(oid)` contains
   `price_type = 'offering'::price_type`; `pg_attribute.attnotnull` is `true` for
-  `listing.price_type`; and — the D65 limb — `listing.price_kind` exists, has type
-  `price_kind`, is `NOT NULL`, and its `atthasdef` default renders as `'asking'`.
-- **Green by** The `listing` table with the CHECK, the NOT NULLs and the
+  `listing.price_type`; and — the D115 limb — a **second** CHECK on the same
+  relation whose definition contains `price_kind = 'asking'::price_kind`, with
+  `listing.price_kind` typed `price_kind`, `NOT NULL`, and its `atthasdef` default
+  rendering as `'asking'`.
+- **Green by** The `listing` table with both CHECKs, the NOT NULLs and the
   `price_kind` default of `15` §5.
 - **Discharges** **V1(a)**, and **V46**'s listing limb.
+- **Why the second CHECK.** D91 moved every notice out of `listing`, which left
+  `price_kind` there unconstrained. Until D115 a parser bug could write a sales
+  price into the offering table, and nothing stopped it. R2.9e is the negative
+  companion: it asserts the insert now fails.
 
 #### R2.5 `test_transaction_price_type_and_price_kind_check_constraints_exist`
 - **Asserts** the same `price_type` shape for `transaction` with
@@ -954,28 +958,30 @@ manifest, and R3.25 fails when a document disagrees with the register.
 
 Per `CLAUDE.md` rule 2 these are asked, not assumed. Each blocks a specific test.
 
-**Eight items were raised. Six are closed.** The table records which decision
-closed each one and which test now carries it.
+**Eight items were raised. Batch 22 closed the last two open ones.** Only 4.8
+remains, and it is a download, not a decision. The table records which decision
+closed each item and which test now carries it.
 
 | # | Item | Status | Test |
 |---|---|---|---|
-| 4.1 | Item 1 has no validation method | **Open** | R1.11–R1.15 |
+| 4.1 | Item 1 has no validation method | **Closed by D124** — V65 written | R1.11–R1.15 |
 | 4.2 | `listing` foreign keys to future tables | **Closed** — plain `BIGINT`, foreign keys land with items 9 and 14 | R2.30 |
-| 4.3 | `price_kind` absent from `15` | **Closed by D65, D66, D68** | R2.1b, R2.4, R2.5, R2.6, R2.9b, R2.12b |
+| 4.3 | `price_kind` absent from `15` | **Closed by D65, D66, D68, D115** | R2.1b, R2.4, R2.5, R2.6, R2.9b, R2.9e, R2.12b |
 | 4.4 | `admin_unit` carries no provenance | **Closed** — `as_of` and `source_id` added | R2.31, R3.24 |
-| 4.5 | V7(b) cannot run in CI | **Open** — pre-push only | R1.8 |
+| 4.5 | V7(b) cannot run in CI | **Closed by D124** — pre-push hook, never CI | R1.8 |
 | 4.6 | Ring membership undefined | **Closed by D64** — boundary within 25 km | R3.19, R3.19b, R3.20 |
 | 4.7 | Import extent, and V6's approximate counts | **Closed** — the two rings, exact list from the manifest | R3.20 |
 | 4.8 | The two Skierniewice TERYT codes | **Open** until the register is downloaded; the guard test stands | R3.25 |
 
-### 4.1 Item 1 has no validation method of its own (rule 5 gap)
-`04`'s coverage table assigns item 1 to "V7 (anchor privacy); migrations covered by
-V1's constraint-existence test". But R1.11–R1.15 — engine version, migration
-head/idempotence/reversibility, schema-digest symmetry — are discharged by **no V
-entry**. Rule 5 says a validation method precedes implementation.
-**Ask:** add a validation entry (proposed **V63 — environment and migration
-reproducibility**) to `04-validation.md`, or record explicitly that these are
-preconditions exempt from rule 5. **Blocks** R1.11–R1.15.
+### 4.1 Item 1 has no validation method of its own — **closed by D124**
+`04`'s coverage table assigned item 1 to "V7 (anchor privacy); migrations covered
+by V1's constraint-existence test". But R1.11–R1.15 — engine version, migration
+head, idempotence, reversibility, schema-digest symmetry — were discharged by **no
+V entry**, and rule 5 says a validation method precedes implementation.
+
+**V65 now covers configuration loading and the parameter file** (FR-75). It carries
+the four failure modes R1.11–R1.15 exercise, plus the static scan that catches a
+ratified value copied into code. R1.11–R1.15 are writable.
 
 ### 4.2 `listing.parcel_id` and `listing.plot_cluster_id` — **closed**
 The columns exist in migration `0002` as plain `BIGINT` with no foreign key. Items
@@ -997,13 +1003,15 @@ NULL REFERENCES source(id)`, plus the `in_ring TEXT[]` that D64 materialises. R2
 asserts the columns; R3.24 asserts the loader fills them. One consequence for the
 migration order: `source` must be created before `admin_unit`.
 
-### 4.5 V7(b) cannot run in CI
+### 4.5 V7(b) cannot run in CI — **closed by D124**
 R1.8 needs the gitignored `config/anchors.yml` to know what strings to search for,
 so it skips in a clean checkout — the exact environment where a leak would be
-found. **Ask:** commit a salted hash of the forbidden strings (salt in the
-gitignored file, hash committed) so CI can scan without the plaintext, or accept
-that V7(b) is a local pre-commit hook only and record that.
-**Affects** R1.8's coverage, not its writability.
+found.
+
+**D124 settles it: V7(b) is a local pre-push hook and never runs in CI.** Putting
+the addresses in CI to test that they are not in the repository defeats the point.
+CI keeps V7(a), (c) and (d), which need no address. R1.8 keeps its skip, and the
+skip reason names the hook so a reader knows where the check does run.
 
 ### 4.6 Ring membership — **closed by D64**
 A gmina belongs to a ring when any part of its boundary lies within 25 km of the

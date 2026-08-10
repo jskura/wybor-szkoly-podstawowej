@@ -42,6 +42,14 @@ CREATE TYPE series_kind     AS ENUM ('stock','flow');                    -- D56,
 may never set buildability; making the value non-existent means the violation
 cannot be written even by mistake.
 
+`price_kind` is one shared enum, and **every table that uses it pins its own
+subset with a CHECK**. `listing` allows `asking` alone (D115), `notice` allows
+`auction_start` and `tender`, and the sales table allows `transaction` alone
+(D68). The enum says which labels exist; the CHECKs say which table may carry
+which. D91 made this possible by moving every notice out of `listing`, and D115
+closed the gap it left — until then a parser bug could write a sales price into
+the offering table, and nothing stopped it.
+
 ## 3. Reference data
 
 ```sql
@@ -133,7 +141,9 @@ CREATE TABLE listing (
   price_per_m2        NUMERIC(12,2) GENERATED ALWAYS AS (price_pln / area_m2) STORED,
   price_type          price_type NOT NULL DEFAULT 'offering'
                         CHECK (price_type = 'offering'),        -- V1
-  price_kind          price_kind NOT NULL DEFAULT 'asking',     -- D65, FR-64
+  price_kind          price_kind NOT NULL DEFAULT 'asking'
+                        CHECK (price_kind = 'asking'),           -- D115
+
   area_source         TEXT NOT NULL CHECK (area_source IN ('register','structured','body','title')),
 
   asset_class         asset_class NOT NULL,

@@ -141,10 +141,14 @@ execution. A failure here blocks a release.
   without `anchors.yml` produces a clear error naming the example file, not a crash
   and not a silent fallback to hardcoded coordinates.
 - **How** (a) Test asserting `config/anchors.yml` matches a `.gitignore` rule;
-  (b) a repository scan test — grep the working tree **and** `git log -p` for the
-  anchor street names and house number, asserting zero matches; (c) test that the
-  example file parses and contains only placeholders; (d) test that a missing
-  config raises a named, actionable error.
+  (b) a repository scan — grep the working tree **and** `git log -p` for the anchor
+  street names and house number, asserting zero matches; (c) test that the example
+  file parses and contains only placeholders; (d) test that a missing config raises
+  a named, actionable error.
+- **Where each runs (D124).** (a), (c) and (d) run in CI. **(b) runs locally only,
+  as a pre-push hook**, because it needs the real addresses to search for and CI
+  must never hold them. The hook reads them from the gitignored file. A machine
+  with no `anchors.yml` skips (b) and says so; it does not pass silently.
 - **Against** The repository tree and full git history; the example config.
 - **Falsified by** Any occurrence of a real anchor address in tracked content or
   history; a hardcoded coordinate fallback; a silent start with no anchors.
@@ -913,6 +917,20 @@ the computed signal matches orthophoto inspection; **no parcel with missing
 building data is ever reported `unlikely`**; no verdict renders without its
 disclaimer.
 
+**The labels are a signal, not a verdict (D121).** Each label records what the
+surroundings look like — how many buildings, at what distance. No label claims a
+plot may be built on. This matters twice over, because D102 and D103 let the same
+20 parcels choose the good-neighbour radius and the coverage-probe values. A set
+labelled with verdicts would need ground truth from each gmina, and D63 removed
+the judgement that reading would rest on.
+
+**A `likely` verdict comes from a proxy (D114).** Free EGiB data carries no
+ownership, so a public road is inferred from register class `dr` plus an OSM
+highway class. The test set must therefore include parcels whose only road
+evidence is the proxy, and V60 asserts that such a verdict renders with the
+proxy disclaimer and never with the wording used for confirmed ownership. Its
+copy and its confidence marker are O39.
+
 ### V61 — Farmland purchasability badge (FR-66)
 
 Specified in [`19-legal-and-feasibility.md`](./19-legal-and-feasibility.md) §2.3
@@ -984,15 +1002,58 @@ valuation is actually right — which no v0 method can reach.
 ### V64 — Legal re-verification prompt (FR-74, D104, D105)
 
 - **AC** The legal content carries no expiry date. The first time a
-  purchase-restriction badge appears in a session, the application shows a prompt
-  to confirm the cited thresholds against the current consolidated act. The prompt
-  appears once per session, not once per badge.
-- **How** (a) Unit test: render two badges in one session, assert exactly one
-  prompt; (b) test that a new session prompts again; (c) test that the prompt names
-  the act and the date of last verification.
+  purchase-restriction badge of a given **regime** appears in a session, the
+  application shows a prompt to confirm that regime's cited thresholds against the
+  current consolidated act. The prompt appears **once per regime per session**
+  (D116), not once per badge. A session showing farmland and forest badges shows
+  two prompts, each naming its own act.
+- **How** (a) Unit test: render two farmland badges in one session, assert exactly
+  one prompt; (b) render a farmland badge and a forest badge in one session, assert
+  exactly two prompts naming two different acts; (c) test that a new session prompts
+  again; (d) test that each prompt names its act and the date that act was last
+  verified.
 - **Against** Rendered session fixtures.
 - **Falsified by** A badge shown with no prompt in a fresh session; a prompt per
-  badge rather than per session; a prompt that does not name what to check.
+  badge rather than per regime; **a second regime appearing after the first with no
+  prompt of its own**; a prompt that does not name what to check.
+
+### V65 — Configuration loading and the parameter file (FR-75, D124)
+
+- **AC** Every ratified parameter loads from `config/params.yml`, and none appears
+  as a literal in code or in a migration. A file that is missing, malformed, or
+  short of a required key raises a named error at startup that says which key and
+  which file. The application never falls back to a built-in default for a ratified
+  parameter. Each value in the file carries its decision number.
+- **How** (a) A static scan of `src/` and the migrations for the ratified values
+  themselves, asserting zero occurrences outside the loader — this is the test that
+  catches a value copied into code; (b) a loader test per failure mode: file
+  absent, invalid YAML, required key missing, value of the wrong type, each
+  asserting the error names the key and the file; (c) a test that every key in the
+  file carries a decision number, and that the number exists in `00-decisions.md`;
+  (d) a test that removing any key makes the application refuse to start, which
+  proves there is no silent default.
+- **Against** The committed `params.yml`, a set of malformed copies as fixtures,
+  and the decision log.
+- **Falsified by** A ratified value found in code; a start that succeeds with a
+  key missing; an error that says only "config error"; a key with no decision
+  number.
+
+### V66 — The public-road proxy is visible as a proxy (FR-76, D114, O39)
+
+- **AC** A `likely` verdict produced from register class `dr` plus an OSM highway
+  class renders its own disclaimer and a marker naming that evidence. The wording
+  reserved for confirmed ownership never appears on a proxy verdict, and the two
+  wordings are never equal.
+- **How** (a) Render a `likely` verdict from proxy evidence and assert the
+  disclaimer and the evidence marker are present; (b) assert the proxy wording and
+  the confirmed-ownership wording differ, by hash, so neither can drift into the
+  other; (c) a seeded test that a verdict built from proxy evidence but rendered
+  with the confirmed wording fails, so the scan cannot pass vacuously; (d) assert
+  the labelled set includes at least one parcel whose only road evidence is the
+  proxy.
+- **Against** Rendered node-tree fixtures and the 20-parcel labelled set.
+- **Falsified by** A proxy verdict with no disclaimer; the two wordings equal; a
+  labelled set with no proxy-only parcel.
 
 ## Deferred — method required before implementation
 
@@ -1061,3 +1122,6 @@ The mapping is the gate: an FR with no V entry cannot be implemented (rule 5).
 | FR-68 list-page-first | V58 |
 | FR-69..70 acceptance, v0 dedup | V51, V56 |
 | FR-71..72 surface, raw payloads | V59, V57 |
+| FR-73..74 forest badge, legal prompt | V63, V64 |
+| FR-75 parameter file | V65 |
+| FR-76 public-road proxy | V66, V60 |

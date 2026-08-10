@@ -659,9 +659,9 @@ the table, the row and the badge all use one vocabulary.
 | `Br` | grunty rolne zabudowane | `agricultural` | **farmland** | **One character from `B`, different regime** |
 | `Wsr` | grunty pod stawami | `agricultural` | **farmland** | **Two characters from `Ws`, different regime** |
 | `W` | grunty pod rowami | `agricultural` | **farmland** | |
-| `Lzr` | grunty zadrzewione i zakrzewione na użytkach rolnych | `agricultural` | **farmland** | **One character from `Lz`, different regime.** Wooded, and a *użytek rolny*, so it stays agricultural. §8.3 records this as open until the forest act is read |
+| `Lzr` | grunty zadrzewione i zakrzewione na użytkach rolnych | `agricultural` | **farmland** | **One character from `Lz`, different regime (D117).** Wooded, and a *użytek rolny*, so the farmland rule governs it |
 | `Ls` | lasy | **`forest`** | **forest** | **Changed by D106.** A different act, a different pre-emption holder. It gets its own badge, and it must never carry the farmland copy |
-| `Lz` | grunty zadrzewione i zakrzewione | `none` | **none** | Wooded but outside the agricultural register. Whether the forest act reaches it is open (§8.3) |
+| `Lz` | grunty zadrzewione i zakrzewione | `none` | **none** | Wooded but outside the agricultural register, so regime `none` (D117). **Risk recorded in `19` §2a.3:** if the forest act does reach `Lz`, we show no badge where a pre-emption right exists |
 | `B` | tereny mieszkaniowe | `none` | **none** | |
 | `Ba` | tereny przemysłowe | `none` | **none** | |
 | `Bi` | inne tereny zabudowane | `none` | **none** | |
@@ -782,13 +782,12 @@ still a page that must promise nothing.
 | `test_class_symbol_matching_is_case_sensitive` | `dr` matches, `DR` and `Dr` do not — they take the unrecognised path and alarm. Case-insensitive matching would collapse `B`/`b` and is exactly how `Br` would come to be treated as `BR` |
 | `test_area_is_formatted_with_the_declared_separator` | `3400` renders as `3 400`, never `3400`, `3,400` or `3.400` |
 
-> **Open, must be answered before R9 is written.** The thousands separator in
-> `19` §2.2's copy is a space of unknown kind. U+0020 breaks the line between `3`
-> and `400`; U+00A0 does not; U+202F narrow no-break space is the Polish
-> typographic convention. **Provisional treatment:** one declared constant
-> `THOUSANDS_SEP = " "`, asserted by hash like every other literal, with the
-> choice recorded in the decision log. The test must reference the constant, so the
-> answer can change in one place.
+> **Settled: U+00A0 (D125).** U+0020 would break the line between `3` and `400`,
+> which puts half a number on each line. The non-breaking space prevents that, and
+> it is the Polish convention. The separator is one declared constant
+> `THOUSANDS_SEP = " "`, asserted by hash like every other literal. Every
+> test references the constant rather than the character, so the value stays in one
+> place.
 
 The separator question now covers both badges. One constant, used by both title
 lines, so the answer lands in one place for both.
@@ -979,7 +978,7 @@ article, record the threshold, the effective date and the transitional provision
 set `verified_at` / `verified_by` / `verification_note`. **Item 15 does not ship
 until this has been done at least once for each act.** Two badges mean two acts and
 two separate readings. A pass over the farmland act verifies nothing about the forest
-one, and the forest reading must also settle the `Lz` / `Lzr` question of §5.1.
+one. D117 settled the `Lz` / `Lzr` question of §5.1; the reading (O40) only confirms it.
 
 No test replaces this step, and D104 makes that sharper rather than softer. With the
 expiry gone, reading the act is the only thing that turns an entry from `unverified`
@@ -1011,12 +1010,12 @@ with the other UI strings once the owner has read it.
 | `test_prompt_text_comes_from_one_declared_constant` | — | Hash matches the table above; a second copy anywhere in `src/` fails, the same rule §4.1 applies to the disclaimer |
 | `test_seeded_per_badge_prompt_is_caught` | A render module that prompts on every badge | The suite fails. Without it, `test_second_badge_in_the_same_session_shows_no_prompt` is the only guard and a counter reset would pass it by accident |
 
-**One point I have not settled.** V64 says *purchase-restriction badge*, so either
-regime triggers the prompt, once per session. A session that shows a farmland badge
-first and a forest badge later therefore prompts **only for the farmland act**, and
-the forest verification date never reaches the reader. Prompting once per regime, at
-most twice, is the other defensible answer. The tests above encode V64 as written.
-§8.3 carries the question.
+**Settled: once per regime per session (D116).** At most two prompts. A session
+showing a farmland badge and then a forest badge shows two prompts, each naming its
+own act. The two acts change independently, so one check cannot stand for both. Two
+tests carry the rule: `test_two_farmland_badges_in_one_session_show_one_prompt` and
+`test_a_second_regime_in_the_same_session_shows_its_own_prompt`. The second is the
+one that would have been missing under the old reading, so it is written first.
 
 ---
 
@@ -1165,29 +1164,41 @@ a row, so a parcel cannot hold both badges' legal context at once.
 | 2 | `05` §3.1 | The known-answer fixture has no `separation_kind` field. Grid and geodesic differ by 0.21 m at 300 m — a fifth of the budget — so the fixture is unusable as specified (§3.4) | ❌ Open. The fixture still does not exist |
 | 3 | `05` §10.3 | `test_badge_states_possibility_never_certainty` asserts lower-case `"możliwe ograniczenia"` against copy that capitalises it. The test as written fails correct copy (§5.2) | ✅ **Fixed.** `05` §10.3 now matches case-insensitively. The copy stays capitalised |
 | 4 | `05` §5 | The centroid-trap parcel is described as "60 m from its nearest edge but 190 m from its centroid"; a 3 500 m² parcel giving both exactly is over-constrained. The fixture uses 60.000 m and **235.000 m**, which discriminates more strongly at radius 100 | ✅ **Fixed.** `05` §5 now names 60.000 m and 235.000 m, matching P6 |
-| 5 | `19` §1.3 / V60 | Validates the neighbour **signal**; is worded as though it validates the composite **verdict**. Imagery cannot contradict a road or land-use claim (§7.4) | ❌ Open, and D102/D103 raise its weight: the label set now also chooses two shipped parameters |
-| 6 | `19` §1 / `05` §6.1 | **EGiB free data gives no ownership, so `road_public_status` is `unknown` for every road in production** — and cell 1, the only `likely` cell in 54, becomes unreachable. Either a documented proxy (register class `dr` + OSM highway class) is ratified as evidence of a public road, or `likely` never ships. §1.3 marks R1 `public_confirmed` purely so the fixture can exercise the cell | ❌ Open |
+| 5 | `19` §1.3 / V60 | Validates the neighbour **signal**; was worded as though it validates the composite **verdict**. Imagery cannot contradict a road or land-use claim (§7.4) | ✅ **Fixed by D121.** The labels are a signal only, and `04` §V60 now says so. The wording matches what the set can prove, which matters twice over because D102 and D103 let it choose two shipped parameters |
+| 6 | `19` §1 / `05` §6.1 | **EGiB free data gives no ownership, so `road_public_status` is `unknown` for every road in production** — and cell 1, the only `likely` cell in 54, becomes unreachable | ✅ **Fixed by D114.** The proxy — register class `dr` plus an OSM highway class — is ratified as evidence. `likely` ships as a lower-confidence verdict. It renders its own disclaimer and an evidence marker, in wording that differs from the confirmed-ownership wording (FR-76, V66). R1's fixture flag now means "proxy-confirmed", and the labelled set gains parcels whose only road evidence is the proxy |
 | 7 | `05` §10.1 | `test_no_non_agricultural_class_produces_the_badge` asserted that forest gets **no badge at all**. D106 makes that wrong: forest gets no *farmland* badge and does get a *forest* badge. The test blocks correct behaviour and must be replaced, not extended | ✅ **Fixed.** `05` §10.1 and §5.1 here both carry the replacement |
-| 8 | `19` | **Doc 19 has no forest section.** D106 needs the act, the holder and the Polish copy written where the farmland ones live. §5.5's strings are this document's proposal | ❌ Open, and it blocks R11 |
+| 8 | `19` | **Doc 19 has no forest section.** D106 needs the act, the holder and the Polish copy written where the farmland ones live | ✅ **Written (D122), not yet verified.** `19` §2a now carries the act, the holder, the scope, the badge copy and the class table. All three legal claims are marked `‡`. R11 stays blocked until the owner checks them against the act — that reading is O40 |
 
 ### 8.3 Open questions
 
 Numbers are **not** allocated here — `00-decisions.md` is the only allocator
-(`00-gap-analysis.md` §D). Each needs an O-number assigned there.
+(`00-gap-analysis.md` §D).
 
 **Closed by batch 21:** `citation_max_age_days` (D104 — there is no max age, §6.1a),
 the good-neighbour radius (D102, §1.5) and the coverage-probe values (D103, §1.7).
-What remains, plus three questions D106 created:
 
-| Question | Blocks | Provisional treatment in this plan |
+**Closed by batch 22.** Every question this plan raised now has an answer.
+
+| Question | Answer | Where it lands |
 |---|---|---|
-| **What is the forest badge's Polish copy, and where does it live?** (D106) | R11 | §5.5 proposes four lines and hashes them. `19` must carry them before R11 is typed |
-| **Do `Lz` and `Lzr` fall under the forest act?** `Lz` is wooded land outside the agricultural register; `Lzr` is wooded and a *użytek rolny* | R11 | §5.1 keeps `Lz` at regime `none` and `Lzr` at `agricultural`. Both are provisional, and both are part of §6.5's reading of the forest act |
-| **Does the prompt fire once per session, or once per regime per session?** (D105, V64) | R12 | §6.6 encodes V64 as written: once per session, naming the act of the badge that triggered it |
-| Is register class `dr` + OSM highway class acceptable evidence of a **public** road? | The `likely` cell, i.e. all of R3/R6 | Fixture flag `road_public_status`; production consequence stated in §8.2/6 |
-| Which **thousands separator** in the badge? U+0020 / U+00A0 / U+202F | R9 | One constant `THOUSANDS_SEP = " "`, hash-asserted (§5.4) |
-| Does V60's label set validate the **verdict** or the **signal**, and if the verdict, where does road/land-use ground truth come from? | R8 | Treated as signal-only throughout §7. D102 and D103 raise the stakes: the same set now chooses two shipped parameters |
-| Is a **50/50** gmina straddle a tie the majority rule cannot resolve? | R1 | P8 is deliberately 40/20 so the tie is not exercised. The tie-break rule is undefined and untested |
+| What is the forest badge's Polish copy, and where does it live? | **D122** — `19` §2a carries it. All three legal claims are marked `‡`, and R11 waits on the owner's reading | §5.5, `19` §2a.2 |
+| Do `Lz` and `Lzr` fall under the forest act? | **D117** — `Lz` regime `none`, `Lzr` regime `agricultural`, because `Lzr` is a *użytek rolny*. The accepted risk is recorded in `19` §2a.3 | §5.1 |
+| Does the prompt fire once per session, or once per regime? | **D116** — once per regime per session, at most twice, each naming its own act | §6.6, V64 |
+| Is register class `dr` + an OSM highway class acceptable evidence of a **public** road? | **D114** — yes, as a proxy. `likely` ships with its own disclaimer and an evidence marker, in wording that differs from the confirmed-ownership wording | §8.2/6, FR-76, V66 |
+| Which **thousands separator** in the badge? | **D125** — U+00A0, one hashed constant | §5.4 |
+| Does V60's label set validate the **verdict** or the **signal**? | **D121** — signal only. The labels record what the surroundings look like, never whether building is permitted. D63 removed the judgement a verdict reading would rest on | §7 throughout |
+| Is a **50/50** gmina straddle a tie the majority rule cannot resolve? | **D123** — lowest TERYT wins. Arbitrary but total, so the answer is stable across runs. The plot page names both gminas | §1.3 |
+
+**P8 stays at 40/20, and a new fixture exercises the tie.** D123 gives the rule; a
+rule with no test is a rule that drifts. The new parcel straddles two gminas
+exactly, and the test asserts both that the lower TERYT wins and that a re-run
+gives the same answer.
+
+**Two items remain, and neither is a decision.** O39 is the wording of the D114
+proxy disclaimer, which nobody has written. O40 is the reading of the two acts that
+turns the `‡` claims in `19` §2.1 and §2a.1 into verified ones. O40 blocks stage
+S15 from shipping; O39 blocks the `likely` cell's rendering. Nothing earlier waits
+on either.
 
 ---
 

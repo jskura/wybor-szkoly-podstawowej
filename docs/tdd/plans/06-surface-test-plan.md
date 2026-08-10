@@ -1487,7 +1487,8 @@ time and holds no copy of its own
 (`test_glossary_protected_list_is_read_from_the_document`). Every other document
 points there. Adding a term to the glossary extends the lint, with no code change.
 
-The ten terms the glossary now lists, with the renderings the lint rejects:
+The twelve terms the glossary now lists (D118 added the last two), with the
+renderings the lint rejects:
 
 | # | Protected term | Forbidden rendering |
 |---|---|---|
@@ -1501,8 +1502,15 @@ The ten terms the glossary now lists, with the renderings the lint rejects:
 | 8 | `droga dojazdowa` | `dojazd` alone, `droga`, `access` |
 | 9 | `zakres międzykwartylowy` | `IQR`, `rozstęp ćwiartkowy`, `interquartile range` |
 | 10 | `warunki zabudowy` | `WZ` alone, `warunki`, `planning conditions` |
+| 11 | `służebność przejazdu` | `dojazd`, `służebność` alone, `prawo przejazdu`, `easement` |
+| 12 | `klasa gruntu` | `jakość gleby`, `klasa ziemi`, `soil class`, `land class` |
 
-`test_protected_terms_match_the_glossary_exactly` asserts the ten terms above
+Term 11 does **not** forbid `droga`, because term 8 is `droga dojazdowa` and the
+word is legal there. The two terms share the concept of access and must not share a
+forbidden rendering, or the lint fires on correct copy. A test asserts that no two
+terms in the table forbid the same string.
+
+`test_protected_terms_match_the_glossary_exactly` asserts the twelve terms above
 equal the parsed glossary list. It is the test that keeps this table from drifting
 into a second copy.
 

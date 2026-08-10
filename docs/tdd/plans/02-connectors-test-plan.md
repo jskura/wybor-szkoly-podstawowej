@@ -1527,6 +1527,6 @@ and Q6 of pass 1 are closed by D65, D68 and D91.
 |---|---|---|---|
 | **Q9** | **Who records the `robots.txt` evidence for KOWR, the two auction hosts and the ~50 BIP hosts, and when?** §0.4 makes it a precondition of fetching | Every KOWR, auction and BIP fixture | The gate is **blocking** and it covers three source families. An afternoon's work, same procedure as O10 — but it must happen before anything is recorded |
 
-One naming choice sits inside D111 and the owner may overturn it: the two
-connectors are called `auction_central` and `auction_gazette`, in English per
-D15. Nothing else in this plan depends on the names.
+The two connector names are settled: **`auction_central` and `auction_gazette`**
+(D119), in English per D15. They name what each source is rather than the
+institution, which can be renamed.

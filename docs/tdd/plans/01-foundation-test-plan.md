@@ -667,7 +667,7 @@ depend on a loaded hierarchy. The hierarchy is item 3's subject.
 | R2.9b | `price_kind='sprzedaz'` | rejected | `InvalidTextRepresentation`; `"sprzedaz" in str(exc)` |
 | R2.9c | `price_kind=None` | rejected | `NotNullViolation`, `diag.column_name == "price_kind"` |
 | R2.9d | omit `price_kind` entirely | insert **succeeds**; `SELECT price_kind` returns `"asking"` — the fail-safe default | — |
-| R2.9e **(finding, see below)** | `listing.price_kind='transaction'` | **succeeds today** — and it should not | — |
+| R2.9e **(D115)** | `listing.price_kind='transaction'` | rejected | `CheckViolation`, `diag.constraint_name == "listing_price_kind_check"` |
 | R2.10a | `transaction.price_type='offering'` | rejected | `CheckViolation`, `diag.constraint_name == "transaction_price_type_check"` |
 | R2.10b | `transaction.price_type=None` | rejected | `NotNullViolation`, `diag.column_name == "price_type"` |
 | R2.10c **(D68)** | `transaction.price_kind='asking'` | rejected | `CheckViolation`, `diag.constraint_name == "transaction_price_kind_check"` |
@@ -675,16 +675,16 @@ depend on a loaded hierarchy. The hierarchy is item 3's subject.
 R2.9 uses `'asking'` deliberately: it is a valid `price_kind` label and an invalid
 `price_type` label, so the test also documents that the two axes are distinct.
 
-**R2.9e is a finding, not a passing test.** `15` §5 gives `listing.price_kind` a
-`NOT NULL` and a default, but no CHECK. D68 added the `transaction` label to the
-enum for the sales side. Nothing now stops a `listing` row carrying
-`price_kind = 'transaction'`, which says a portal advert is a recorded sale. The
-same hole exists on `notice`, but D91 closed it there with a CHECK.
+**R2.9e was a finding, and D115 closed it.** `15` §5 gave `listing.price_kind` a
+`NOT NULL` and a default but no CHECK, so a `listing` row could carry
+`price_kind = 'transaction'` — a portal advert recorded as a completed sale. D91
+had closed the same hole on `notice`; `listing` was missed.
 
-**Ask:** add `CHECK (price_kind = 'asking')` to `listing`, matching how `15` §1
-already pins `price_type` per table. I do not add it here, because it changes the
-schema. Write R2.9e and R2.10c now: R2.10c is green, R2.9e is red, and the pair
-shows exactly which table is missing its constraint.
+`15` §5 now carries `CHECK (price_kind = 'asking')`, matching how the same table
+already pins `price_type`. Every table using the shared enum pins its own subset:
+`listing` to `asking`, `notice` to `auction_start` and `tender`, `transaction` to
+`transaction`. R2.9e and R2.10c are the negative pair, one per table, and both are
+green once the migration lands.
 
 ### 5.5 Item 2 — `metric_unit_month`
 
@@ -1019,15 +1019,15 @@ validation method is missing, which is a rule 5 violation, not a gap in this pla
 
 | Item | Status |
 |---|---|
-| §4.1 — item 1 has no validation method of its own | **Open.** Blocks R1.11–R1.15 under rule 5. Proposed V63 |
+| §4.1 — item 1 has no validation method of its own | **Closed by D124.** V65 covers configuration loading and the parameter file. R1.11–R1.15 are writable |
 | §4.2 — `listing` foreign keys to future tables | **Closed.** Plain `BIGINT`, foreign keys later, pinned by R2.30 |
-| §4.3 — `price_kind` | **Closed by D65, D66, D68.** Tests R2.1b, R2.4, R2.5, R2.5b–e, R2.6, R2.9b–d, R2.11, R2.12b–d |
+| §4.3 — `price_kind` | **Closed by D65, D66, D68, D115.** Tests R2.1b, R2.4, R2.5, R2.5b–e, R2.6, R2.9b–e, R2.11, R2.12b–d |
 | §4.4 — `admin_unit` provenance | **Closed.** Tests R2.31a–d and R3.24 |
-| §4.5 — V7(b) in CI | **Open.** Currently pre-push only (§7.2). The salted-hash option is unimplemented |
+| §4.5 — V7(b) in CI | **Closed by D124.** Pre-push hook, never CI (§7.2). Putting the addresses in CI to prove they are absent defeats the point |
 | §4.6 — ring membership | **Closed by D64.** Tests R3.19, R3.19b, R3.20 |
 | §4.7 — import extent and V6's approximate counts | **Closed.** The extent is the two rings; V6 asserts the exact gmina list from `manifest["ring_gminas"]`, which R3.20 checks. The list is `⟨RECORD⟩` until the clip is recorded — a recording step, not an open question |
 | The two Skierniewice TERYT codes | **Open** until the TERC register is downloaded. Both invented codes are deleted, no replacement is guessed, and R3.25 fails when any document disagrees with the register. §3.9, §3.10 |
-| `listing.price_kind` has no CHECK | **New finding, open.** A listing can be stored with `price_kind='transaction'`. R2.9e is written red; §5.4 states the proposed CHECK |
+| `listing.price_kind` has no CHECK | **Closed by D115.** `15` §5 now carries `CHECK (price_kind = 'asking')`. R2.9e is the negative test and goes green with the migration |
 | `notice` in migration `0002` | **Recorded assumption**, stated in `../01-foundation-and-schema.md` §2. Overturn it and R2.5b–e move to item 7 |
 | The 400 m / 600 m boundary points | **Open** until the PRG clip is recorded |
 | EPSG:2180 coordinates of the distance pair | **Open** until the recording script runs; the *separations* (600 m, 20 000 m) are fixed here and are not open |

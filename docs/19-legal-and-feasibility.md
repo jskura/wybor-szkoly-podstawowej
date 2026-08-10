@@ -31,12 +31,22 @@ you than the zoning layer itself.
 | Signal | How | Confidence |
 |---|---|---|
 | **Developed neighbour exists** | Building geometry within a radius of the parcel boundary, from county EGiB WFS where available, OSM buildings otherwise | Good where EGiB has buildings; weaker on OSM |
-| **Shares a public road** | Parcel adjacency to a road parcel, plus OSM road classification | Moderate |
+| **Shares a public road** | Parcel adjacency to a road parcel, plus OSM road classification | Moderate — **a proxy, see below** |
 | **Land-use class** | EGiB — whether it is *grunt rolny* needing de-designation | Good |
 | **Protected area overlap** | GDOŚ layers — landscape park, Natura 2000 (relevant to the Budy Grabskie ring) | Good |
 
 Composite output: `wz_feasibility ∈ {likely, uncertain, unlikely, unknown}` — an
 indication, never a prediction.
+
+**The public road is inferred, not read (D114).** Free EGiB data carries no
+ownership, so nothing in the free sources states that a road is public. Without a
+substitute, `road_public_status` would read `unknown` for every road, and `likely`
+— one cell of the 54 in the truth table — would never occur in production. The
+substitute is **register class `dr` plus an OSM highway class**. That pair is
+evidence, not proof: a private access road can carry both marks. So FR-76 requires
+every `likely` verdict resting on it to render its own disclaimer and a marker
+naming the evidence, in wording that differs from the wording reserved for
+confirmed ownership. V66 tests that the two wordings are never equal.
 
 ### 1.2 What we must not claim
 
@@ -123,6 +133,77 @@ Rules:
 - **Against** EGiB land-use classes; the consolidated text of the act.
 - **Falsified by** A badge on non-agricultural land; a missing badge on farmland;
   copy citing a superseded threshold.
+
+---
+
+## 2a. Forest land purchase restrictions (D106)
+
+> **Every legal claim in this section is unverified (D122).** I wrote it; nobody
+> has checked it against the consolidated act. The act title, the pre-emption
+> holder and the scope below are marked `‡`. The stage that renders the forest
+> badge stays blocked until you verify all three. Shipping a badge that names the
+> wrong authority is worse than shipping no badge, because it sends you to the
+> wrong office with a false sense of having checked.
+
+Forest land is restricted under a **different act from farmland, with a different
+pre-emption holder**. That is the whole reason it needs its own badge rather than
+an extension of §2. A badge that named KOWR on a forest plot would be confidently
+wrong.
+
+### 2a.1 The claims to verify
+
+| # | Claim | Status |
+|---|---|---|
+| `las_act_title` | The governing act is the *ustawa o lasach* | ‡ unverified |
+| `las_preemption_holder` | The pre-emption right sits with **Lasy Państwowe**, not KOWR | ‡ unverified |
+| `las_preemption_scope` | The right attaches to a sale of forest land regardless of area, with exceptions for transfers between close family | ‡ unverified |
+
+Each claim is stored as a citation record with the date it was verified and by
+whom. FR-74 prompts for re-verification the first time a forest badge appears in a
+session, separately from the farmland prompt (D116) — the two acts change
+independently, so one check cannot stand for both.
+
+### 2a.2 The badge
+
+```
+⚠ Grunt leśny — 3 400 m²
+   Możliwe ograniczenia w nabyciu (ustawa o lasach)
+   Możliwe prawo pierwokupu Lasów Państwowych
+   → sprawdź u notariusza przed ofertą
+```
+
+The four lines are hashed in the test plan, so the copy cannot drift once you
+ratify it. The act title and the holder render **from the citation record**, never
+from a literal in the template. A helper that builds this badge is therefore
+unable to name KOWR.
+
+Rules, all shared with §2.2 except the last:
+
+- Driven by the **register** land-use class, never the advert's claim (FR-48).
+- Says *possible*, never *certain*.
+- Never a filter.
+- An unknown class gets no badge and no reassurance.
+- **The two badges never cross.** The farmland badge never renders on forest, and
+  the forest badge never renders on farmland (V63).
+
+### 2a.3 Which register classes fall where (D117)
+
+`config/register_classes.yml` gives each class one `regime`, and the badge follows
+it. Two classes needed a ruling:
+
+| Class | What it is | Regime | Why |
+|---|---|---|---|
+| `Ls` | Forest | `forest` | The plain case |
+| `Lz` | Wooded land **outside** the agricultural register | `none` | No badge |
+| `Lzr` | Wooded land that **is** a *użytek rolny* | `agricultural` | The farmland rule governs it because it is a *użytek rolny* |
+
+**Risk recorded.** If the forest act does reach `Lz`, we show no badge where a
+pre-emption right exists. That is the failure this ruling accepts. It is listed
+here so a later reader finds it, rather than inferring the silence was deliberate
+in the other direction.
+
+`Ls`/`Lz` is an adversarial pair in the test set: the two classes look alike, sit
+one letter apart, and now carry different regimes.
 
 ---
 
