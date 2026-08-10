@@ -28,6 +28,11 @@ aggregates:
 validation:
   area_min_m2: 300           # O12
   area_max_m2: 200000        # O12
+  # V10 states the price band beside the area band. It was ratified in the same
+  # breath and never reached this file, so it lived as a literal in the
+  # normalizer — the one thing FR-75 exists to prevent.
+  price_per_m2_min_pln: 1        # O12
+  price_per_m2_max_pln: 100000   # O12
   conflict_threshold_pct: 5  # D81
   conflict_threshold_base: register   # D120 — the register area is the denominator
 

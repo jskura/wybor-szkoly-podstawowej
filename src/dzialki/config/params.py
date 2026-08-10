@@ -53,6 +53,8 @@ class Validation(_Strict):
 
     area_min_m2: int
     area_max_m2: int
+    price_per_m2_min_pln: int
+    price_per_m2_max_pln: int
     conflict_threshold_pct: int
     conflict_threshold_base: str
 

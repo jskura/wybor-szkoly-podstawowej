@@ -526,9 +526,14 @@ row states register `1200`.
 written as `(advert - register) / register > 0.05` passes every row above it and
 never flags an advert that understates the area.
 
-- `test_conflict_threshold_is_relative_not_absolute` — a 60 m² gap on a 1 200 m²
-  plot flags; the same 60 m² gap on a 200 000 m² plot does not. An absolute
+- `test_conflict_threshold_is_relative_not_absolute` — a **100 m²** gap on a
+  1 200 m² plot flags; the same gap on a 200 000 m² plot does not. An absolute
   threshold makes every hectare-scale plot conflict.
+
+  **This bullet said 60 m², and 60 m² is wrong.** 60/1200 is exactly 5%, and D81
+  flags a gap of *more than* 5%. The row named `on_the_boundary` four paragraphs
+  above states the same case and expects `False`, so the section contradicted
+  itself. Found by writing the test.
 - `test_conflict_threshold_is_five_percent_not_two` — asserts
   `CONFLICT_THRESHOLD == Decimal("0.05")` **and** that structured `1224.00`
   (exactly 2%) gives `conflict is False`. The superseded value is named so a
