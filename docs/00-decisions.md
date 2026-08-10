@@ -226,6 +226,25 @@ use?". Full analysis in [`22-source-access-options.md`](./22-source-access-optio
 | D76 | Can the tool exist in time? | **Build it, accept the risk** | 26 to 29 days against a six-month horizon. Recorded so it is a known cost |
 | D77 | Repository name | **`ile-za-dzialke`** | The rename needs your action on GitHub. Document references are updated. The Python package name is O34 |
 
+## Batch 18 — normalization rules (2026-08-07)
+
+Answers to the open questions raised by the pass-2 normalization plan.
+
+| # | Item | Decision | Note |
+|---|---|---|---|
+| D78 | O-N6 cross-source match key | **Area, price, gmina and asset class** | Chosen over the round-number guard. **Residual risk recorded:** two building plots of 1000 m² at 100 000 zł in one gmina still merge. V56's false-merge monitoring is the only detector |
+| D79 | O-N1 dot in a number | **Quarantine as ambiguous**, except a dot followed by four digits with `ha`, which is the register's own format | Reading `1.200` as `1.2` is a 1000-fold error, so ambiguity loses |
+| D80 | O-N3 `250 tys.` / `1,2 mln` | **Parse the multiplier, confidence low** | Common and unambiguous. Quarantining drops a segment |
+| D81 | O-N4 register-versus-advert conflict | **More than 5%** | Looser than the 2% proposed. Fewer flags; a real mismatch below 5% passes unflagged |
+| D82 | O-N2 area range `1200-1500 m²` | **Quarantine as not single-valued** | A midpoint invents a number nobody wrote |
+| D83 | O-N5 `ok. 1200 m²` | **Parse, mark approximate, show the marker** | The reader sees that the figure is the seller's estimate |
+| D84 | O-N7 canonical record | **Earliest first seen, then source id, then external id** | A total order, so the result is stable under input permutation. V47 needs this |
+| D85 | O-N8 out-of-band record | **Visible, excluded from aggregates** | V47 forces exclusion; rule 7 forces visibility |
+| D86 | O-N10 bare `a` abbreviation | **Read as ares only near an area keyword**, or in a structured field or title | Stops "12 a nawet 15 minut" becoming a 1200 m² plot |
+| D87 | O-N11 low-confidence area | **Include in aggregates, flagged** | Same treatment as a thin sample |
+| D88 | O-N12 band check | **The exact quotient**, not the stored rounded value | A record that rounds back onto the edge is still flagged |
+| D89 | O-N9 compound areas | **Re-opened** — see O35 | The chosen answer produces a 20% error on `1 ha 25 a` |
+
 ### Items raised after batch 13
 
 | # | Raised by | Status |
