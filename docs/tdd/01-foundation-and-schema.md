@@ -492,14 +492,22 @@ migration. Overturn this and R2.5b moves to item 7.
   `range_kind_matches_n` asserts **zero** occurrences. D67 removed the CHECK, and a
   re-introduction must fail rather than pass quietly.
 
-#### R2.18c `test_metric_range_kind_unavailable_is_storable`
-- **Asserts** a row with `range_kind = 'unavailable'`, `n = 1` and all five
-  percentile columns equal succeeds. And that no CHECK forbids `'unavailable'` at
-  any `n` — asserted by inserting one such row at `n = 40` as well.
-- **Green by** Already green from R2.3's `range_kind` enum.
+#### R2.18c `test_metric_spread_is_absent_only_when_the_source_publishes_none`
+- **Asserts** four cases against constraint `spread_present_unless_unavailable`.
+  (a) `range_kind='unavailable'` with `n=40`, `median_ppm2` set and all four spread
+  columns `NULL` → **succeeds**. (b) The same row with `p25_ppm2` set → rejected.
+  (c) `range_kind='iqr'` with any one of the four spread columns `NULL` → rejected,
+  asserted once per column. (d) `range_kind='unavailable'` with `median_ppm2=NULL`
+  → rejected with `NotNullViolation`, because a row with neither a central value
+  nor a spread carries nothing.
+- **Green by** The `spread_present_unless_unavailable` CHECK of `15` §9.
 - **Discharges** **V4**'s D69 limb. GUS publishes a central value with no spread.
-  Showing that absence is rule 7; raising an error on correct data is not. The
-  rendering of the explicit copy is item 11's job, not the schema's.
+  Rule 7 survives the addition: the spread may be absent only when the source
+  publishes none, and then it must be absent completely. A half-filled spread is
+  unwritable, so nullability cannot be used to skip the spread. Rendering the
+  explicit copy is item 11's job, not the schema's.
+- **Note** `range_bounds_ordered` exempts `'unavailable'`, because there are no
+  bounds to order. R2.18a's cases therefore all use `'iqr'` or `'min_max'`.
 
 #### R2.18d `test_metric_flow_row_states_its_window`
 - **Asserts** three cases against constraint `flow_states_its_window`:
@@ -511,12 +519,15 @@ migration. Overturn this and R2.5b moves to item 7.
   the window to 90 days. A flow row that does not say which window produced it is
   not interpretable, and a stock row that names one is a mislabelled flow.
 
-#### R2.19 `test_metric_cannot_be_stored_without_its_spread_and_sample_size`
-- **Asserts** six separate inserts, each with exactly one of
-  `n, median_ppm2, p25_ppm2, p75_ppm2, min_ppm2, max_ppm2` set to `NULL`, each
-  raising `NotNullViolation` with `exc.diag.column_name` equal to that column.
-- **Green by** The NOT NULLs of `15` §9.
-- **Discharges** **V4** ("no aggregate without its spread") structurally.
+#### R2.19 `test_metric_cannot_be_stored_without_its_sample_size_or_central_value`
+- **Asserts** two inserts, each with exactly one of `n` and `median_ppm2` set to
+  `NULL`, each raising `NotNullViolation` with `exc.diag.column_name` equal to that
+  column. The four spread columns are **not** `NOT NULL` any more; R2.18c covers
+  them, because their rule is conditional rather than absolute.
+- **Green by** The two remaining NOT NULLs of `15` §9.
+- **Discharges** **V4**. Rule 7's floor is a sample size and a central value on
+  every row. The spread is required too, but only where a spread exists, which is a
+  CHECK rather than a NOT NULL.
 
 #### R2.20 `test_metric_requires_provenance`
 - **Asserts** `as_of = NULL` raises `NotNullViolation` on `as_of`;

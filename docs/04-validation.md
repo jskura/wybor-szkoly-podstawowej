@@ -1003,7 +1003,7 @@ discovered later.
 | Feature | PRD | Note for the method |
 |---|---|---|
 | Travel time to anchors | FR-21 | Known-answer test: hand-checked drive times for ~10 plots against an independent routing source |
-| Choropleth and filters | FR-30 | Must test that thin-data gminas render hatched with visible spread, and that "no supply" is visually distinct from "thin supply" |
+| Choropleth and filters | FR-30 | Must test that thin-data gminas render faded (D113) with visible spread, and that "no supply" is visually distinct from "thin supply" |
 | Parcel resolution via ULDK | FR-14 | Known-answer test against parcels with published identifiers |
 | Zoning and `unknown` as terminal | FR-16, FR-17 | Must prove `unknown` is never inferred: a plot surrounded by buildable neighbours with no plan data must still read `unknown` |
 | Nature attributes | FR-19, FR-20 | Distances hand-checked against a map; protected status must render as both amenity and constraint |

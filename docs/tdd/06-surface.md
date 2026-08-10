@@ -577,10 +577,9 @@ D99 gives the protected terms one home: the **Protected terms** section of
 [`12-glossary.md`](../12-glossary.md). The lint reads that section and no other
 copy. Every document that mentions the list points there.
 
-- `test_protected_terms_are_never_loosely_translated()` — for each protected term
-  in the glossary's Protected terms section (*cena ofertowa*, *cena transakcyjna*,
-  *działka*, *plan ogólny*, *MPZP*, *wypis i wyrys*, *media*, *droga dojazdowa*,
-  *zakres międzykwartylowy*, *warunki zabudowy*), the lint fails on the forbidden
+- `test_protected_terms_are_never_loosely_translated()` — the test reads the term
+  list from the glossary's Protected terms section (D99) and enumerates none of it
+  here. For each term the lint fails on the forbidden
   renderings: `cena ofertowa → "cena rynkowa" | "market price"`,
   `cena transakcyjna → "cena"` unqualified, `droga dojazdowa → "dojazd"` alone,
   `MPZP → "plan"` alone, `zakres międzykwartylowy → "IQR"` or

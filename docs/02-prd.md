@@ -293,9 +293,10 @@ they disagree, both are shown, labelled by type, and the gap is the feature.
 
 ### 8.7 Presentation
 
-- **FR-29** Polish UI, English code and docs (D15). Domain terms used correctly:
-  *działka budowlana*, *plan ogólny*, *wypis i wyrys*, *media*, *droga dojazdowa*,
-  *cena ofertowa*, *cena transakcyjna*.
+- **FR-29** Polish UI, English code and docs (D15). Domain terms used correctly.
+  The protected terms — never loosely translated, never replaced with a synonym —
+  are listed in [`12-glossary.md`](./12-glossary.md), section *Protected terms*
+  (D99). That section is the only home for the list.
 - **FR-30** Map view (choropleth by gmina, filter-driven), plot page (verdict card,
   comparables, risk and nature badges, price history, negotiation panel),
   comparison board (2–4 plots, differences highlighted, weighted ranking with

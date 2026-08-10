@@ -36,9 +36,10 @@ each is testable.
   to a configured anchor.
 - Gminas with no matching supply are visibly distinct from gminas with thin
   supply — these are different facts and must not share a colour.
-- **Thin-data rendering**: gminas below n=5 are hatched rather than solid. The
-  number is still available on click (rule 4 above); the hatch signals that the
-  colour is weakly supported. This is the visual half of D18.
+- **Thin-data rendering**: gminas below n=5 are faded rather than solid (D113).
+  The number is still available on click (rule 4 above). Fading can read as "less
+  of something" rather than "less certain", so the `n` on the label carries the
+  meaning. This is the visual half of D18.
 - Side panel per gmina: median, range, n, mix-adjusted 12-month change, both price
   types side by side, and the asking-vs-sales gap.
 
@@ -98,7 +99,7 @@ interfaces quietly start lying.
 |---|---|
 | **Loading** | Skeleton; never a zero or a dash that could be read as a value |
 | **Empty (no data)** | *"Brak danych"* plus why — not yet crawled, no listings, or outside scope. These are different and say so |
-| **Thin (n < 5)** | Number **and** min–max **and** n, with hatched/muted treatment |
+| **Thin (n < 5)** | Number **and** min–max **and** n, with faded treatment (D113) |
 | **Stale** | Where the last crawl is older than expected, the age is shown on the number itself |
 | **Error** | What failed and what is still trustworthy — a failed sales query never blanks the offering figures |
 
@@ -108,8 +109,10 @@ Polish UI throughout, using the terms in [`12-glossary.md`](./12-glossary.md)
 consistently. Numbers formatted Polish-style: space thousands separator, comma
 decimal, `zł/m²`. Dates as `DD.MM.YYYY`.
 
-Terms never to translate loosely: *plan ogólny*, *MPZP*, *wypis i wyrys*,
-*działka*, *media*, *droga dojazdowa*, *cena ofertowa*, *cena transakcyjna*.
+The protected terms — those never loosely translated and never replaced with a
+synonym — are listed in [`12-glossary.md`](./12-glossary.md), section *Protected
+terms* (D99). That section is the only home for the list, and the terminology lint
+reads it there.
 
 ## 5. Deferred
 

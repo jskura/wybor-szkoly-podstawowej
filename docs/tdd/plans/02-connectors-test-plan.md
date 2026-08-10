@@ -166,7 +166,7 @@ the table states each one on its own row:
 | `agent-specific.txt`, agent `lpc-research-bot` | `partial` | `True` ✎ | `False` ✎ | Named group wins outright; the `*` group is not merged in |
 | `agent-specific.txt`, agent `other` | `disallow_all` | `False` ✎ | `False` ✎ | |
 | `malformed.txt` | `partial` | `True` ✎ | `True` ✎ | Unrecognised lines dropped **per line**; `warnings == ["line 2: unknown directive 'Disalow'", "line 3: unparseable Crawl-delay 'soon'", "line 4: missing colon"]` ✎ |
-| `no-group.txt` | `allow_all` ✎ | `True` ✎ | `True` ✎ | **D92.** A served file with no matching group is an allow (RFC 9309). `policy.warnings == ["no matching group"]` ✎, no alarm, and the run continues |
+| `no-group.txt` | `allow_all` ✎ | `True` ✎ | `True` ✎ | **D92.** A served file with no matching group is an allow (RFC 9309). `policy.warnings == ["no_matching_group"]` ✎, no alarm, and the run continues |
 | `other-agent-only.txt` | `allow_all` ✎ | `True` ✎ | `True` ✎ | **D92**, same rule by a different route: the only group names another agent, so no group matches us |
 | 404 | `unknown` | raises `RobotsEvidenceMissing` | — | **D92, our own stricter rule.** A missing file is not permission |
 | 503 | `unavailable` | `False` ✎ | `False` ✎ | Alarm `robots_unavailable`, zero content requests |
@@ -185,7 +185,7 @@ tests/unit/ingest/test_robots_rules.py
     for fixture in ("no-group.txt", "other-agent-only.txt"):
       assert policy.state == "allow_all"
       assert policy.allows("/oferta/1") is True
-      assert policy.warnings == ["no matching group"]
+      assert policy.warnings == ["no_matching_group"]
       assert policy.alarms == []
 
   test_a_missing_file_is_not_permission                     # our own rule

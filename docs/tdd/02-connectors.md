@@ -202,7 +202,7 @@ one lives in `docs/evidence/robots/`).
 | 2.2 | `test_disallowed_path_is_never_requested` | Fixture `disallow-oferta.txt` (`Disallow: /oferta/`): `policy.allows("/oferta/123") is False`, `policy.allows("/szukaj?...") is True`; after a full `fetch()`, `[c.path for c in transport.calls if c.path.startswith("/oferta/")] == []` | V14 |
 | 2.3 | `test_user_agent_specific_rules_win_over_wildcard` | Fixture with `User-agent: *  Disallow: /` and a named-agent block allowing `/szukaj`: with our configured agent, `allows("/szukaj") is True`; with agent `"other"`, `False` | V14 |
 | 2.4 | `test_missing_robots_is_not_permission` | **Our own rule, D92 part 1.** Transport returns 404 for `/robots.txt` → `policy.state == "unknown"`; the runner raises `RobotsEvidenceMissing` unless `source.robots_ok` was set from recorded evidence. Assert `transport.calls == ["/robots.txt"]` | V14, §0.4 |
-| 2.4b | `test_a_served_file_with_no_matching_group_allows` | **RFC 9309, D92 part 2.** Fixtures `no-group.txt` and `other-agent-only.txt` (a served 200 with no group that matches us) → `allows("/szukaj?q=x") is True`, `allows("/oferta/1") is True`, and `"robots_no_matching_group" in policy.warnings`. The test states this rule on its own and never reads it off test 2.4 | V14, §0.4 |
+| 2.4b | `test_a_served_file_with_no_matching_group_allows` | **RFC 9309, D92 part 2.** Fixtures `no-group.txt` and `other-agent-only.txt` (a served 200 with no group that matches us) → `allows("/szukaj?q=x") is True`, `allows("/oferta/1") is True`, and `policy.warnings == ["no_matching_group"]`. The test states this rule on its own and never reads it off test 2.4 | V14, §0.4 |
 | 2.5 | `test_robots_5xx_is_treated_as_disallow` | 503 on `/robots.txt` → zero content requests, alarm `robots_unavailable`. A failing robots endpoint must not read as an open door | V14 |
 | 2.6 | `test_crawl_delay_overrides_config_when_stricter` | `Crawl-delay: 20` with `rate_limit_rpm: 9` (6.67 s) → `effective_interval_s == 20.0`; with `Crawl-delay: 2` → `effective_interval_s == pytest.approx(6.667, abs=1e-3)` (ours is stricter, ours wins) | V14 |
 | 2.7 | `test_partial_permission_yields_list_only_mode` | List path allowed, detail path disallowed → `connector.mode == "list_only"`, and every emitted item has `detail_fetched is False` | V14, §0.3 |
@@ -636,7 +636,7 @@ złoty, so a smaller tolerance flags every second-auction notice.
 | 6.12 | `test_area_in_hectares_converts_exactly` | `"0,3000 ha" → 3000 m²`; `"3 000 m²" → 3000`; assert equality | V54, F1 |
 | 6.13 | `test_missing_coordinates_fall_back_to_the_parcel_not_a_pin` | No coordinates but a parcel id → `location_precision == "parcel"` after resolution, `geom is None` at parse time | V54, V29 |
 | 6.14 | `test_auction_rows_never_move_an_asking_median` | Asking median `80.00`, `n = 20`; add 5 auction rows at `30.00`; assert asking median `== 80.00`, `n == 20`; separate `auction_start` aggregate `n == 5` | **V46** |
-| 6.15 | `test_collected_count_matches_the_services_stated_total` | As V43; truncation alarms and blocks | V54, V43 |
+| 6.15 | `test_collected_count_matches_the_sources_stated_total[<source>]` | As V43, with the D95 tolerance; parametrised over both sources; truncation alarms and blocks | V54, V43 |
 | 6.16 | `test_each_source_layout_has_its_own_fixture_and_parser` | Parametrised over the layout registry; assert every registered layout has ≥1 dated fixture, and every fixture directory has a registered layout | V54 |
 | 6.17 | `test_both_auction_sources_are_registered` | **D111.** `{s.name for s in auction_sources} == {"auction_central","auction_gazette"}`; each source has ≥1 layout in the layout registry; dropping either source fails the test. This is what stops the gazette from being postponed and then forgotten | V54 |
 | 6.18 | `test_the_same_auction_published_by_both_sources_is_one_notice` | The central service and the gazette both publish one auction: assert `count(notice) == 1` after both connectors run, and that the surviving row records both `source_ids`. The match key is D78's (area, price, gmina, asset class) | V54, V56 |
@@ -654,7 +654,8 @@ Variants per layout: `…_first-auction-3-4.html` ·
 `…_with-parcel-id.html` · `…_list-truncated.html` ·
 `…_drift-renamed-price.html`
 
-Plus `…/auction/cross-source_same-auction.html` per source, the pair 6.18 needs.
+Plus `…/auction/<source>/<layout>/2026-08-08_cross-source.html` in **both**
+source directories. That pair is what 6.18 needs.
 
 ---
 
@@ -788,7 +789,7 @@ one rule from another.
 | **D94** | The auction fraction arithmetic must agree within 1 zł | §6.1 |
 | **D95** | The count-agreement tolerance is `max(3 listings, 2%)` | §4.5, 5.10, 6.15 |
 | **D96** | An approximate stated total is report-only and never blocks publication | §4.5 |
-| **D97** | The TERYT to BDL unit-id mapping is data in config. No test derives it by string operations | 3.1 |
+| **D97** | The TERYT to BDL unit-id mapping is data in config. No test derives it by string operations | 3.1, 3.1b |
 | **D111** | Both auction sources are built: the central e-auction service and the bankruptcy gazette | §6, 6.17, 6.18 |
 | **D65, D68** | `price_kind ∈ {asking, auction_start, tender, transaction}`. Auction and tender rows carry `price_type = 'offering'`. Transaction rows carry `price_type = 'sales'` | 5.1, 6.7, 7.12, 3.9 |
 

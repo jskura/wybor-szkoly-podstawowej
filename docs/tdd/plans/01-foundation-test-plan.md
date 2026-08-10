@@ -699,12 +699,15 @@ shows exactly which table is missing its constraint.
 | R2.18a-1 | `min_ppm2=200.00` (above `p25=100.00`) | rejected | `CheckViolation`, `diag.constraint_name == "range_bounds_ordered"` |
 | R2.18a-2 | `p75_ppm2=90.00` (below `median=120.00`) | rejected | `CheckViolation`, `range_bounds_ordered` |
 | R2.18a-3 | all five equal to `Decimal("120.00")`, `n=1`, `range_kind='min_max'` | **succeeds** — the degenerate n=1 row rule 7 requires | — |
-| R2.18c-1 **(D69)** | `range_kind='unavailable'`, `n=1`, all five equal to `Decimal("120.00")` | **succeeds** | — |
-| R2.18c-2 **(D69)** | `range_kind='unavailable'`, `n=40`, the canonical spread | **succeeds** — no CHECK couples `unavailable` to a sample size | — |
+| R2.18c-1 **(D69)** | `range_kind='unavailable'`, `n=40`, `median_ppm2=120.00`, all four spread columns `None` | **succeeds** — the GUS row | — |
+| R2.18c-2 **(D69)** | as above but `p25_ppm2=100.00` | rejected — a half-filled spread is unwritable | `CheckViolation`, `spread_present_unless_unavailable` |
+| R2.18c-3 **(D69)** | `range_kind='iqr'`, exactly one of `p25_ppm2, p75_ppm2, min_ppm2, max_ppm2` set to `None`, four cases | each rejected | `CheckViolation`, `spread_present_unless_unavailable` |
+| R2.18c-4 **(D69)** | `range_kind='unavailable'`, `median_ppm2=None` | rejected — no central value and no spread carries nothing | `NotNullViolation`, `diag.column_name == "median_ppm2"` |
+| R2.18c-5 **(D69)** | `range_kind='unavailable'`, `n=1`, spread columns `None`, `median_ppm2=120.00` | **succeeds** — no CHECK couples `unavailable` to a sample size | — |
 | R2.18d-1 **(D66)** | `series_kind='flow'`, `flow_window_days=None` | rejected | `CheckViolation`, `flow_states_its_window` |
 | R2.18d-2 **(D66)** | `series_kind='stock'`, `flow_window_days=90` | rejected | `CheckViolation`, `flow_states_its_window` |
 | R2.18d-3 **(D107)** | `series_kind='flow'`, `flow_window_days=90` | **succeeds** — 90 days is D107's window | — |
-| R2.19 | six inserts, each nulling exactly one of `n, median_ppm2, p25_ppm2, p75_ppm2, min_ppm2, max_ppm2` | each rejected | `NotNullViolation`, `diag.column_name` equal to that column, asserted per case |
+| R2.19 | two inserts, one nulling `n` and one nulling `median_ppm2` | each rejected | `NotNullViolation`, `diag.column_name` equal to that column, asserted per case. The four spread columns are no longer `NOT NULL` — R2.18c covers them, because their rule is conditional |
 | R2.20a | `as_of=None` | rejected | `NotNullViolation`, `diag.column_name == "as_of"` |
 | R2.20b | `source_ids=[]` | rejected | `CheckViolation`, `diag.constraint_name == "metric_unit_month_source_ids_check"` |
 | R2.20c | `source_ids=None` | rejected | `NotNullViolation`, `diag.column_name == "source_ids"` |
@@ -895,7 +898,9 @@ be asserted in CI; the synthetic fixture can, exactly.
 | Scaling | any `(price, area)` with `2·price` exactly representable at 2 dp | `ppm2(2p, a) == 2 * ppm2(p, a)` | same |
 | Ratio invariance | `(10p, 10a)` | `ppm2(10p, 10a) == ppm2(p, a)` | same |
 | Enum closure | any `text` not in `{"offering","sales"}` | raises `InvalidTextRepresentation` | same |
-| Range-bound ordering | five sorted `Decimal`s | insert succeeds iff `min<=p25<=median<=p75<=max`, else `CheckViolation` on `range_bounds_ordered` | same |
+| Range-bound ordering | five sorted `Decimal`s, `range_kind='iqr'` | insert succeeds iff `min<=p25<=median<=p75<=max`, else `CheckViolation` on `range_bounds_ordered`. `range_kind='unavailable'` is excluded from the strategy: the constraint exempts it, because there are no bounds to order | same |
+| Threshold monotonicity (D67) | `k ∈ {3, 5, 8}`, `n ∈ [1, 1000]` | `range_kind_for(n) == "iqr"` iff `n >= k`. Running over three thresholds is what fails an implementation with any single value written into the code | `property`, `unit` |
+| Enum closure, `price_kind` | any `text` not in the four labels | raises `InvalidTextRepresentation`. Generalises R2.9b | `property`, `integration`, `needs_db` |
 | Distance symmetry | point pairs inside the §3.3 bbox | `distance_m(p,q) == distance_m(q,p)` exactly; `distance_m(p,p) == 0.0` | `property`, `unit` |
 
 Hypothesis profile: `deadline=None` for database-backed properties (container

@@ -204,6 +204,8 @@ support features already specified as requirements.
 | D65 | Are auction and tender prices offering or sales? | **Offering** — nothing has been transacted. Distinguished by a new `price_kind ∈ {asking, auction_start, tender}` | Closes the FR-64 gap; rule 6 unaffected, `price_kind` is the finer axis inside `offering` |
 | D66 | `metric_unit_month` could not store stock and flow separately | **Key extended** with `area_band`, `series_kind`, `price_kind` | D56 made flow the headline; without this the two collide on insert |
 | D67 | n=5 was frozen into a database CHECK while O11 marks it unratified | **Threshold moves to configuration**; the CHECK enforces internal consistency only | A provisional parameter must not require a migration to change |
+| D68 | D65 gave `price_kind` three labels, all of them offering kinds. A sales row had no label to carry | **A fourth label, `transaction`**, and a CHECK that fixes it on every sales table | Two agents found this independently. Without it, rule 6's sales half could not be written at all |
+| D69 | Every aggregate must carry a spread (rule 7), but GUS publishes a central value and no spread | **A third `range_kind`, `unavailable`**, plus a CHECK that permits missing spread columns only for that label | The interface says in words that the source publishes no spread (U1a). Silence would read as "no uncertainty" |
 
 ## Batch 16 — source access (2026-08-07)
 
@@ -224,7 +226,7 @@ use?". Full analysis in [`22-source-access-options.md`](./22-source-access-optio
 | D74 | How to handle the open questions from the test plans? | **Ask all of them** | About 35 items, most with a proposed answer. Nine batches |
 | D75 | Start work before the robots.txt answer? | **Yes — items 1 to 4, plus the off-portal connectors** | Caveat: the connector code can be written, but KOWR and BIP **fixtures** also need robots evidence (Q9). Those parts stall with the portal |
 | D76 | Can the tool exist in time? | **Build it, accept the risk** | 26 to 29 days against a six-month horizon. Recorded so it is a known cost |
-| D77 | Repository name | **`ile-za-dzialke`** | The rename needs your action on GitHub. Document references are updated. The Python package name is O34 |
+| D77 | Repository name | **`ile-za-dzialke`** | The rename needs your action on GitHub. Document references are updated. The Python package name is O33 |
 
 ## Batch 18 — normalization rules (2026-08-07)
 
@@ -243,7 +245,7 @@ Answers to the open questions raised by the pass-2 normalization plan.
 | D86 | O-N10 bare `a` abbreviation | **Read as ares only near an area keyword**, or in a structured field or title | Stops "12 a nawet 15 minut" becoming a 1200 m² plot |
 | D87 | O-N11 low-confidence area | **Include in aggregates, flagged** | Same treatment as a thin sample |
 | D88 | O-N12 band check | **The exact quotient**, not the stored rounded value | A record that rounds back onto the edge is still flagged |
-| D89 | O-N9 compound areas | **Re-opened** — see O35 | The chosen answer produces a 20% error on `1 ha 25 a` |
+| D89 | O-N9 compound areas | **Re-opened** — re-asked in batch 19, answered by D90 | The chosen answer produces a 20% error on `1 ha 25 a` |
 
 ## Batch 19 — compound areas, notice storage, crawl behaviour (2026-08-07)
 
@@ -298,6 +300,13 @@ actuals) and the two new ones below.
 | O29 | Map at this scale | **Closed by D60** — choropleth plus gmina table |
 | O30 | How to point at a plot | **Closed by D61** — paste a listing URL |
 | O31 | Keep agree/disagree | **Closed by D62/D63** — withdrawn, replaced by comparability feedback (V51c) |
+| O32 | Browser-assisted capture needs its own requirement (`22` §4) | **Open.** D72 makes it the fallback route, but no FR describes it. Write the FR only if the robots reading sends us down that route |
+| O33 | Python package name | **Closed by D112** — `dzialki` |
+| O34 | Good-neighbour radius | **Closed by D102** — configurable, with a sensitivity report |
+| O35 | Coverage-probe values | **Closed by D103** — configurable, the labelled set decides |
+| O36 | Legal verification staleness | **Closed by D104/D105** — no expiry, re-verify on first display in a session |
+| O37 | Forest land | **Closed by D106** — its own badge |
+| O38 | Schema tables the feasibility spec needed (`tdd/05` §1.3) | **Closed** — `parcel_building`, `building_coverage` and `parcel_wz_feasibility` exist in `15` |
 
 ### Still blocked on you
 

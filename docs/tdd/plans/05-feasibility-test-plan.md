@@ -790,6 +790,80 @@ still a page that must promise nothing.
 > choice recorded in the decision log. The test must reference the constant, so the
 > answer can change in one place.
 
+The separator question now covers both badges. One constant, used by both title
+lines, so the answer lands in one place for both.
+
+### 5.5 The forest badge copy — proposed here, not ratified (D106)
+
+> **`19` carries no forest section.** The farmland copy of §5.2 came from `19` §2.2,
+> which the owner ratified. Nothing equivalent exists for forest. The strings below
+> are **this document's proposal**. They must land in `19` and get a decision entry
+> before R11 is typed. The hashes are of the proposed text, so an edit shows up as a
+> changed hash instead of a silent rewrite.
+
+```
+⚠ Grunt leśny — 3 400 m²
+   Możliwe ograniczenia w nabyciu (ustawa o lasach)
+   Możliwe prawo pierwokupu (Lasy Państwowe)
+   → sprawdź u notariusza przed ofertą
+```
+
+Lines 2 and 3 render the parenthesised text **from the citation record**, never from
+a literal. The act title and the holder above show what the record is expected to
+hold; neither string appears in `src/`.
+
+| Line | Const | Template | Chars | UTF-8 bytes | SHA-256 (of the template, UTF-8) |
+|---|---|---|---|---|---|
+| 1 | `FOREST_BADGE_TITLE_TEMPLATE` | `⚠ Grunt leśny — {area} m²` | 25 | 31 | `526e84e072ae623ee43f0a94b901d9ebbf47698314376c3c9abe9d66c17add17` |
+| 2 | `FOREST_RESTRICTION_TEMPLATE` | `Możliwe ograniczenia w nabyciu ({act_title})` | 44 | 45 | `6aedb1a06c033cc2811427a3d51a983b86217b462d3fa070cf40fca726d3100a` |
+| 3 | `FOREST_PREEMPTION_TEMPLATE` | `Możliwe prawo pierwokupu ({holder})` | 35 | 36 | `ee6c0a0abe1d49e4bfaaebd7af0742278602b83cff010a4ad94da893ecb3c7b4` |
+| 4 | `BADGE_NOTARY_LINE` | `sprawdź u notariusza przed ofertą` | 33 | 35 | `796cb396bf0f8f2a7430520e01d408ea0bc9ad122c39d432a86d498edcd82e8d` |
+
+All four are NFC, with U+26A0 WARNING SIGN, U+2014 EM DASH and U+0020 spaces around
+the dash — the same conventions §4.3 pins for the disclaimer, and the same homoglyph
+guards apply.
+
+**Line 4 is the farmland constant, reused.** The advice is identical, so one constant
+serves both badges. `test_notary_line_is_one_constant_shared_by_both_badges` asserts
+object identity, not string equality, so nobody can fork it and then soften one copy.
+
+| Test | Assertion |
+|---|---|
+| `test_forest_badge_contains_all_four_lines` | Line 1 matches the template with the area substituted; lines 2–4 present verbatim after substitution |
+| `test_forest_badge_act_and_holder_come_from_the_citation_record` | Set the record's `act_title` to a fixture value and re-render. The rendered line changes with it. A hardcoded act title passes the first render and fails this one |
+| `test_forest_badge_states_possibility_never_certainty` | Contains `Możliwe ograniczenia` and `Możliwe prawo pierwokupu`; contains none of `{"nie możesz kupić", "zakaz nabycia", "na pewno", "wymagana zgoda", "nie kupisz"}`, case-insensitively. The same forbidden set as the farmland badge, because the failure mode is the same |
+| `test_forest_badge_shows_area_and_its_source` | `Grunt leśny — 3 400 m²`, `area_source == "register"`, parcel `as_of` rendered (rule 7, V28) |
+| `test_forest_badge_uses_the_declared_thousands_separator` | The same constant §5.4 pins |
+| `test_forest_badge_is_never_a_filter` | `Ls` appears in an unfiltered result set; no SQL predicate references the badge (D51, applied to the second regime) |
+
+### 5.6 The crossing tests — V63, and why they outrank the presence tests
+
+A missing badge is a gap. **A badge naming the wrong act and the wrong authority is a
+false statement that looks exactly as authoritative as a true one.** The user reads a
+real act and a real body, telephones the wrong office, and nothing on the page hints
+at the substitution. This is F16.
+
+The four strings that must never cross:
+
+| Regime | Act title | Pre-emption holder |
+|---|---|---|
+| `agricultural` | *ustawa o kształtowaniu ustroju rolnego* | KOWR |
+| `forest` | *ustawa o lasach* | Lasy Państwowe |
+
+| Test | Assertion |
+|---|---|
+| `test_forest_page_contains_no_farmland_act_or_holder` | Whole-page scan after HTML tag stripping: the `Ls` page contains neither `kształtowaniu ustroju rolnego` nor `KOWR`, case-insensitively, anywhere |
+| `test_farmland_page_contains_no_forest_act_or_holder` | The same in the other direction, for every one of the 8 `agricultural` rows: no `o lasach`, no `Lasy Państwowe` |
+| `test_the_two_badges_never_appear_together` | Over all 24 rows plus the four unknown inputs: at most one purchase-restriction badge per page. One register class, one regime, one badge |
+| `test_swapping_the_regime_swaps_the_whole_badge` | Render `Ls` and `R` with area 3 400 m² and the same `as_of`. Title line, act and holder all differ; line 4 is identical **and is the same object**. A helper that varies the title and forgets the holder fails on the holder assertion |
+| `test_no_badge_renders_for_the_none_regime` | The 15 `none` rows render neither badge and make no acquisition statement (§5.3) |
+| `test_seeded_crossed_badge_is_caught` | A deliberately broken render module — the forest badge wired to the `agricultural` citation entry — makes the suite fail. Without this, the scans above could pass vacuously against a page that renders no badge at all |
+| `test_regime_module_contains_no_class_symbol_literal` | Architecture test: no `"Ls"`, `"R"` or other symbol appears in `src/lpc/legal/`. A branch on a symbol is how a wrong regime gets hardcoded and then outlives the table |
+
+`test_seeded_crossed_badge_is_caught` is the test that gives the section its value.
+The scans are negative assertions, and a negative assertion passes trivially against
+an empty page.
+
 ---
 
 ## 6. The citation check
@@ -803,54 +877,95 @@ Four independent comparisons, each with its own failure:
 |---|---|---|---|
 | **X1** | Every numeric quantity and date appearing in rendered legal copy | The `value` field of the `claim_id` that copy declares | A number in the copy with no `claim_id`, or a `claim_id` whose `value` differs from what was rendered |
 | **X2** | Every `ha` / `hektar` quantity and act-related date literal found by scanning `src/` | The allowlist: the citation reader module and `tests/fixtures/legal/` | A literal anywhere else — a template, a helper, a default argument. **This is the comparison that makes X1 meaningful**; a literal in a template routes around X1 entirely |
-| **X3** | `verified_at` of every entry | The **build date**, minus `citation_max_age_days` | Any entry verified longer ago than the window. **Fails the build**, not a warning |
+| **X3** | ~~`verified_at` against the build date minus `citation_max_age_days`~~ | — | **Withdrawn by D104.** See §6.1a |
 | **X4** | `consolidated_text_id` + `text_as_of` of every entry | The identifier fetched live from ISAP | A changed identifier marks the entry **stale**; it does not guess at the new content |
 
-Two more that need no external input and catch record rot:
+Three more that need no external input and catch record rot:
 
 | # | Assertion | Failure |
 |---|---|---|
 | **X5** | `verified_at >= text_as_of` for every entry | An entry verified against a text older than the one it cites — the verification proves nothing about the cited version |
 | **X6** | Every `claim_id` in the record is referenced by at least one rendered string, and every rendered legal string references a `claim_id` | Orphan claims (dead law nobody displays) and uncited claims (displayed law nobody verified). Both directions, or the record drifts from the page |
+| **X7** | Every rendered legal string on a page cites a `claim_id` whose `regime` equals the page's regime | **F16.** A forest page citing an `agricultural` claim is a badge naming the wrong act. X7 catches it at the record seam, where §5.6's page scans catch it at the text seam. Two independent checks, because one of them is a negative assertion |
 
-### 6.2 The four claims item 15 makes
+### 6.1a X3 is withdrawn — D104 removes the expiry
 
-| `claim_id` | Value per `19` §2.1 | Status today |
-|---|---|---|
-| `ukur_consent_threshold_ha` | 5 ha (previously 1 ha) | **unverified** |
-| `ukur_threshold_effective_date` | 2026-04-30 | **unverified** |
-| `ukur_kowr_preemption_applies` | qualitative — pre-emption may attach regardless of size | **unverified** |
-| `ukur_resale_holding_period_years` | referenced but not quantified in `19` | **unverified, and not even stated** |
+X3 failed the build once `verified_at` passed a configured age, and O30 asked how
+long the window should be. **D104 answers: there is no window.** The clock measured
+our reading habits, not the law. A short window failed the build on a quiet act; a
+long one caught nothing; and neither told us the act had changed.
 
-`19` §2.1 says outright that the law moved in 2026 and secondary sources disagree.
-Today's build date is **2026-08-08**, so the claimed change is a little over three
-months old and has never been checked against the consolidated text. **Every entry
-is `unverified` right now, and that is the state the tests must be written
-against** — not the state we hope to be in after someone reads the act.
+D105 supplies what X3 was reaching for. **The application prompts for re-verification
+the first time a purchase-restriction badge appears in a session** (§6.6). The check
+sits where the risk is — at the moment the legal content is in front of a reader —
+and costs nothing on a session that shows no badge.
+
+| Test | Assertion |
+|---|---|
+| `test_citation_record_declares_no_expiry` | The record schema carries no `expires_at`, no `max_age_days`, no `citation_max_age_days`. A reintroduced expiry field fails the test, so D104 cannot be undone by a quiet config addition |
+| `test_verified_at_is_reported_not_enforced` | Set `verified_at` to 2019-01-01. The build passes, the badge renders, and the date appears in the prompt. Nothing gates on it |
+
+X4 still runs, and it is now the **only** automatic signal that the law moved. That
+raises its weight: a scheduled check that silently stops running would leave the
+prompt as the sole defence. `test_isap_check_reports_its_last_run_date` asserts the
+drill records when it last succeeded, so a dead check looks dead.
+
+### 6.2 The claims the two badges make
+
+**Farmland — four claims, from `19` §2.1:**
+
+| `claim_id` | Regime | Value per `19` §2.1 | Status today |
+|---|---|---|---|
+| `ukur_consent_threshold_ha` | `agricultural` | 5 ha (previously 1 ha) | **unverified** |
+| `ukur_threshold_effective_date` | `agricultural` | 2026-04-30 | **unverified** |
+| `ukur_kowr_preemption_applies` | `agricultural` | qualitative — pre-emption may attach regardless of size | **unverified** |
+| `ukur_resale_holding_period_years` | `agricultural` | referenced but not quantified in `19` | **unverified, and not even stated** |
+
+**Forest — three claims, from nowhere yet (D106):**
+
+| `claim_id` | Regime | Value | Status today |
+|---|---|---|---|
+| `las_act_title` | `forest` | *ustawa o lasach* | **unverified** |
+| `las_preemption_holder` | `forest` | Lasy Państwowe | **unverified** |
+| `las_preemption_scope` | `forest` | qualitative — a pre-emption right may attach to a forest parcel | **unverified** |
+
+`19` §2.1 says outright that the farmland law moved in 2026 and secondary sources
+disagree. The forest claims are weaker still: `19` has no forest section, so the
+three entries above rest on doc 15's schema comment and on general knowledge. **Every
+entry in both tables is `unverified` right now, and that is the state the tests must
+be written against** — not the state we hope to be in after someone reads the acts.
+
+`test_forest_claims_are_marked_unverified_in_the_record` asserts `verified_at: null`
+on all three forest entries, with a `verification_note` saying the act is unread. An
+entry that claims verification without §6.5 having run for the forest act fails.
 
 ### 6.3 What fails, concretely
 
 | Trigger | Result |
 |---|---|
 | `5 ha` appears in a Jinja template | X2 fails: literal outside the allowlist |
+| `Lasy Państwowe` appears in a render helper | X2 fails: holder names are in the allowlist scan too (§5.5) |
 | The record says 5 ha, the copy renders 1 ha | X1 fails: rendered value ≠ `claim_id` value |
-| `verified_at = 2026-01-15`, max age 90 days, build 2026-08-08 | X3 fails: 205 days > 90. **Build fails** |
+| `verified_at = 2019-01-01` | **Nothing fails.** D104 removed the clock. The date renders in the prompt and the reader decides |
+| A `citation_max_age_days` key reappears in config | `test_citation_record_declares_no_expiry` fails |
 | `verified_at = 2026-03-01`, `text_as_of = 2026-04-30` | X5 fails: verified before the text it cites existed |
 | ISAP returns a new consolidated-text id | X4 marks stale → §6.4's degradation → operator task |
 | A new sentence about pre-emption ships without a `claim_id` | X6 fails: uncited claim |
 | `ukur_resale_holding_period_years` present in the record, never rendered | X6 fails: orphan claim |
+| The forest badge renders `ukur_kowr_preemption_applies` | X7 fails: regime mismatch, and §5.6's scan fails on `KOWR` |
 
 ### 6.4 The degraded badge, which is the badge that ships today
 
-Because all four entries are `unverified`, the **only** badge form item 15 may
-currently render is the degraded one. Its test is therefore not a fallback test; it
-is the primary test.
+Because every entry in both tables is `unverified`, the **only** badge form either
+regime may currently render is the degraded one. Its test is therefore not a fallback
+test; it is the primary test, for both badges.
 
 | Test | Assertion |
 |---|---|
-| `test_unverified_citations_render_the_degraded_badge` | With all four entries unverified: the badge renders, contains all three constants of §5.2, contains `BADGE_NOTARY_LINE`, and **contains no digit outside the area figure** |
-| `test_degraded_badge_makes_no_threshold_claim` | No occurrence of `ha`, `hektar`, `5 ha`, `1 ha`, or any date other than the parcel's `as_of` |
-| `test_degraded_badge_is_not_silently_weaker` | The degraded badge and the verified badge are byte-identical on lines 2–4; only the threshold sentence is absent. A degraded badge must not also lose its warning |
+| `test_unverified_citations_render_the_degraded_badge` | With all four farmland entries unverified: the badge renders, contains all three constants of §5.2, contains `BADGE_NOTARY_LINE`, and **contains no digit outside the area figure** |
+| `test_unverified_forest_citations_render_the_degraded_badge` | The same for `Ls` and §5.5's four lines. The act and the holder still render, because they come from the record and the record still holds them — an unverified name is not an absent one |
+| `test_degraded_badge_makes_no_threshold_claim` | No occurrence of `ha`, `hektar`, `5 ha`, `1 ha`, or any date other than the parcel's `as_of`. Parametrized over both regimes |
+| `test_degraded_badge_is_not_silently_weaker` | The degraded badge and the verified badge are byte-identical on lines 2–4; only the threshold sentence is absent. A degraded badge must not also lose its warning. Parametrized over both regimes |
 | `test_verified_citations_add_the_threshold_sentence` | Flip the fixture record to verified → one additional sentence appears, and its numbers equal the record's `value` fields |
 
 `test_consolidated_text_identifier_unchanged_since_verification` lives in
@@ -862,8 +977,46 @@ CI, where it would make the build depend on a government portal's uptime.
 `scripts/verify_legal_citations.md`: open the consolidated text at ISAP, locate the
 article, record the threshold, the effective date and the transitional provisions,
 set `verified_at` / `verified_by` / `verification_note`. **Item 15 does not ship
-until this has been done at least once.** X3 mechanises "on the date shipped"; it
-cannot mechanise having read the act.
+until this has been done at least once for each act.** Two badges mean two acts and
+two separate readings. A pass over the farmland act verifies nothing about the forest
+one, and the forest reading must also settle the `Lz` / `Lzr` question of §5.1.
+
+No test replaces this step, and D104 makes that sharper rather than softer. With the
+expiry gone, reading the act is the only thing that turns an entry from `unverified`
+into `verified`, and the prompt of §6.6 is the only thing that asks for it again.
+
+### 6.6 The re-verification prompt (FR-74, V64, D105)
+
+**File:** `tests/unit/app/test_reverification_prompt.py`.
+
+The prompt is a task addressed to the operator, shown at the moment the legal content
+is actually in use. It is not a warning to the buyer about the plot.
+
+| Const | Template | Chars | UTF-8 bytes | SHA-256 |
+|---|---|---|---|---|
+| `REVERIFY_PROMPT_TEMPLATE` | `Przepisy mogły się zmienić — sprawdź {act_title}; ostatnia weryfikacja {verified_at}` | 84 | 90 | `12ae7b7d7f06c199a29c6de360443e90b7e08ce244fb0cb0f946eff58acfb9af` |
+
+**Proposed here, not ratified**, exactly like §5.5's forest copy. It belongs in `21`
+with the other UI strings once the owner has read it.
+
+| Test | Given | Assertion |
+|---|---|---|
+| `test_first_badge_in_a_session_shows_the_prompt` | Fresh session, render `R` | Exactly one prompt |
+| `test_second_badge_in_the_same_session_shows_no_prompt` | Fresh session, render `R` then `S` | Exactly one prompt across both renders. Once per session, not once per badge — a prompt on every badge trains the reader to dismiss it, which is how a real change slips through |
+| `test_a_new_session_prompts_again` | Two sessions, one badge each | Two prompts. The counter lives in session state, never in a module global and never on disk |
+| `test_a_session_with_no_badge_shows_no_prompt` | Render `B`, then `dr`, then an unknown class | Zero prompts. This is D105's whole economy: no badge, no cost |
+| `test_prompt_names_the_act_and_the_last_verification_date` | Fresh session, render `R` | The prompt contains the `agricultural` entry's `act_title` and its `verified_at`. With `verified_at: null` the prompt renders `nigdy` in that slot rather than an empty string |
+| `test_prompt_names_the_forest_act_when_a_forest_badge_triggers_it` | Fresh session, render `Ls` first | The prompt names the forest act, not the farmland one. **This is F16 wearing a different hat**: a prompt that always names the farmland act is a wrong statement in a second place |
+| `test_prompt_never_blocks_the_badge` | Prompt dismissed, prompt ignored, prompt not rendered at all | The badge renders identically in all three. The prompt is a task, never a gate. A gate would recreate the expiry D104 removed |
+| `test_prompt_text_comes_from_one_declared_constant` | — | Hash matches the table above; a second copy anywhere in `src/` fails, the same rule §4.1 applies to the disclaimer |
+| `test_seeded_per_badge_prompt_is_caught` | A render module that prompts on every badge | The suite fails. Without it, `test_second_badge_in_the_same_session_shows_no_prompt` is the only guard and a counter reset would pass it by accident |
+
+**One point I have not settled.** V64 says *purchase-restriction badge*, so either
+regime triggers the prompt, once per session. A session that shows a farmland badge
+first and a forest badge later therefore prompts **only for the farmland act**, and
+the forest verification date never reaches the reader. Prompting once per regime, at
+most twice, is the other defensible answer. The tests above encode V64 as written.
+§8.3 carries the question.
 
 ---
 
@@ -876,6 +1029,14 @@ Those are different questions and only the second one is V60.
 
 Entry criterion 5 of `20` §8 is unmet until this file exists, so **items 14–15 are
 not startable**, and no amount of pass-2 detail changes that.
+
+**Batch 21 gave this file two more jobs.** D102 makes it the arbiter of the shipped
+good-neighbour radius, and D103 makes it the arbiter of the coverage-probe values.
+The same 20 parcels do all three jobs, so the labelling cost of §7.3 does not rise.
+The consequence does: a sloppy label now moves a parameter that ships, not only a
+test result that fails. The file therefore carries a `label_set_version`, and
+`test_configured_values_are_recorded_with_their_evidence` (`05` §5.1) asserts each
+configured value names the version that chose it.
 
 ### 7.1 What it must contain
 
@@ -894,6 +1055,7 @@ obvious built neighbours and 5 clearly isolated.
 | `justification` | One line, e.g. "two houses with outbuildings on the parcel directly east, both fronting the same road" |
 | `draw_seed`, `draw_index` | §7.2 — proof the parcel was drawn, not chosen |
 | `building_layer_hidden` | Boolean, must be `true` — §7.3 |
+| `label_set_version` | File-level, not per entry. D102 and D103 make the configured parameters cite it, so a relabelled set forces the parameters to be rechosen rather than silently inherited |
 
 ### 7.2 How it is produced — sampling, not picking
 
@@ -968,45 +1130,63 @@ validation decision before R8, and it is not resolved here.
 
 Raised, not absorbed. Each needs an answer before the stage that depends on it.
 
-### 8.1 Schema — `15` §7 cannot store what §2's table computes
+### 8.1 Schema — five of eight gaps are closed
 
-The tables added after the gap analysis close A4's headline gap but not its
-substance. `parcel_wz_feasibility` holds `verdict`, `neighbour_found`,
-`shares_road`, `coverage_source`, `computed_at`.
+Doc 15 now carries `parcel_building`, `building_coverage`, `parcel_wz_feasibility`
+and `parcel_purchase_restriction`. That closes A4 and most of what this section
+raised. The remaining three are listed as remaining.
 
-| # | Gap | Consequence |
+| # | Gap | Status |
 |---|---|---|
-| 1 | **No `reason_code` column** | The `unknown_carries_reason_code` constraint of `05` §1.3 cannot be written, and blocks 4/5/6 of §2 — 27 of 54 cells — collapse into one indistinguishable `unknown`. §4.1's four `unknown` sentences cannot be selected |
-| 2 | **No land-use or protection column** | Two of the table's four axes, plus modifier M2, are not stored. `test_verdict_carries_its_reason_codes_and_evidence` cannot pass; the verdict cannot be re-derived from the row |
-| 3 | **`coverage_source TEXT`, not an evidence reference** | Cannot carry `n`, the control radius, the source's `as_of`. Rule 7 requires the verdict to display its `n`, so the number would have to be recomputed at render time from data the row does not point at |
-| 4 | **No radius, no nearest-building distance** | `test_radius_value_appears_in_rendered_reason_string` renders a radius the row does not record. Re-rendering an old verdict after a config change silently restates it with the new radius |
-| 5 | **`parcel_building.distance_m INT`** | Truncates to whole metres. §1.6's tier-S assertions need 0.001 m; an `INT` makes `30.000` and `30.4` indistinguishable, and the mm tolerance untestable through the database |
-| 6 | **`parcel_building` PK includes `geom`** | A refetch with different vertex order or coordinate precision inserts a duplicate building. Needs a source-side building identifier or a normalised geometry hash |
-| 7 | **`building_coverage`** allows `source='none'` with `has_coverage=true` | Representable and meaningless. Needs `CHECK ((source = 'none') = (has_coverage = false))` |
-| 8 | **`unlikely_requires_coverage` is an implication; `05` §1.3 asks for a biconditional** | Here **the schema is right and pass 1 is wrong**: a `likely` verdict should be free to record its coverage evidence, and the biconditional would forbid it. Pass 1 §1.3's row should be corrected to the implication |
+| 1 | **No `reason_code` column** | ✅ **Closed.** `reason_code TEXT NOT NULL`, which is stronger than asked: every verdict carries a reason, not only `unknown`. Blocks 4/5/6 of §2 keep their distinct codes and §4.1's four `unknown` sentences are selectable |
+| 2 | **No land-use or protection column** | ✅ **Closed.** `land_use_class` and `protection_kind` are on the row, so the verdict re-derives from it |
+| 3 | **`coverage_source TEXT`, not an evidence reference** | ✅ **Closed** by `evidence_ref JSONB`, which points at the `parcel_building` rows the verdict relied on. Rule 7's `n` reads from the row rather than from a recomputation |
+| 4 | **No radius recorded** | ✅ **Closed** by `search_radius_m`. `test_radius_value_appears_in_rendered_reason_string` renders the radius the row stores, so re-rendering an old verdict after a config change cannot restate it with the new radius. **The nearest-building distance is still not on the feasibility row**; it is reachable through `evidence_ref`, which is enough |
+| 5 | **`parcel_building.distance_m INT`** | ✅ **Closed** by `distance_mm BIGINT`. Millimetres, so §1.6's tier-S assertions survive a database round trip. Every assertion that names a distance reads `distance_mm` and divides by 1 000, and `test_distance_is_stored_in_millimetres_not_metres` writes 30.0004 m and reads back `30000` |
+| 6 | **`parcel_building` PK includes `geom`** | ❌ **Open.** A refetch with different vertex order or coordinate precision inserts a duplicate building. Needs a source-side building identifier or a normalised geometry hash |
+| 7 | **`building_coverage` allows `source='none'` with `has_coverage=true`** | ❌ **Open.** Representable and meaningless. Needs `CHECK ((source = 'none') = (has_coverage = false))` |
+| 8 | **`unlikely_requires_coverage` is an implication; `05` §1.3 asked for a biconditional** | ✅ **Closed, and pass 1 was the wrong one.** A `likely` verdict must be free to record the coverage evidence it also relied on, and the biconditional forbids it. `05` §1.3 now states the implication and says so |
+
+`parcel_purchase_restriction` arrived with the same batch, keyed `(parcel_id,
+regime)` with `regime ∈ {agricultural, forest}`, and carrying `act_citation`,
+`holder` and `verified_at`. It is the storage side of §5.6: two regimes cannot share
+a row, so a parcel cannot hold both badges' legal context at once.
+
+| Test | Assertion |
+|---|---|
+| `test_a_parcel_holds_at_most_one_purchase_restriction_row` | One register class, one regime. A second row for the same parcel is a data defect, and the Δ assertion `badge_regime_mismatch` reports it |
+| `test_stored_holder_matches_the_citation_record_for_that_regime` | The row's `holder` equals the record's `preemption_holder`. Two stores of the same fact, held together by a test |
 
 ### 8.2 Spec defects found while writing the detail
 
-| # | Where | Defect |
-|---|---|---|
-| 1 | `05` §3.1 | "A transposed easting/northing passes neither [orientation]" is false — transposition is an isometry and preserves every distance. Only an absolute containment or coordinate check catches it (§3.5) |
-| 2 | `05` §3.1 | The known-answer fixture has no `separation_kind` field. Grid and geodesic differ by 0.21 m at 300 m — a fifth of the budget — so the fixture is unusable as specified (§3.4) |
-| 3 | `05` §10.3 | `test_badge_states_possibility_never_certainty` asserts lower-case `"możliwe ograniczenia"` against copy that capitalises it. The test as written fails correct copy (§5.2) |
-| 4 | `05` §5 | The centroid-trap parcel is described as "60 m from its nearest edge but 190 m from its centroid"; a 3 500 m² parcel giving both exactly is over-constrained. The fixture uses 60.000 m and **235.000 m**, which discriminates more strongly at radius 100 |
-| 5 | `19` §1.3 / V60 | Validates the neighbour **signal**; is worded as though it validates the composite **verdict**. Imagery cannot contradict a road or land-use claim (§7.4) |
-| 6 | `19` §1 / `05` §6.1 | **EGiB free data gives no ownership, so `road_public_status` is `unknown` for every road in production** — and cell 1, the only `likely` cell in 54, becomes unreachable. Either a documented proxy (register class `dr` + OSM highway class) is ratified as evidence of a public road, or `likely` never ships. §1.3 marks R1 `public_confirmed` purely so the fixture can exercise the cell |
+| # | Where | Defect | Status |
+|---|---|---|---|
+| 1 | `05` §3.1 | "A transposed easting/northing passes neither [orientation]" is false — transposition is an isometry and preserves every distance. Only an absolute coordinate or containment check catches it (§3.5) | ✅ **Fixed.** `05` §3.1 now states the correction and carries four absolute-position tests. §3.5 gives their numbers |
+| 2 | `05` §3.1 | The known-answer fixture has no `separation_kind` field. Grid and geodesic differ by 0.21 m at 300 m — a fifth of the budget — so the fixture is unusable as specified (§3.4) | ❌ Open. The fixture still does not exist |
+| 3 | `05` §10.3 | `test_badge_states_possibility_never_certainty` asserts lower-case `"możliwe ograniczenia"` against copy that capitalises it. The test as written fails correct copy (§5.2) | ✅ **Fixed.** `05` §10.3 now matches case-insensitively. The copy stays capitalised |
+| 4 | `05` §5 | The centroid-trap parcel is described as "60 m from its nearest edge but 190 m from its centroid"; a 3 500 m² parcel giving both exactly is over-constrained. The fixture uses 60.000 m and **235.000 m**, which discriminates more strongly at radius 100 | ✅ **Fixed.** `05` §5 now names 60.000 m and 235.000 m, matching P6 |
+| 5 | `19` §1.3 / V60 | Validates the neighbour **signal**; is worded as though it validates the composite **verdict**. Imagery cannot contradict a road or land-use claim (§7.4) | ❌ Open, and D102/D103 raise its weight: the label set now also chooses two shipped parameters |
+| 6 | `19` §1 / `05` §6.1 | **EGiB free data gives no ownership, so `road_public_status` is `unknown` for every road in production** — and cell 1, the only `likely` cell in 54, becomes unreachable. Either a documented proxy (register class `dr` + OSM highway class) is ratified as evidence of a public road, or `likely` never ships. §1.3 marks R1 `public_confirmed` purely so the fixture can exercise the cell | ❌ Open |
+| 7 | `05` §10.1 | `test_no_non_agricultural_class_produces_the_badge` asserted that forest gets **no badge at all**. D106 makes that wrong: forest gets no *farmland* badge and does get a *forest* badge. The test blocks correct behaviour and must be replaced, not extended | ✅ **Fixed.** `05` §10.1 and §5.1 here both carry the replacement |
+| 8 | `19` | **Doc 19 has no forest section.** D106 needs the act, the holder and the Polish copy written where the farmland ones live. §5.5's strings are this document's proposal | ❌ Open, and it blocks R11 |
 
 ### 8.3 Open questions
 
 Numbers are **not** allocated here — `00-decisions.md` is the only allocator
 (`00-gap-analysis.md` §D). Each needs an O-number assigned there.
 
+**Closed by batch 21:** `citation_max_age_days` (D104 — there is no max age, §6.1a),
+the good-neighbour radius (D102, §1.5) and the coverage-probe values (D103, §1.7).
+What remains, plus three questions D106 created:
+
 | Question | Blocks | Provisional treatment in this plan |
 |---|---|---|
+| **What is the forest badge's Polish copy, and where does it live?** (D106) | R11 | §5.5 proposes four lines and hashes them. `19` must carry them before R11 is typed |
+| **Do `Lz` and `Lzr` fall under the forest act?** `Lz` is wooded land outside the agricultural register; `Lzr` is wooded and a *użytek rolny* | R11 | §5.1 keeps `Lz` at regime `none` and `Lzr` at `agricultural`. Both are provisional, and both are part of §6.5's reading of the forest act |
+| **Does the prompt fire once per session, or once per regime per session?** (D105, V64) | R12 | §6.6 encodes V64 as written: once per session, naming the act of the badge that triggered it |
 | Is register class `dr` + OSM highway class acceptable evidence of a **public** road? | The `likely` cell, i.e. all of R3/R6 | Fixture flag `road_public_status`; production consequence stated in §8.2/6 |
 | Which **thousands separator** in the badge? U+0020 / U+00A0 / U+202F | R9 | One constant `THOUSANDS_SEP = " "`, hash-asserted (§5.4) |
-| Does V60's label set validate the **verdict** or the **signal**, and if the verdict, where does road/land-use ground truth come from? | R8 | Treated as signal-only throughout §7 |
-| `citation_max_age_days` — a month or a quarter? (`05` O30) | R10 | 90 days assumed in §6.3's worked example only |
+| Does V60's label set validate the **verdict** or the **signal**, and if the verdict, where does road/land-use ground truth come from? | R8 | Treated as signal-only throughout §7. D102 and D103 raise the stakes: the same set now chooses two shipped parameters |
 | Is a **50/50** gmina straddle a tie the majority rule cannot resolve? | R1 | P8 is deliberately 40/20 so the tie is not exercised. The tie-break rule is undefined and untested |
 
 ---
@@ -1020,10 +1200,18 @@ In order, each red before the next is written:
 3. Its three companions in the same commit, against **P3** (isolated, positive coverage), **P10** (zero in control radius), **P11** (OSM) — `05` §1.2.
 4. The tier table and `test_distance_tolerance_budget_is_declared_per_scale` — §3.1.
 5. The five degree controls C1–C5 — §3.3.
-6. The 54-row table as data, then `test_no_input_combination_produces_a_verdict_outside_the_table` — §2.2.
-7. `test_likely_disclaimer_is_byte_identical_to_unlikely_disclaimer` — §4.2.
-8. The register-class table and its generated parametrisation — §5.1.
-9. X1–X6 — §6.1.
+6. `test_parcel_corner_coordinates_match_the_scene_declaration` and the three tests beside it — §3.5. **They come before anything that consumes a coordinate**, because a transposed pipeline passes every distance test written after them.
+7. The 54-row table as data, then `test_no_input_combination_produces_a_verdict_outside_the_table` — §2.2.
+8. `test_likely_disclaimer_is_byte_identical_to_unlikely_disclaimer` — §4.2.
+9. The register-class table with its `regime` column, and the generated parametrisation — §5.1.
+10. `test_adversarial_class_pairs_do_not_share_a_regime`, including the new `Ls`/`Lz` pair — §5.1.
+11. X1, X2, X4–X7 — §6.1. **Not X3**: D104 withdrew it, and `test_citation_record_declares_no_expiry` takes its place.
+12. `test_seeded_crossed_badge_is_caught` — §5.6. Write it before the crossing scans, so the scans are never green against an empty page.
+13. `test_first_badge_in_a_session_shows_the_prompt` and its companions — §6.6.
+
+Steps 9–13 are D106's and D105's share of the work, and step 12 is the one to write
+first among them. The crossing scans are negative assertions, and a negative
+assertion that nobody has seen fail proves nothing.
 
 Step 2 stays first for the reason pass 1 gave: it is the test that will be under
 pressure when `unknown` looks unhelpful on a screen, and P4 is the fixture that

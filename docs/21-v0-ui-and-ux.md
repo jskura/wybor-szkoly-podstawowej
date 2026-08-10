@@ -45,7 +45,9 @@ You have a listing or a plot in mind. You want a verdict.
 │    mediana 127 · zakres międzykwartylowy 99–168 · n = 61│
 │                                                          │
 │  Ceny transakcyjne · powiat skierniewicki · GUS 2025Q4  │
-│    średnia 104 · poziom powiatu, dane kwartalne         │
+│    średnia 104 · transakcja · n = 312                   │
+│    zakres: brak — GUS nie podaje rozrzutu               │
+│    poziom powiatu, dane kwartalne                       │
 │                                                          │
 │  ⚠ Nie sprawdzamy planu — nie wiemy, czy można budować  │
 ├─────────────────────────────────────────────────────────┤
@@ -81,8 +83,9 @@ price-type and price-kind selector is always visible**, because a map that silen
 switches between asking and transaction prices is the most dangerous screen in the
 product.
 
-- Gminas below n=5 render **hatched, not solid** (O13). The colour still appears —
-  rule 7 forbids hiding — but the hatch says "thin" without needing to be read.
+- Gminas below n=5 render **faded, not solid** (D113). The colour still appears —
+  rule 7 forbids hiding. Fading can read as "less of something" rather than "less
+  certain", so the `n` on the label carries the meaning.
 - "No listings at all" is visually distinct from "few listings". These are
   different facts and must not share a treatment.
 - Every gmina label carries `n` inline.
@@ -108,6 +111,7 @@ could mislead.
 | # | Rule | Why |
 |---|---|---|
 | U1 | No aggregate renders without `n` **and** its range, at equal prominence | Rule 7. Not a tooltip, not on hover |
+| U1a | Where the source publishes no spread (`range_kind = 'unavailable'`, D69), the interface says so in words. It never omits the range line | A missing range line reads as "no uncertainty". GUS is the case that forces this |
 | U2 | Every price shows **type** (ofertowa/transakcyjna) and **kind** (asking/licytacja/przetarg) | FR-64. An auction start price next to an asking price without labels is actively misleading |
 | U3 | Flow and stock always both shown, always labelled, flow first | D56, FR-67 |
 | U4 | The flow window length appears next to every flow figure | O27/V62 — "mediana przepływu" means nothing without "ostatnie 90 dni" |

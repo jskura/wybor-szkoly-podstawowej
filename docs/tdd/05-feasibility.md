@@ -40,7 +40,7 @@ cycle. Status per criterion:
 | 3 | Verification tier assigned | ✅ table above |
 | 4 | Silent-failure modes have named detectors | ⚠️ **F14, F15 and F16 are new and must be added to `20` §3 before implementation** — detectors specified in §9 |
 | 5 | Fixtures exist, dated, scrubbed | ❌ **Blocking.** The 20-parcel hand-labelled set (§8) does not exist yet. It is the first thing to build, and it is manual work, not code |
-| 6 | Metamorphic properties listed (numeric core) | ✅ §3.0 (projection), §6.3 (composite) |
+| 6 | Metamorphic properties listed (numeric core) | ✅ §3.5 (projection), §6.3 (composite) |
 | 7 | Legal copy exists for every badge | ❌ **Blocking for §12 only.** `19` carries the farmland copy in §2.2. It carries **no forest section at all**. Doc 19 needs a forest section before R11 is typed |
 
 Three of the seven are not met. Items 14–15 are **not startable** until the
@@ -376,7 +376,7 @@ thin fetch behind `ingest/http.py`.
 | Test | Assertion |
 |---|---|
 | `test_building_within_radius_of_parcel_boundary_counts` | A building 40 m from the boundary is `present` at radius 100 m |
-| `test_distance_measured_from_boundary_not_centroid` | An elongated 3 500 m² parcel with a building 60 m from its nearest edge but 190 m from its centroid is `present` at radius 100 m. A centroid implementation fails |
+| `test_distance_measured_from_boundary_not_centroid` | An elongated 3 500 m² parcel with a building **60.000 m** from its nearest edge and **235.000 m** from its centroid is `present` at radius 100 m. A centroid implementation fails. (An earlier draft said 190 m; a 3 500 m² parcel cannot give both numbers, and the test plan's fixture P6 gives 235 m) |
 | `test_radius_is_read_from_configuration_not_hardcoded` | D102. Mirrors V62's rule for the flow window: one configured value, no per-call-site literal. Static check plus a behavioural check that changing config changes the answer |
 | `test_coverage_probe_values_are_read_from_configuration_not_hardcoded` | D103, same shape, for `control_radius_m` and `min_control_buildings` |
 | `test_radius_value_appears_in_rendered_reason_string` | `19` §1.2 requires *"w promieniu X m"* — the X must be the X actually used |
@@ -580,7 +580,7 @@ The subtlest requirement in item 15: silence is not a clean bill of health
 |---|---|
 | `test_badge_is_driven_by_register_class_not_advert_claim` | Advert says *"działka budowlana"*, register says `R` → badge present. Advert says *"rolna"*, register says `B` → badge absent. FR-48/V25 |
 | `test_farmland_badge_names_the_holder_recorded_for_its_regime` | The rendered pre-emption line names the holder that the citation record carries for regime `agricultural`. The copy in `19` §2.2 spells KOWR out, so the literal and the record must not drift apart. A mismatch fails and names both values |
-| `test_badge_states_possibility_never_certainty` | Contains *"możliwe ograniczenia"* and *"możliwe prawo pierwokupu KOWR"*; contains none of `{"nie możesz kupić", "zakaz nabycia", "na pewno", "wymagana zgoda"}` — the determination is the notary's |
+| `test_badge_states_possibility_never_certainty` | Contains *"Możliwe ograniczenia"* and *"Możliwe prawo pierwokupu KOWR"*, matched **case-insensitively**; contains none of `{"nie możesz kupić", "zakaz nabycia", "na pewno", "wymagana zgoda"}` — the determination is the notary's. (An earlier draft asserted the lower-case forms against copy that `19` §2.2 capitalises, so the test failed correct copy) |
 | `test_badge_directs_to_a_notary` | Contains *"sprawdź u notariusza przed ofertą"* |
 | `test_badge_is_never_a_filter` | A badged plot appears in an unfiltered result set (D51 chose the badge over exclusion); plus an architecture check that no query predicate references the badge |
 | `test_badge_shows_area_and_its_source` | *"Grunt rolny — 3 400 m²"* with `area_source == "register"` and the parcel's `as_of` (rule 7, V28) |
@@ -814,7 +814,7 @@ the questions that remain follow.
 | **O29** | Coverage-probe values | **D103** — configuration, decided by the same labelled set | §1.2's boxed warning and §5.1. Getting these wrong reproduces the exact error `unknown` exists to prevent, so the warning sits next to the first test, not in an appendix |
 | **O30** | Citation max age | **D104** — there is no expiry | §11.1a. The build-failing age test is deleted, and `test_citation_record_declares_no_expiry` stops it coming back |
 | — | What replaces the expiry? | **D105** — prompt on the first badge in a session | §13, and FR-74 in the PRD |
-| **O32** | Missing schema tables | Closed — `parcel_building`, `building_coverage` and `parcel_wz_feasibility` now exist in doc 15 | §1.3, which also corrects pass 1's biconditional to the implication the schema ships, and records `distance_mm` |
+| **O38** | Missing schema tables | Closed — `parcel_building`, `building_coverage` and `parcel_wz_feasibility` now exist in doc 15 | §1.3, which also corrects pass 1's biconditional to the implication the schema ships, and records `distance_mm` |
 | **O33** | Does the badge apply to forest? | **D106** — forest gets **its own** badge, its own act, its own holder, its own verification | §12 in full, F16 in §9, FR-73/V63 |
 
 ### 14.2 Still open
