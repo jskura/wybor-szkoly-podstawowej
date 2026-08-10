@@ -24,6 +24,10 @@ dev = [
     # Builds the ring fixture. Needs only the WGS84 ellipsoid, no PROJ grids and
     # no download, so the fixture stays reproducible offline.
     "pyproj>=3.6",
+    # The differential test for percentiles. `metrics/` must never import it —
+    # an architecture test enforces that, because a reference implementation is
+    # only a check if it is a second implementation.
+    "numpy>=1.26",
 ]
 
 [tool.hatch.build.targets.wheel]

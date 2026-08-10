@@ -419,6 +419,11 @@ CREATE TABLE metric_unit_month (
 
   n             INT NOT NULL,
   median_ppm2   NUMERIC(12,2) NOT NULL,
+  -- FR-24. Never a headline figure: D42 makes the median the answer. Stored
+  -- because the gap between the two shows when one observation is carrying
+  -- the group. Nullable for the same reason as the spread columns — a
+  -- central value published with no observations has no mean.
+  mean_ppm2     NUMERIC(12,2),
   -- Nullable ONLY when range_kind = 'unavailable' (D69). A source such as GUS
   -- publishes a central value and no spread. The CHECK below makes every other
   -- combination unwritable, so nullability cannot be used to skip the spread.

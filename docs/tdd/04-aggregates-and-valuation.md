@@ -270,7 +270,7 @@ of data is absence, never zero (V13's rule applied here).
 **D1 · `test_spread_is_min_max_below_the_threshold`**
 Fixture `[61, 96, 140, 240]` (n=4). Asserts `range_kind == "min_max"`,
 `low == 61.00`, `high == 240.00`, **and** that `p25 == 87.25` / `p75 == 165.00` are
-still stored (the schema requires all four percentile columns `NOT NULL`; only the
+still stored (the four spread columns are nullable only for this case; only the
 *displayed* range switches).
 This is the `CLAUDE.md` rule-6 example verbatim: `median 118, range 61–240, n=4`.
 
@@ -323,7 +323,7 @@ explicit text *"Nie znamy rozrzutu — GUS publikuje tylko średnią"*, and that
 missing field is not rule 7 either. Plan §6.5 gives the fixture: median 130.00,
 n 37, chosen so no offering figure can leak into it unnoticed.
 D6 tests the aggregate and the render. It does not test storage, because such a row
-cannot be stored today — see §10 question 7.
+stores: the four spread columns are nullable when `range_kind = 'unavailable'`, and a CHECK makes every other combination unwritable.
 
 ### Block E — the estimator contract
 
@@ -862,7 +862,7 @@ does, which is settled; it is whether
 owns the answer.
 
 **7 · Storage of a D69 row.** `metric_unit_month` declares `p25_ppm2`, `p75_ppm2`,
-`min_ppm2` and `max_ppm2` as `NOT NULL` (`15` §9). A row with
+`min_ppm2` and `max_ppm2` as nullable, guarded by a CHECK (`15` §9). A row with
 `range_kind = 'unavailable'` has none of them, so it cannot be written as the schema
 stands. D69 settles the shape and the copy; it does not settle the columns. D6 tests
 the shape and does not touch storage. Two ratified decisions disagree here, and the

@@ -1005,11 +1005,13 @@ Three assertions, each killing a different wrong behaviour:
 The 130.00 is deliberately **not** any value in §1.1, so a figure leaking from the
 offering fixture is visible.
 
-**One consequence to record rather than hide.** `metric_unit_month` declares
-`p25_ppm2`, `p75_ppm2`, `min_ppm2` and `max_ppm2` as `NOT NULL` (`15` §9). A D69 row
-has none of them, so it cannot be written to that table as the schema stands. The
-test above runs at the aggregate and render boundary, where the shape is decided.
-Storage is a schema question and it is open — see §9, question 7.
+**This was a real gap, and it is closed.** The four spread columns were declared
+`NOT NULL`, so the row D69 exists to allow could never be written. `15` §9 and
+migration `0002` now make them nullable, guarded by
+`spread_present_unless_unavailable`: a spread may be absent only when the source
+publishes none, and then it must be absent completely. Nullability cannot be used
+to skip rule 7. `test_a_central_value_with_no_spread_is_storable` asserts the row
+stores.
 
 ---
 
@@ -1120,7 +1122,7 @@ Pass 1 carried five. Five are closed. Two remain, and neither blocks work item 1
 | 4 · Flow window length | **Closed by D107** — 90 days. §3.3 keeps the sensitivity evidence on the record |
 | **6 · `price_kind` for sales rows** | **Closed by D68** — `transaction`. See P1-6 |
 | 5 · Rounding point | **Open.** This plan rounds once, on storage (§0.4). If the API rounds again, `stock − flow == 8.00` becomes fixture-dependent. `06-surface.md` owns the answer |
-| **7 · Storage of a D69 row** | **Open, new.** `metric_unit_month` declares `p25_ppm2`, `p75_ppm2`, `min_ppm2` and `max_ppm2` `NOT NULL` (`15` §9). An `unavailable` row has none of them, so it cannot be written as the schema stands. D69 settles the shape and the copy; it does not settle the columns. §6.5 tests the shape and does not touch storage |
+| **7 · Storage of a D69 row** | **Closed.** The four spread columns are nullable, guarded by `spread_present_unless_unavailable`, so an `unavailable` row stores and every other combination stays unwritable. Both `15` §9 and migration `0002` carry it |
 
 Question 7 is a contradiction between two ratified decisions, not a preference. I
 found it while writing §6.5 and I am recording it rather than choosing an answer.
