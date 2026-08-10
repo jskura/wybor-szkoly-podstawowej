@@ -1,0 +1,2 @@
+# A served file with no group at all. RFC 9309 makes this an allow.
+Sitemap: https://example.invalid/sitemap.xml
