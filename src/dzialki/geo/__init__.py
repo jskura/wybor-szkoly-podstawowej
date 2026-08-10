@@ -1,5 +1,7 @@
-"""Location resolution, the precision gate, and projections.
+"""Location resolution, the precision gate, and projections."""
 
-Empty until its work item lands. The package exists now so the architecture
-tests can assert an absent import edge (R1.2).
-"""
+from .loader import load_admin_units, load_anchor
+from .rings import assign_rings
+from .straddle import owning_gmina
+
+__all__ = ["assign_rings", "load_admin_units", "load_anchor", "owning_gmina"]

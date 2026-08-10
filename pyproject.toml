@@ -21,6 +21,9 @@ dev = [
     "pytest>=8.0",
     "hypothesis>=6.100",
     "ruff>=0.5",
+    # Builds the ring fixture. Needs only the WGS84 ellipsoid, no PROJ grids and
+    # no download, so the fixture stays reproducible offline.
+    "pyproj>=3.6",
 ]
 
 [tool.hatch.build.targets.wheel]
