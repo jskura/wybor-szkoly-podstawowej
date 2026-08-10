@@ -250,14 +250,58 @@ def test_render_is_a_sibling_of_the_shell_not_a_child(
     assert not (package / "app" / "render").exists()
 
 
-def test_the_shell_package_holds_no_module_yet(repo_root: pathlib.Path) -> None:
-    """The adapter is the only module permitted to import Streamlit, and it
-    arrives with its own work item. Until then the boundary is trivially held,
-    and this test says so rather than leaving the reader to infer it."""
-    app = repo_root / "src" / "dzialki" / "app"
-    packages = sorted(
-        child.name
-        for child in app.iterdir()
-        if child.is_dir() and (child / "__init__.py").exists()
-    )
-    assert packages == []
+def test_only_the_shell_adapter_may_import_streamlit(
+    repo_root: pathlib.Path,
+) -> None:
+    """One module draws, and it decides nothing.
+
+    Every honesty rule is checked against the node tree, where no browser is
+    needed. A rule that lived in the adapter would need one, and a rule that
+    needs a browser is a rule nobody checks.
+    """
+    package = repo_root / "src" / "dzialki"
+    adapter = package / "app" / "shell.py"
+
+    offenders: list[str] = []
+    for path in package.rglob("*.py"):
+        if path == adapter:
+            continue
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            names: list[str] = []
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                names = [node.module]
+            if any(name.split(".")[0] == "streamlit" for name in names):
+                offenders.append(f"{path.relative_to(repo_root)}:{node.lineno}")
+    assert offenders == []
+
+
+def test_the_adapter_imports_streamlit_lazily(repo_root: pathlib.Path) -> None:
+    """Inside the function, not at module scope.
+
+    At module scope the test above would depend on Streamlit being installed,
+    and the whole unit suite would drag in a UI framework to check a mapping.
+    """
+    adapter = repo_root / "src" / "dzialki" / "app" / "shell.py"
+    tree = ast.parse(adapter.read_text(encoding="utf-8"))
+
+    module_level = [
+        node
+        for node in tree.body
+        if isinstance(node, (ast.Import, ast.ImportFrom))
+        and "streamlit"
+        in {
+            (alias.name if isinstance(node, ast.Import) else node.module or "")
+            for alias in getattr(node, "names", [None]) or [None]
+        }
+    ]
+    assert module_level == []
+
+    lazy = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Import)
+        and any(alias.name == "streamlit" for alias in node.names)
+    ]
+    assert len(lazy) == 1
