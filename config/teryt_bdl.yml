@@ -1,0 +1,26 @@
+# TERYT to GUS BDL unit-id mapping (D97).
+#
+# Recorded as data, never derived. A BDL unit id resembles a padded TERYT code,
+# so it is tempting to build one from the other with a slice and a pad. Do not.
+# Where the pattern does not hold, string surgery produces a well-formed id for
+# the wrong unit, and the failure shows only as a series that is quietly missing
+# or quietly wrong. A static scan of the connector forbids exactly that.
+#
+# The map is EMPTY, and deliberately so. Filling it needs two things nobody has
+# yet:
+#
+#   1. The in-scope powiat list, which comes from clipping the national boundary
+#      register to the two 25 km rings (D64). Nobody has run that clip.
+#   2. Each powiat's BDL unit id, read from the BDL unit register.
+#
+# Writing plausible-looking codes here from memory would be worse than an empty
+# file: an empty map stops the connector, and a wrong map produces a price series
+# for the wrong place that looks entirely healthy.
+#
+# `verified: false` makes the loader refuse. Set it true in the same commit that
+# fills the map and records the evidence path.
+verified: false
+verified_at: null
+evidence: null
+
+powiats: {}

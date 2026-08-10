@@ -29,12 +29,13 @@ V0_PACKAGES = {
     "ops",
 }
 
-# S4 adds teryt_bdl.yml (D97); S15 adds register_classes.yml (D117). Each stage
-# edits this list on purpose.
+# S15 adds register_classes.yml (D117). Each stage edits this list on purpose,
+# which is the point of asserting equality rather than containment.
 TRACKED_CONFIG_FILES = [
     "config/anchors.example.yml",
     "config/params.yml",
     "config/sources.yml",
+    "config/teryt_bdl.yml",
 ]
 
 
