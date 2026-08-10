@@ -964,6 +964,36 @@ the work plan changes.
 golden-file regression (O26), and everything at verification tier D — whether the
 valuation is actually right — which no v0 method can reach.
 
+### V63 — Forest and farmland badges never cross (FR-73, D106)
+
+- **AC** A parcel with a forest register class carries the **forest** badge only.
+  A parcel with an agricultural class carries the **farmland** badge only. Neither
+  badge renders on the other class. Each badge names its own act and its own
+  pre-emption holder. A parcel with an unknown class carries no badge, and no
+  statement that it is unrestricted.
+- **How** (a) Unit tests over fixtures at every register class, including unknown;
+  (b) a test asserting the two badges never appear together on one parcel;
+  (c) a text assertion that the forest badge does not contain the farmland act's
+  name, and the reverse.
+- **Against** EGiB register classes, one fixture per class.
+- **Falsified by** Either badge on the wrong class; a badge naming the other act
+  or the other holder; an unknown class presented as unrestricted. **Naming the
+  wrong authority is worse than saying nothing**, which is why the crossing test
+  matters more than the presence test.
+
+### V64 — Legal re-verification prompt (FR-74, D104, D105)
+
+- **AC** The legal content carries no expiry date. The first time a
+  purchase-restriction badge appears in a session, the application shows a prompt
+  to confirm the cited thresholds against the current consolidated act. The prompt
+  appears once per session, not once per badge.
+- **How** (a) Unit test: render two badges in one session, assert exactly one
+  prompt; (b) test that a new session prompts again; (c) test that the prompt names
+  the act and the date of last verification.
+- **Against** Rendered session fixtures.
+- **Falsified by** A badge shown with no prompt in a fresh session; a prompt per
+  badge rather than per session; a prompt that does not name what to check.
+
 ## Deferred — method required before implementation
 
 These have no validation method yet. Per rule 5, one must be written here before

@@ -441,6 +441,19 @@ these are the requirements it must satisfy.
   document stored with its hash, and a documented path from a parser fix to
   recomputed aggregates without touching snapshots.
 
+### 8.10a Forest purchase restriction (D106)
+
+- **FR-73** **Forest purchasability badge.** Forest land is restricted under a
+  different act from farmland, with a different pre-emption holder. The forest
+  badge is separate from FR-66. It names its own act and its own holder. The
+  farmland badge never renders on forest, and the forest badge never renders on
+  farmland. Naming the wrong act and the wrong authority is worse than saying
+  nothing.
+- **FR-74** **Legal verification prompt** (D104, D105). The legal content of
+  FR-66 and FR-73 carries no expiry date. Instead the application prompts for
+  re-verification the first time a purchase-restriction badge appears in a
+  session. This puts the check where the risk is, at no standing cost.
+
 ### 8.11 Research spikes
 
 - **FR-31** **RCN access research** (D5), before any RCN connector is scheduled.

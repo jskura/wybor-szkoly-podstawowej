@@ -186,6 +186,31 @@ The append-only rule is a **grant**, not a convention — V12 tests it at the
 database level.
 
 ```sql
+CREATE TABLE notice (                     -- D91: KOWR, auction and BIP records
+  id              BIGSERIAL PRIMARY KEY,
+  source_id       INT NOT NULL REFERENCES source(id),
+  external_id     TEXT NOT NULL,
+  url             TEXT NOT NULL,
+  notice_date     DATE NOT NULL,          -- when the notice was published
+  auction_at      TIMESTAMPTZ,            -- NULL for a plain sale notice
+  price_pln       NUMERIC(14,2),          -- NULL where the notice states no price
+  area_m2         NUMERIC(12,2),          -- NULL where the notice states no area
+  price_per_m2    NUMERIC(12,2) GENERATED ALWAYS AS (
+                    CASE WHEN price_pln IS NOT NULL AND area_m2 > 0
+                         THEN price_pln / area_m2 END) STORED,
+  price_type      price_type NOT NULL DEFAULT 'offering'
+                    CHECK (price_type = 'offering'),
+  price_kind      price_kind NOT NULL
+                    CHECK (price_kind IN ('auction_start','tender')),
+  valuation_pln   NUMERIC(14,2),          -- the surveyor's figure, where stated
+  statutory_fraction TEXT,                -- e.g. '3/4'; the figure is meaningless without it
+  parcel_identifier  TEXT,                -- notices carry this far more often than adverts
+  teryt_gmina     TEXT REFERENCES admin_unit(teryt),
+  as_of           DATE NOT NULL,
+  UNIQUE (source_id, external_id)
+);
+CREATE INDEX ON notice (teryt_gmina, notice_date);
+
 CREATE TABLE plot_cluster (
   id                  BIGSERIAL PRIMARY KEY,
   canonical_listing_id BIGINT,
@@ -311,6 +336,18 @@ CREATE TABLE parcel_wz_feasibility (      -- A4, FR-65
   -- neighbours, so an unlikely verdict without coverage is unwritable.
   CONSTRAINT unlikely_requires_coverage
     CHECK (verdict <> 'unlikely' OR coverage_source IS NOT NULL)
+);
+
+CREATE TABLE parcel_purchase_restriction (   -- D51 farmland, D106 forest
+  parcel_id     BIGINT NOT NULL REFERENCES parcel(id),
+  regime        TEXT NOT NULL CHECK (regime IN ('agricultural','forest')),
+  -- Two different acts, two different pre-emption holders. The farmland badge
+  -- must never render on forest, and the reverse. D106.
+  act_citation  TEXT NOT NULL,
+  holder        TEXT NOT NULL,             -- KOWR for farmland; State Forests for forest
+  verified_at   DATE NOT NULL,             -- D104: no expiry; D105 prompts on first display
+  as_of         DATE NOT NULL,
+  PRIMARY KEY (parcel_id, regime)
 );
 
 CREATE TABLE parcel_access (
