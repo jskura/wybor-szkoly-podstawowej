@@ -1,0 +1,19 @@
+services:
+  db:
+    # Pinned. R1.11 asserts the major versions, which is what makes the pin
+    # testable rather than decorative.
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dzialki}
+      POSTGRES_DB: ${POSTGRES_DB:-dzialki}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      retries: 30
+
+volumes:
+  db_data:

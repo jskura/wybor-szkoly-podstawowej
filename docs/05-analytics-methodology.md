@@ -77,16 +77,22 @@ Given a subject (real plot or hypothetical feature bundle):
 | Buildability | **Exact match** (D28) | The dominant price determinant. A buildable plot is never compared to farmland |
 | Asset class | Exact match | budowlana ≠ rekreacyjna ≠ rolna |
 | Price type | Exact match | Rule 6 |
-| Area | Within **±50%** ‡ of subject | Price per m² varies systematically with size (§4) |
-| Recency | Observed within **12 months** ‡ | Older observations are a different market |
-| Geography | Same gmina; widen by **10 km** ‡ rings if under the minimum count | Local markets are local |
+| Area | Within **±50%** of subject (D108) | Price per m² varies systematically with size (§4) |
+| Recency | Observed within **12 months** (D110) | Older observations are a different market |
+| Geography | Same gmina; widen by **10 km** rings if under the minimum count | Local markets are local |
 
-**Widening ladder.** If the same-gmina set yields fewer than **5** ‡ comparables, widen
-in this fixed order, stopping at the first step that reaches 5: same gmina → 10 km
-radius → 25 km radius → same powiat → same powiat, area band relaxed to ±100%.
-The step reached is recorded and **displayed** — an estimate built from a 25 km
-radius is a weaker claim than one from the same gmina, and the user must be able
-to see which they are getting.
+**Widening ladder.** If the same-gmina set yields fewer than **3** comparables
+(D109), widen in this fixed order, stopping at the first step that reaches 3:
+same gmina → 10 km radius → 25 km radius → same powiat → same powiat with the area
+band relaxed to ±100%. The step reached is recorded and **displayed** — an estimate
+built from a 25 km radius is a weaker claim than one from the same gmina, and the
+user must be able to see which they are getting.
+
+**The trigger is ratified; the ladder is not.** D109 fixes the minimum at 3. The
+five steps and their order were never asked about, and the fifth changes a
+different axis — it relaxes the area band D108 ratified at ±50%. That step can
+therefore return comparables D108 excludes. Recorded as **O41**; the ladder is
+configuration until it is answered, and `config/params.yml` marks it as such.
 
 Buildability is **never** relaxed. It would be the easiest way to find more
 comparables and the fastest way to make the number meaningless.

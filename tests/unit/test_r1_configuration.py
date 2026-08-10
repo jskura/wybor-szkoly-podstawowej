@@ -35,13 +35,18 @@ def test_settings_require_explicit_database_url(
 def test_sources_config_defaults_are_fail_closed(repo_root: pathlib.Path) -> None:
     """A source that defaults to enabled with no robots evidence is the failure
     V14 exists to prevent. The defaults are decided here, not in the connector."""
-    from dzialki.config import load_sources
+    from dzialki.config import load_params, load_sources
 
-    sources = load_sources(repo_root / "config" / "sources.yml")
+    params = load_params(repo_root / "config" / "params.yml")
+    sources = load_sources(
+        repo_root / "config" / "sources.yml",
+        default_rate_limit_rpm=params.crawl.default_rate_limit_rpm,
+    )
     minimal = sources["minimal_registry"]
     assert minimal.enabled is False
     assert minimal.robots_ok is False
-    assert minimal.rate_limit_rpm == 5
+    assert minimal.rate_limit_rpm == params.crawl.default_rate_limit_rpm
+    assert params.crawl.default_rate_limit_rpm == 5
 
 
 def test_unknown_source_kind_is_rejected_by_name(tmp_path: pathlib.Path) -> None:
@@ -52,7 +57,7 @@ def test_unknown_source_kind_is_rejected_by_name(tmp_path: pathlib.Path) -> None
         "sources:\n  - name: portal_x\n    kind: scraper\n", encoding="utf-8"
     )
     with pytest.raises(ConfigError) as caught:
-        load_sources(bad)
+        load_sources(bad, default_rate_limit_rpm=5)
     assert "kind" in str(caught.value)
     assert "scraper" in str(caught.value)
 
@@ -125,6 +130,7 @@ def test_missing_params_file_raises_named_actionable_error(
         ("aggregates", "flow_window_days"),
         ("validation", "conflict_threshold_pct"),
         ("crawl", "retry_after_max_s"),
+        ("crawl", "default_rate_limit_rpm"),
         ("feasibility", "good_neighbour_radius_m"),
         ("surface", "thousands_sep"),
     ],

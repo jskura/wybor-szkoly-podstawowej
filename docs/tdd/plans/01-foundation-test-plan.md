@@ -92,8 +92,15 @@ Three conftest files. Nothing else may create a database connection.
 | `migrated_db` | session | Drops and recreates the target database, then runs `alembic upgrade head` **as a subprocess**. Never builds the schema from SQLAlchemy metadata — a schema built by the helper would let a migration bug pass every constraint test in item 2 |
 | `conn` | function | A `psycopg.Connection` opened on `migrated_db` inside an explicit transaction, **rolled back** in teardown. `autocommit=False`. Every constraint test uses this |
 | `conn_as(role)` | function | Factory returning a connection authenticated as `app_read` / `app_write` / `app_pipeline`. Used only by R2.27–R2.29 |
-| `schema_digest` | function | Callable implementing §6.1 of pass 1: `pg_dump --schema-only --no-owner --no-privileges`, strip `--` comments and `SET`/`SELECT pg_catalog.set_config` lines, strip blank lines, sort remaining lines, SHA-256 |
+| `schema_digest` | function | Callable implementing §6.1 of pass 1: `pg_dump --schema-only --no-owner --no-privileges`, strip `--` comments, `SET`/`SELECT pg_catalog.set_config` lines **and the `\restrict`/`\unrestrict` pair**, strip blank lines, sort remaining lines, SHA-256 |
 | `geometry_digest` | function | `SHA-256` over `SELECT teryt, ST_AsBinary(geom) FROM admin_unit ORDER BY teryt` |
+
+**The `\restrict` pair was found by running the test, not by writing it.** Recent
+`pg_dump` versions wrap their output in `\restrict <nonce>` and `\unrestrict
+<nonce>`, and the nonce is fresh on every dump. Without stripping it, two dumps of
+one unchanged database differ, so R1.13 and R1.15 fail for a reason that has
+nothing to do with the migrations. The rule above named only comments and `SET`
+lines, which was the whole normalization until a real dump proved otherwise.
 
 `migrated_db` sets `SET TIME ZONE 'UTC'` on every connection it hands out.
 Partition-bound assertions (R2.25) compare rendered `timestamptz` literals, and

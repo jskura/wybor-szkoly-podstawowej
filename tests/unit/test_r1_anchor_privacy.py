@@ -20,7 +20,9 @@ HOUSE_NUMBER = re.compile(r"\d+\s*[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]")
 
 
 def _run(args: list[str], cwd: pathlib.Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(args, cwd=cwd, capture_output=True, text=True)
+    # check=False on purpose: a non-zero exit is the result these tests read,
+    # not an error. `git grep` exits 1 when it finds nothing, which is the pass.
+    return subprocess.run(args, cwd=cwd, capture_output=True, text=True, check=False)
 
 
 def test_anchors_yml_is_gitignored(repo_root: pathlib.Path) -> None:
@@ -58,9 +60,7 @@ def test_anchors_example_contains_only_placeholders(
         # A renamed label would defeat a label-only check. A real coordinate
         # committed by accident still fails here.
         assert re.search(r"\d", anchor.label) is None
-        inside = (
-            min_lon <= anchor.lon <= max_lon and min_lat <= anchor.lat <= max_lat
-        )
+        inside = min_lon <= anchor.lon <= max_lon and min_lat <= anchor.lat <= max_lat
         assert not inside
 
 
@@ -75,8 +75,23 @@ def test_anchor_loader_contains_no_coordinate_literals(
     tree = ast.parse(source)
     min_lon, min_lat, max_lon, max_lat = poland_bbox
 
+    # Docstrings are prose, not data the loader uses. A sentence naming test R1.6
+    # reads as "6 p" to the house-number pattern, and excluding them costs
+    # nothing: a leaked address would sit in a value, not in documentation.
+    docstrings = {
+        id(node.body[0].value)
+        for node in ast.walk(tree)
+        if isinstance(
+            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+        )
+        and node.body
+        and isinstance(node.body[0], ast.Expr)
+        and isinstance(node.body[0].value, ast.Constant)
+        and isinstance(node.body[0].value.value, str)
+    }
+
     for node in ast.walk(tree):
-        if not isinstance(node, ast.Constant):
+        if not isinstance(node, ast.Constant) or id(node) in docstrings:
             continue
         if isinstance(node.value, float):
             in_lon = min_lon <= node.value <= max_lon

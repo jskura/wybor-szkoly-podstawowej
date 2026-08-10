@@ -102,7 +102,10 @@ CREATE TABLE source (
   kind            TEXT NOT NULL CHECK (kind IN ('portal','registry','api')),
   base_url        TEXT,
   robots_ok       BOOLEAN NOT NULL DEFAULT FALSE,
-  rate_limit_rpm  INT NOT NULL DEFAULT 5,
+  -- No DEFAULT. The fail-closed value lives in config/params.yml (FR-75) and the
+  -- loader supplies it. A DEFAULT here would freeze a second copy at migration
+  -- time, and the two would drift the first time the value changed.
+  rate_limit_rpm  INT NOT NULL,
   last_success_at TIMESTAMPTZ,
   last_item_count INT,
   health          TEXT NOT NULL DEFAULT 'unknown'

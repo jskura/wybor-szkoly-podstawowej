@@ -202,8 +202,10 @@ later item's tests run inside.
 
 #### R1.14 `test_downgrade_to_base_removes_every_project_table`
 - **Asserts** after `downgrade base`, the set of `information_schema.tables` in
-  schema `public` minus PostGIS-owned relations (`spatial_ref_sys`,
-  `geography_columns`, `geometry_columns`) is **empty**.
+  schema `public` minus the relations that are not ours (`spatial_ref_sys`,
+  `geography_columns`, `geometry_columns`, and `alembic_version`) is **empty**.
+  `alembic_version` survives on purpose: it records that the database sits at
+  base, so dropping it would lose the only trace that the downgrade ran.
 - **Green by** Every migration implementing its `downgrade`.
 - **Discharges** none. Enforces `15` §13's "every migration is reversible or
   explicitly documented as not". A migration that opts out fails this test until it

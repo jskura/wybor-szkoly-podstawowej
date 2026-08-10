@@ -309,6 +309,8 @@ actuals) and the two new ones below.
 | O38 | Schema tables the feasibility spec needed (`tdd/05` §1.3) | **Closed** — `parcel_building`, `building_coverage` and `parcel_wz_feasibility` exist in `15` |
 | O39 | The D114 proxy needs its own disclaimer, and `likely` needs a marker naming the evidence behind it | **Open, raised by D114.** A `likely` verdict from a proxy must not read like one from confirmed ownership. Blocks nothing until the `likely` cell is implemented |
 | O40 | The legal specifics in `19` §2.1 and the three forest claims in `19` §2a.1 are unverified | **Open, needs you.** Secondary sources disagree and the law moved in 2026. A reading task against the consolidated acts, not a decision. Blocks stage S15 from shipping, nothing earlier |
+| O41 | **The widening ladder was never ratified** (`05` §3). D109 fixed the minimum at 3, but the five steps and their order were not asked about | **Open, raised while writing S1.** The fifth step relaxes the area band to ±100%, changing an axis D108 ratified at ±50%, so it can return comparables D108 excludes. Configuration until answered. Blocks nothing before S9 |
+| O42 | **The fail-closed rate limit was never ratified.** A source that states no limit gets 5 requests per minute | **Open, raised while writing S1.** The value came from the test plan, not from a decision. It now lives in `config/params.yml` with one home instead of two — `15` §4 previously froze a second copy as a schema DEFAULT. Blocks nothing; it only has to be slow enough |
 
 ### Still blocked on you
 

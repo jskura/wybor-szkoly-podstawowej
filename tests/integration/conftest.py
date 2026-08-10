@@ -14,9 +14,14 @@ import pytest
 
 psycopg = pytest.importorskip("psycopg", reason="psycopg is not installed")
 
-# Lines pg_dump emits that carry no schema meaning. Comparing digests without
-# stripping them would report a difference for a changed dump timestamp.
-_NOISE = re.compile(r"^(--|SET |SELECT pg_catalog\.set_config)")
+# Lines pg_dump emits that carry no schema meaning.
+#
+# The \restrict and \unrestrict pair carries a fresh random nonce on every dump.
+# Without stripping it, two dumps of one unchanged database differ, and R1.13 and
+# R1.15 fail for a reason that has nothing to do with the migrations. The test
+# plan's normalization rule named only comments and SET lines; this is a third
+# case that only appears against a real pg_dump.
+_NOISE = re.compile(r"^(--|SET |SELECT pg_catalog\.set_config|\\restrict|\\unrestrict)")
 
 
 @pytest.fixture(scope="session")

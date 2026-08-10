@@ -16,7 +16,16 @@ import pytest
 
 pytestmark = [pytest.mark.integration, pytest.mark.needs_db]
 
-POSTGIS_OWNED = {"spatial_ref_sys", "geography_columns", "geometry_columns"}
+# Relations that survive `downgrade base` and should. The first three belong to
+# PostGIS. The fourth is the migration tool's own bookkeeping: it records that
+# the database is at base, so dropping it would lose the only record that the
+# downgrade happened.
+NOT_OURS = {
+    "spatial_ref_sys",
+    "geography_columns",
+    "geometry_columns",
+    "alembic_version",
+}
 
 
 def _alembic(repo_root: pathlib.Path, url: str, *args: str) -> None:
@@ -90,7 +99,7 @@ def test_downgrade_to_base_removes_every_project_table(
                     "WHERE table_schema = 'public'"
                 ).fetchall()
             }
-        assert remaining - POSTGIS_OWNED == set()
+        assert remaining - NOT_OURS == set()
     finally:
         _alembic(repo_root, migrated_db, "upgrade", "head")
 

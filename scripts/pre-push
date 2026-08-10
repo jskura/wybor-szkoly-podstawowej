@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# V7(b) — the anchor addresses must not reach the repository (D124).
+#
+# This runs here and never in CI. Putting the addresses into CI so that CI can
+# prove they are absent from the repository defeats the point. The check reads
+# them from the gitignored config/anchors.yml, which only your machine has.
+#
+# Install:  ln -s ../../scripts/pre-push .git/hooks/pre-push
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+if [ ! -f config/anchors.yml ]; then
+  echo "pre-push: config/anchors.yml absent — V7(b) not exercised." >&2
+  echo "pre-push: copy config/anchors.example.yml and fill it in." >&2
+  exit 0
+fi
+
+if [ "$(git rev-parse --is-shallow-repository)" = "true" ]; then
+  echo "pre-push: shallow clone — V7(b) cannot scan history. Refusing." >&2
+  echo "pre-push: run 'git fetch --unshallow' first." >&2
+  exit 1
+fi
+
+exec python3 -m pytest -q -m needs_local_secrets

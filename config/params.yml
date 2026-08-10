@@ -11,7 +11,15 @@ comparables:
   area_band_pct: 50          # D108
   recency_months: 12         # D110
   min_before_widening: 3     # D109 — a median of 3 is close to noise
-  widening_ladder: [gmina, radius_10km, radius_25km, powiat]
+  # O41 — the trigger above is ratified, the ladder is not. The last step
+  # relaxes the area band D108 fixed at 50%, so it can return comparables
+  # D108 excludes.
+  widening_ladder:      # O41
+    - gmina             # O41
+    - radius_10km       # O41
+    - radius_25km       # O41
+    - powiat            # O41
+    - powiat_area_band_100pct   # O41
 
 aggregates:
   flow_window_days: 90       # D107
@@ -25,10 +33,13 @@ validation:
 
 crawl:
   fraction_tolerance_pln: 1  # D94
-  count_tolerance:           # D95 — the larger of the two
-    abs: 3
-    pct: 2
+  count_tolerance:           # D95 — the allowance is the larger of the two
+    abs: 3                   # D95
+    pct: 2                   # D95
   retry_after_max_s: 3600    # D93
+  # The rate limit a source gets when it declares none. Slow on purpose.
+  # Nobody ratified the number — see O42.
+  default_rate_limit_rpm: 5  # O42
 
 feasibility:
   good_neighbour_radius_m: 100      # D102 — arbitrated by the 20-parcel labelled set
@@ -36,4 +47,5 @@ feasibility:
   coverage_probe_min_buildings: 3   # D103
 
 surface:
-  thousands_sep: " "    # D125 — U+00A0, so a number never breaks across lines
+  # Written as an escape: U+00A0 and a plain space look identical in a file.
+  thousands_sep: "\u00A0"   # D125 — so a number never breaks across lines
