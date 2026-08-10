@@ -22,6 +22,7 @@ V0_PACKAGES = {
     "db",
     "ingest",
     "normalize",
+    "dedup",
     "geo",
     "metrics",
     "valuation",
