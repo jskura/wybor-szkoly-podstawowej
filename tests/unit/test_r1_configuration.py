@@ -216,6 +216,9 @@ PENDING_STAGES = {
     "comparables.recency_months": "S9 — the pipeline that calls the estimator",
     "comparables.min_before_widening": "S9 — the widening ladder",
     "comparables.widening_ladder": "S9 — the widening ladder (and O41)",
+    # The phrase parser takes the tolerance as an argument and the test
+    # supplies it. The connector that would read the key is still S13 work,
+    # so the key stays pending: a test reading it is not a consumer.
     "crawl.fraction_tolerance_pln": "S13 — the auction connector",
     "crawl.count_tolerance": "S12 — the portal corpus check",
     "crawl.retry_after_max_s": "S12 — the crawl runner",
