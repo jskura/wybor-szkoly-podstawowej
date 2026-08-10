@@ -43,7 +43,30 @@ how to sound. Warmth comes from directness, not from decoration.
 Report bad news plainly. State an error as an error. Do not soften a defect with
 careful words. Simple English makes a problem easier to see, not easier to hide.
 
-## 2. PRD first, always
+## 2. Ask questions with the AskUserQuestion tool
+
+Use the `AskUserQuestion` tool. Do not guess. Do not settle an open point in
+prose and then continue.
+
+- Ask about **every** ambiguity. Do not cover an unclear requirement with a
+  "sensible default" and a footnote.
+- Ask many questions, not few. Ask them in batches, before the work starts.
+- Give real options. Each option must say what happens if the user picks it.
+- Recommend one option when you have a view, and say why.
+- Ask again when an answer creates a new question.
+
+This applies to scope, data sources, priorities, metric definitions, thresholds,
+UX behaviour, stack choices, deployment and naming. Ask when in doubt.
+
+**Assumptions.** An assumption is acceptable only if you do two things. Label it
+as an assumption in the PRD. Tell the user in the same turn.
+
+**Why this is rule 2.** This project has one owner and no second reviewer. A
+wrong assumption becomes a document, then a schema, then a test. The audit in
+`docs/17-assumption-audit.md` records the cost. Many decisions were mine, not the
+owner's. Each one had to be found and undone later.
+
+## 3. PRD first, always
 
 No implementation work begins without a PRD entry covering it.
 
@@ -52,18 +75,6 @@ No implementation work begins without a PRD entry covering it.
   functional requirement (FR-n) before writing code.
 - If a change turns out mid-flight to need something the PRD does not cover, stop
   and update the PRD, then continue.
-
-## 3. Resolve ambiguity by asking, not by assuming
-
-Use `AskUserQuestion` for **every** ambiguity — do not paper over an unclear
-requirement with a "sensible default" and a footnote. Ask many questions rather
-than few, and ask them in batches before the work rather than after.
-
-Applies to: scope, data sources, priorities, metric definitions, thresholds,
-UX behaviour, stack choices, deployment, naming. When in doubt, ask.
-
-Assumptions are only acceptable when explicitly labelled as such in the PRD and
-flagged to the user in the same turn.
 
 ## 4. TDD
 

@@ -35,9 +35,9 @@ area cross-check and the per-reason quarantine baseline.
 | 4 | Touched silent failures have named detectors | ✅ F1, F2, F3, F9, F12 — mapped in §11 |
 | 5 | Fixtures exist, dated, scrubbed | ⛔ **Not yet.** §10 specifies them; they are created as step 0 of the red-green sequence |
 | 6 | Metamorphic properties listed (numeric core) | ✅ §7 |
-| — | Ambiguities resolved by asking, not assuming (rule 3) | ⛔ **Eight open questions in §12 block seven named tests.** They are asked before those tests are written, not decided here |
+| — | Ambiguities resolved by asking, not assuming (rule 2) | ⛔ **Eight open questions in §12 block seven named tests.** They are asked before those tests are written, not decided here |
 
-Criterion 5 is work, not a blocker. **Criterion "rule 3" is a hard gate**: the
+Criterion 5 is work, not a blocker. **Criterion "rule 2" is a hard gate**: the
 tests marked *blocked* in §12 are not written — and their behaviour is not
 implemented — until the corresponding question is answered.
 
@@ -442,7 +442,7 @@ addresses are scrubbed at capture, not later (FR-23).
 
 Not addressed here, by design: F4–F8, F10, F11, F13 belong to other work items.
 
-## 12. Ambiguities — asked, not assumed (rule 3)
+## 12. Ambiguities — asked, not assumed (rule 2)
 
 Each blocks the named test. These are asked in one batch before step 1 of §3, and
 the answers are recorded in `00-decisions.md` before the blocked tests are written.

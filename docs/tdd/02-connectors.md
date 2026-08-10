@@ -693,7 +693,7 @@ arguments.
 
 ## 11. Open questions that block a green suite
 
-Per rule 3 these are asked, not assumed. Each one currently prevents a test in
+Per rule 2 these are asked, not assumed. Each one currently prevents a test in
 this document from being written truthfully.
 
 | # | Question | Blocks | Note |

@@ -524,7 +524,7 @@ least once and the record reflects it** — no test can substitute for reading t
 
 ## 12. Assumptions and open questions — flagged, not absorbed
 
-Rule 3 forbids resolving ambiguity by assumption. These arose while writing this
+Rule 2 forbids resolving ambiguity by assumption. These arose while writing this
 spec and are **unresolved**; each needs an answer (and a decision-log entry) before
 the stage that depends on it. They are listed here rather than silently defaulted.
 

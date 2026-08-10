@@ -1,6 +1,6 @@
 # Assumption audit — self-review of docs 00–16
 
-A critical review of my own planning work against `CLAUDE.md` rule 3: *resolve
+A critical review of my own planning work against `CLAUDE.md` rule 2: *resolve
 ambiguity by asking, not by assuming*. Written before challenging these with the
 owner, so the findings are not shaped by the answers.
 
@@ -95,7 +95,7 @@ likely exceeds 160 GB once list pages, which change daily, are counted.
 
 ## B. Choices I made that were never yours
 
-Rule 3 says these should have been questions. Grouped by how much damage a wrong
+Rule 2 says these should have been questions. Grouped by how much damage a wrong
 default does.
 
 ### B1 — Metric definitions at the heart of the valuation (highest impact)

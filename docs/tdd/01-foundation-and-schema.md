@@ -38,7 +38,7 @@ Every test below states four things:
 | 6. Metamorphic properties listed | §5.1 | §5.2 | §5.3 |
 
 Entry criterion 2 is **not fully met for item 1** and criterion 4 is **not met for
-item 2** until the open items in §4 are answered. Per rule 2 and rule 5 those are
+item 2** until the open items in §4 are answered. Per rule 3 and rule 5 those are
 resolved before the first test is written, not during.
 
 ### 0.2 Test layout
@@ -742,7 +742,7 @@ extent). R3.15–R3.17 cannot be written until those are answered.
 
 ## 4. Blocked, ambiguous, or missing — resolve before the first test
 
-Per `CLAUDE.md` rule 3 these are asked, not assumed. Each blocks a specific test.
+Per `CLAUDE.md` rule 2 these are asked, not assumed. Each blocks a specific test.
 
 ### 4.1 Item 1 has no validation method of its own (rule 5 gap)
 `04`'s coverage table assigns item 1 to "V7 (anchor privacy); migrations covered by

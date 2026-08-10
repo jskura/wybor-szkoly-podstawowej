@@ -431,7 +431,7 @@ Not touched: E8, E10, E12–E15, E17–E26.
 | **M4 Sales depth** | E3.5–3.7, E11.4–11.6, E20 | `L` | J5, J7, J11; mix adjustment validated |
 | **M5 Extend** | E13, E14, E22, E23 | `XL` | J10, J12, J4, J6 |
 
-**Assumption, flagged (rule 3):** milestone sizes assume part-time solo work and
+**Assumption, flagged (rule 2):** milestone sizes assume part-time solo work and
 no parallelism. They are ranges for sequencing discussion, not a schedule.
 
 ## 6. Dependency risks

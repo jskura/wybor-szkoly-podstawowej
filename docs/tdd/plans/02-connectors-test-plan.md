@@ -1387,7 +1387,7 @@ the highest-risk arithmetic in the connector layer.
 
 ## 10. New questions this pass raised
 
-Per rule 3, asked rather than assumed. O-numbers are allocated only in
+Per rule 2, asked rather than assumed. O-numbers are allocated only in
 [`00-decisions.md`](../../00-decisions.md), so these carry local Q-numbers until
 they are.
 

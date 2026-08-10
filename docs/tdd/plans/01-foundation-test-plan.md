@@ -396,7 +396,7 @@ rest of the tree.
 
 ### 3.9 Values this document cannot determine, and what is needed
 
-Stated explicitly per `CLAUDE.md` rule 3 rather than guessed.
+Stated explicitly per `CLAUDE.md` rule 2 rather than guessed.
 
 | Value | Why it cannot be fixed here | What is needed |
 |---|---|---|

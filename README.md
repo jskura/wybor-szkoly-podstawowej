@@ -74,7 +74,7 @@ Start with `18` (what we're building), then `17` (why it shrank).
 |---|---|
 | [`docs/18-v0-scope.md`](docs/18-v0-scope.md) | **The plan of record** — the ~26–29 day version, its work plan, its checks, and what it will teach us |
 | [`docs/17-assumption-audit.md`](docs/17-assumption-audit.md) | **Self-review** — contradictions, unasked questions, unverified facts |
-| [`CLAUDE.md`](CLAUDE.md) | Binding project rules. Rule 1 is Simplified Technical English. Then: PRD first, ask do not assume, TDD, a validation method per feature, two price types, provenance, the two-pass workflow |
+| [`CLAUDE.md`](CLAUDE.md) | Binding project rules. 1: Simplified Technical English. 2: ask with the AskUserQuestion tool. 3: PRD first. 4: TDD. 5: a validation method per feature. 6: two price types. 7: provenance. 8: the two-pass workflow |
 | [`docs/00-decisions.md`](docs/00-decisions.md) | Decision log — D1–D63; open items O1–O31, all closed or assigned, 3 blocked on you |
 | [`docs/01-user-journeys.md`](docs/01-user-journeys.md) | 12 journeys (J1–J8 buying, J9–J12 analytical) and the capability map |
 | [`docs/02-prd.md`](docs/02-prd.md) | Requirements FR-1..72, data model, architecture, milestones, risks |

@@ -3,7 +3,7 @@
 Decisions taken with the product owner, newest batch last. Every decision here is
 binding on the PRD; if a decision changes, the PRD changes in the same commit.
 
-Per [`CLAUDE.md`](../CLAUDE.md) rule 3, these were resolved by asking, not by
+Per [`CLAUDE.md`](../CLAUDE.md) rule 2, these were resolved by asking, not by
 assuming. Items marked **ASSUMPTION** were not asked about and must be confirmed
 before the affected work starts.
 

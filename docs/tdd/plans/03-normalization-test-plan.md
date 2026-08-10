@@ -7,7 +7,7 @@ Pass 1 named the tests and fixed their order. **This document is the data**: eve
 input string, every expected value, every expected failure, every fixture row and
 the CI wiring that runs them. A developer should be able to type the tables in
 without a further decision — except where a table says ⛔, which means the decision
-is not ours to take (rule 3).
+is not ours to take (rule 2).
 
 Read with, not instead of, the pass-1 spec: the red-green order (§3 there), the
 contracts (§2 there) and the mutation list (§14 there) are not repeated here.
@@ -43,7 +43,7 @@ O-N12 changes the answer for a whole thin class of records at the edge.
 - `test_every_blocked_marker_names_an_open_question` — the string in each `blocked`
   marker must match an entry in `00-decisions.md` **that has no recorded answer**.
   When a question is answered, CI fails until the marker is removed and the test
-  written. This is rule 3 made mechanical rather than remembered.
+  written. This is rule 2 made mechanical rather than remembered.
 
 ---
 
@@ -771,7 +771,7 @@ scrubbed of seller names, phone numbers and addresses at capture (FR-23).
 | `property` | every push | `pytest tests/property -m property --hypothesis-profile=ci` | blocking |
 | `integration` | every PR | `pytest tests/integration` with a `postgis/postgis:16` service | blocking |
 | `fixtures` | every PR | `pytest tests/unit/test_fixture_hygiene.py` (capture dates, PII sweep) | blocking |
-| `blocked-audit` | every push | `pytest -m blocked --collect-only` + `test_every_blocked_marker_names_an_open_question` | blocking — rule 3 |
+| `blocked-audit` | every push | `pytest -m blocked --collect-only` + `test_every_blocked_marker_names_an_open_question` | blocking — rule 2 |
 | `mutation` | nightly, and on the `mutation` PR label | `mutmut run --paths-to-mutate src/lpc/normalize,src/lpc/dedup` | blocking on the named-mutant list (pass-1 §14), advisory on the score |
 | `assertions-dryrun` | nightly | `ops/assertions` against the last run's data | advisory — the real gate is inside the pipeline |
 

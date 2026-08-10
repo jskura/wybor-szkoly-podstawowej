@@ -677,7 +677,7 @@ it in three places (the config constant, the `range_kind_matches_n` CHECK, and t
 UI). D3 and D4 exist precisely so that ratifying it is a bounded change rather than
 an archaeology exercise.
 
-## 10. Questions that must be answered before implementation (rule 3)
+## 10. Questions that must be answered before implementation (rule 2)
 
 These are **not** resolved by a sensible default in this document. Each blocks the
 step named.

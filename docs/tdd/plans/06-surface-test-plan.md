@@ -2070,7 +2070,7 @@ table_row[equal,always] "gmina Skierniewice"
 
 ## 10. Open items this detail pass surfaced
 
-Flagged rather than assumed, per [`CLAUDE.md`](../../../CLAUDE.md) rule 3. Each
+Flagged rather than assumed, per [`CLAUDE.md`](../../../CLAUDE.md) rule 2. Each
 blocks the step named.
 
 | # | Item | Proposal | Blocks |
