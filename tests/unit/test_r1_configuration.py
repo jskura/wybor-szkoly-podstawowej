@@ -171,21 +171,26 @@ def test_no_ratified_value_appears_as_a_literal_in_the_source(
 ) -> None:
     """The test that catches a parameter copied out of the file and into code.
 
-    The loader is exempt: it names the keys, not the values. Anything else that
-    holds one of these numbers has taken a copy that will not follow a change.
+    The value set is deliberately narrow. It first held every ratified number,
+    including 12 and 100, and flagged `month += 12` and `Decimal(100)` in a date
+    helper and a percentage conversion. Months per year and parts per hundred are
+    universal constants, not copies of a recency window or a search radius, so a
+    scan that reports them trains a reader to ignore it.
+
+    Narrowing the values alone would weaken the rule, so
+    `test_every_ratified_parameter_is_read_somewhere` below covers the same
+    failure from the other side: a copied value orphans its configuration key,
+    and an orphaned key is easy to spot and impossible to argue with.
     """
     from dzialki.config import load_params
 
     params = load_params(repo_root / "config" / "params.yml")
-    # Values distinctive enough that an incidental match is a real finding.
     forbidden = {
-        params.comparables.area_band_pct,
-        params.comparables.recency_months,
         params.aggregates.flow_window_days,
         params.validation.area_min_m2,
         params.validation.area_max_m2,
+        params.validation.price_per_m2_max_pln,
         params.crawl.retry_after_max_s,
-        params.feasibility.good_neighbour_radius_m,
         params.feasibility.coverage_probe_radius_m,
     }
     exempt = {repo_root / "src" / "dzialki" / "config" / "params.py"}
@@ -195,8 +200,57 @@ def test_no_ratified_value_appears_as_a_literal_in_the_source(
         if path in exempt:
             continue
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            if isinstance(node, ast.Constant) and node.value in forbidden:
-                if isinstance(node.value, bool):
-                    continue
+            if (
+                isinstance(node, ast.Constant)
+                and not isinstance(node.value, bool)
+                and node.value in forbidden
+            ):
                 offenders.append(f"{path.relative_to(repo_root)}:{node.lineno}")
     assert offenders == []
+
+
+# Parameters whose consumer has not been built yet. Each names the stage that
+# will read it. The mapping exists so an unread key is a scheduled gap rather
+# than an unnoticed one.
+PENDING_STAGES = {
+    "comparables.recency_months": "S9 — the pipeline that calls the estimator",
+    "comparables.min_before_widening": "S9 — the widening ladder",
+    "comparables.widening_ladder": "S9 — the widening ladder (and O41)",
+    "crawl.fraction_tolerance_pln": "S13 — the auction connector",
+    "crawl.count_tolerance": "S12 — the portal corpus check",
+    "crawl.retry_after_max_s": "S12 — the crawl runner",
+    "crawl.default_rate_limit_rpm": "S12 — the crawl runner",
+    "feasibility.good_neighbour_radius_m": "S14 — the good-neighbour test",
+    "feasibility.coverage_probe_radius_m": "S14 — the coverage probe",
+    "feasibility.coverage_probe_min_buildings": "S14 — the coverage probe",
+}
+
+
+@pytest.mark.architecture
+def test_every_ratified_parameter_is_read_somewhere(
+    repo_root: pathlib.Path,
+) -> None:
+    """A parameter nobody reads is a parameter something else has copied.
+
+    This is the half of FR-75 the value scan cannot cover. Changing a key here
+    must change behaviour; if the code holds its own copy, the key goes unread
+    and the file becomes documentation of a value the program ignores.
+    """
+    from dzialki.config import Params
+
+    source = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in (repo_root / "src").rglob("*.py")
+        if path.name != "params.py"
+    )
+
+    unread = sorted(
+        f"{section_name}.{key}"
+        for section_name, section in Params.model_fields.items()
+        for key in section.annotation.model_fields
+        if f".{key}" not in source
+    )
+    # Equality, not containment. A key whose stage lands starts being read, this
+    # test fails, and its row has to be deleted deliberately. Containment would
+    # let the list rot into a permanent excuse.
+    assert unread == sorted(PENDING_STAGES)

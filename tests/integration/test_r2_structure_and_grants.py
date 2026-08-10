@@ -120,5 +120,9 @@ def test_every_expected_table_exists(conn) -> None:
         "metric_unit_month",
         "coverage_snapshot",
         "assertion_run",
+        # Added by 0004, with the estimator. The log cannot be backfilled, so it
+        # ships with the thing it records rather than after it.
+        "valuation_log",
+        "valuation_exclusion",
     }
     assert present - postgis_owned - tooling == expected
