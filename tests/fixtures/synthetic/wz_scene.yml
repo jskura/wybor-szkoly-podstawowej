@@ -1,0 +1,817 @@
+as_of: '2026-08-08'
+source_name: synthetic
+crs: EPSG:2180
+ordinate_order: easting_first
+scene_easting_range:
+- 599000.0
+- 614000.0
+scene_northing_range:
+- 495000.0
+- 505000.0
+working_parameters:
+  good_neighbour_radius_m: 100
+  coverage_probe_radius_m: 2000
+  coverage_probe_min_buildings: 5
+  coverage_max_age_days: 90
+units:
+- teryt: '999901'
+  name: SYNTH-A
+  rectangle:
+  - 599000.0
+  - 604500.0
+  - 495000.0
+  - 505000.0
+  coverage:
+    source: egib
+    has_coverage: true
+    checked_at: '2026-08-01'
+- teryt: '999903'
+  name: SYNTH-C
+  rectangle:
+  - 604500.0
+  - 607000.0
+  - 495000.0
+  - 505000.0
+  coverage:
+    source: egib
+    has_coverage: true
+    checked_at: '2026-08-01'
+- teryt: '999904'
+  name: SYNTH-D
+  rectangle:
+  - 607000.0
+  - 609000.0
+  - 495000.0
+  - 505000.0
+  coverage:
+    source: egib
+    has_coverage: true
+    checked_at: '2025-01-01'
+- teryt: '999902'
+  name: SYNTH-B
+  rectangle:
+  - 609000.0
+  - 612000.0
+  - 495000.0
+  - 505000.0
+  coverage:
+    source: none
+    has_coverage: false
+    checked_at: '2026-08-01'
+- teryt: '999905'
+  name: SYNTH-E
+  rectangle:
+  - 612000.0
+  - 614000.0
+  - 495000.0
+  - 505000.0
+  coverage:
+    source: osm
+    has_coverage: true
+    checked_at: '2026-08-01'
+roads:
+- id: R1
+  rectangle:
+  - 599000.0
+  - 614000.0
+  - 499990.0
+  - 500000.0
+  register_class: dr
+  osm_highway_class: residential
+  ownership_confirmed: false
+- id: R2
+  rectangle:
+  - 603800.0
+  - 604300.0
+  - 500165.0
+  - 500175.0
+  register_class: dr
+  osm_highway_class: null
+  ownership_confirmed: false
+- id: R3
+  rectangle:
+  - 601000.0
+  - 602000.0
+  - 500060.0
+  - 500070.0
+  register_class: dr
+  osm_highway_class: residential
+  ownership_confirmed: false
+protected_areas:
+- id: SYNTH-PARK
+  rectangle:
+  - 605030.0
+  - 606000.0
+  - 499000.0
+  - 501000.0
+  kind: landscape_park
+- id: SYNTH-OTULINA
+  rectangle:
+  - 604800.0
+  - 605030.0
+  - 499000.0
+  - 501000.0
+  kind: landscape_park_buffer
+buildings:
+- id: B1
+  rectangle:
+  - 600090.0
+  - 600100.0
+  - 500020.0
+  - 500030.0
+  source: egib
+  sits_on: P1N
+- id: B2
+  rectangle:
+  - 600760.0
+  - 600770.0
+  - 500020.0
+  - 500030.0
+  source: egib
+  sits_on: P2N
+- id: B2own
+  rectangle:
+  - 600420.0
+  - 600430.0
+  - 500020.0
+  - 500030.0
+  source: egib
+  sits_on: P2
+- id: B5
+  rectangle:
+  - 605100.0
+  - 605110.0
+  - 500020.0
+  - 500030.0
+  source: egib
+  sits_on: P5N
+- id: B6
+  rectangle:
+  - 602930.0
+  - 602940.0
+  - 500000.0
+  - 500010.0
+  source: egib
+  sits_on: P6N
+- id: B7
+  rectangle:
+  - 604020.0
+  - 604030.0
+  - 500105.0
+  - 500115.0
+  source: egib
+  sits_on: P7N
+- id: B9
+  rectangle:
+  - 607590.0
+  - 607600.0
+  - 500020.0
+  - 500030.0
+  source: egib
+  sits_on: P9N
+- id: B11
+  rectangle:
+  - 612590.0
+  - 612600.0
+  - 500020.0
+  - 500030.0
+  source: osm
+  sits_on: P11N
+- id: C1
+  rectangle:
+  - 601000.0
+  - 601010.0
+  - 500500.0
+  - 500510.0
+  source: egib
+  sits_on: null
+- id: C2
+  rectangle:
+  - 601050.0
+  - 601060.0
+  - 500500.0
+  - 500510.0
+  source: egib
+  sits_on: null
+- id: C3
+  rectangle:
+  - 601100.0
+  - 601110.0
+  - 500500.0
+  - 500510.0
+  source: egib
+  sits_on: null
+- id: C4
+  rectangle:
+  - 601150.0
+  - 601160.0
+  - 500500.0
+  - 500510.0
+  source: egib
+  sits_on: null
+- id: C5
+  rectangle:
+  - 601200.0
+  - 601210.0
+  - 500500.0
+  - 500510.0
+  source: egib
+  sits_on: null
+- id: C6
+  rectangle:
+  - 601250.0
+  - 601260.0
+  - 500500.0
+  - 500510.0
+  source: egib
+  sits_on: null
+parcels:
+- id: P1
+  parcel_identifier: 999901_9.9001.1
+  rectangle:
+  - 600000.0
+  - 600060.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P1N
+  parcel_identifier: 999901_9.9001.2
+  rectangle:
+  - 600090.0
+  - 600150.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P2
+  parcel_identifier: 999901_9.9001.3
+  rectangle:
+  - 600400.0
+  - 600460.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P2N
+  parcel_identifier: 999901_9.9001.4
+  rectangle:
+  - 600760.0
+  - 600820.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P3
+  parcel_identifier: 999901_9.9001.5
+  rectangle:
+  - 602000.0
+  - 602060.0
+  - 500000.0
+  - 500060.0
+  land_use_class: R
+- id: P6
+  parcel_identifier: 999901_9.9001.6
+  rectangle:
+  - 603000.0
+  - 603350.0
+  - 500000.0
+  - 500010.0
+  land_use_class: R
+- id: P6N
+  parcel_identifier: 999901_9.9001.7
+  rectangle:
+  - 602880.0
+  - 602940.0
+  - 500000.0
+  - 500010.0
+  land_use_class: B
+- id: P7
+  parcel_identifier: 999901_9.9001.8
+  rectangle:
+  - 604000.0
+  - 604060.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P7N
+  parcel_identifier: 999901_9.9001.9
+  rectangle:
+  - 604000.0
+  - 604060.0
+  - 500105.0
+  - 500165.0
+  land_use_class: B
+- id: P8
+  parcel_identifier: 999901_9.9001.10
+  rectangle:
+  - 604460.0
+  - 604520.0
+  - 500200.0
+  - 500260.0
+  land_use_class: R
+- id: P10
+  parcel_identifier: 999901_9.9001.11
+  rectangle:
+  - 601000.0
+  - 601060.0
+  - 503000.0
+  - 503060.0
+  land_use_class: B
+- id: P12
+  parcel_identifier: 999901_9.9001.12
+  rectangle:
+  - 604470.0
+  - 604530.0
+  - 500200.0
+  - 500260.0
+  land_use_class: R
+- id: P4
+  parcel_identifier: 999902_9.9002.1
+  rectangle:
+  - 610000.0
+  - 610060.0
+  - 500000.0
+  - 500060.0
+  land_use_class: R
+- id: P5
+  parcel_identifier: 999903_9.9003.1
+  rectangle:
+  - 605000.0
+  - 605060.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P5N
+  parcel_identifier: 999903_9.9003.2
+  rectangle:
+  - 605100.0
+  - 605160.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P9
+  parcel_identifier: 999904_9.9004.1
+  rectangle:
+  - 607500.0
+  - 607560.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P9N
+  parcel_identifier: 999904_9.9004.2
+  rectangle:
+  - 607590.0
+  - 607650.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P11
+  parcel_identifier: 999905_9.9005.1
+  rectangle:
+  - 612500.0
+  - 612560.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+- id: P11N
+  parcel_identifier: 999905_9.9005.2
+  rectangle:
+  - 612590.0
+  - 612650.0
+  - 500000.0
+  - 500060.0
+  land_use_class: B
+subjects:
+- id: P1
+  parcel_identifier: 999901_9.9001.1
+  rectangle:
+  - 600000.0
+  - 600060.0
+  - 500000.0
+  - 500060.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 600000.0
+  - 500000.0
+  land_use_class: B
+  teryt_gmina: '999901'
+  straddles:
+  - teryt: '999901'
+    area_m2: 3600.0
+  own_buildings: []
+  nearest_neighbour_building: B1
+  nearest_neighbour_distance_m: 30.0
+  nearest_neighbour_centroid_distance_m: 60.0
+  buildings_within_good_neighbour_radius: 1
+  buildings_within_probe_radius: 9
+  neighbour_sources_within_radius:
+  - egib
+  roads:
+  - road: R1
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 60.0
+    contact: shared_edge
+  protection: []
+- id: P2
+  parcel_identifier: 999901_9.9001.3
+  rectangle:
+  - 600400.0
+  - 600460.0
+  - 500000.0
+  - 500060.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 600400.0
+  - 500000.0
+  land_use_class: B
+  teryt_gmina: '999901'
+  straddles:
+  - teryt: '999901'
+    area_m2: 3600.0
+  own_buildings:
+  - B2own
+  nearest_neighbour_building: B1
+  nearest_neighbour_distance_m: 300.0
+  nearest_neighbour_centroid_distance_m: 330.0
+  buildings_within_good_neighbour_radius: 0
+  buildings_within_probe_radius: 8
+  neighbour_sources_within_radius: []
+  roads:
+  - road: R1
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 60.0
+    contact: shared_edge
+  protection: []
+- id: P3
+  parcel_identifier: 999901_9.9001.5
+  rectangle:
+  - 602000.0
+  - 602060.0
+  - 500000.0
+  - 500060.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 602000.0
+  - 500000.0
+  land_use_class: R
+  teryt_gmina: '999901'
+  straddles:
+  - teryt: '999901'
+    area_m2: 3600.0
+  own_buildings: []
+  nearest_neighbour_building: C6
+  nearest_neighbour_distance_m: 860.93
+  nearest_neighbour_centroid_distance_m: 902.109
+  buildings_within_good_neighbour_radius: 0
+  buildings_within_probe_radius: 11
+  neighbour_sources_within_radius: []
+  roads:
+  - road: R1
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 60.0
+    contact: shared_edge
+  - road: R3
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 0.0
+    contact: single_vertex
+  protection: []
+- id: P4
+  parcel_identifier: 999902_9.9002.1
+  rectangle:
+  - 610000.0
+  - 610060.0
+  - 500000.0
+  - 500060.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 610000.0
+  - 500000.0
+  land_use_class: R
+  teryt_gmina: '999902'
+  straddles:
+  - teryt: '999902'
+    area_m2: 3600.0
+  own_buildings: []
+  nearest_neighbour_building: B9
+  nearest_neighbour_distance_m: 2400.0
+  nearest_neighbour_centroid_distance_m: 2430.0
+  buildings_within_good_neighbour_radius: 0
+  buildings_within_probe_radius: 0
+  neighbour_sources_within_radius: []
+  roads:
+  - road: R1
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 60.0
+    contact: shared_edge
+  protection: []
+- id: P5
+  parcel_identifier: 999903_9.9003.1
+  rectangle:
+  - 605000.0
+  - 605060.0
+  - 500000.0
+  - 500060.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 605000.0
+  - 500000.0
+  land_use_class: B
+  teryt_gmina: '999903'
+  straddles:
+  - teryt: '999903'
+    area_m2: 3600.0
+  own_buildings: []
+  nearest_neighbour_building: B5
+  nearest_neighbour_distance_m: 40.0
+  nearest_neighbour_centroid_distance_m: 70.0
+  buildings_within_good_neighbour_radius: 1
+  buildings_within_probe_radius: 2
+  neighbour_sources_within_radius:
+  - egib
+  roads:
+  - road: R1
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 60.0
+    contact: shared_edge
+  protection:
+  - area: SYNTH-OTULINA
+    kind: landscape_park_buffer
+    overlap_m2: 1800.0
+    overlap_fraction: 0.5
+  - area: SYNTH-PARK
+    kind: landscape_park
+    overlap_m2: 1800.0
+    overlap_fraction: 0.5
+- id: P6
+  parcel_identifier: 999901_9.9001.6
+  rectangle:
+  - 603000.0
+  - 603350.0
+  - 500000.0
+  - 500010.0
+  area_m2: 3500.0
+  south_west_corner:
+  - 603000.0
+  - 500000.0
+  land_use_class: R
+  teryt_gmina: '999901'
+  straddles:
+  - teryt: '999901'
+    area_m2: 3500.0
+  own_buildings: []
+  nearest_neighbour_building: B6
+  nearest_neighbour_distance_m: 60.0
+  nearest_neighbour_centroid_distance_m: 235.0
+  buildings_within_good_neighbour_radius: 1
+  buildings_within_probe_radius: 7
+  neighbour_sources_within_radius:
+  - egib
+  roads:
+  - road: R1
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 350.0
+    contact: shared_edge
+  protection: []
+- id: P7
+  parcel_identifier: 999901_9.9001.8
+  rectangle:
+  - 604000.0
+  - 604060.0
+  - 500000.0
+  - 500060.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 604000.0
+  - 500000.0
+  land_use_class: B
+  teryt_gmina: '999901'
+  straddles:
+  - teryt: '999901'
+    area_m2: 3600.0
+  own_buildings: []
+  nearest_neighbour_building: B7
+  nearest_neighbour_distance_m: 45.0
+  nearest_neighbour_centroid_distance_m: 75.0
+  buildings_within_good_neighbour_radius: 1
+  buildings_within_probe_radius: 3
+  neighbour_sources_within_radius:
+  - egib
+  roads:
+  - road: R1
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 60.0
+    contact: shared_edge
+  protection: []
+- id: P8
+  parcel_identifier: 999901_9.9001.10
+  rectangle:
+  - 604460.0
+  - 604520.0
+  - 500200.0
+  - 500260.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 604460.0
+  - 500200.0
+  land_use_class: R
+  teryt_gmina: '999901'
+  straddles:
+  - teryt: '999901'
+    area_m2: 2400.0
+  - teryt: '999903'
+    area_m2: 1200.0
+  own_buildings: []
+  nearest_neighbour_building: B7
+  nearest_neighbour_distance_m: 438.321
+  nearest_neighbour_centroid_distance_m: 474.157
+  buildings_within_good_neighbour_radius: 0
+  buildings_within_probe_radius: 3
+  neighbour_sources_within_radius: []
+  roads: []
+  protection: []
+- id: P9
+  parcel_identifier: 999904_9.9004.1
+  rectangle:
+  - 607500.0
+  - 607560.0
+  - 500000.0
+  - 500060.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 607500.0
+  - 500000.0
+  land_use_class: B
+  teryt_gmina: '999904'
+  straddles:
+  - teryt: '999904'
+    area_m2: 3600.0
+  own_buildings: []
+  nearest_neighbour_building: B9
+  nearest_neighbour_distance_m: 30.0
+  nearest_neighbour_centroid_distance_m: 60.0
+  buildings_within_good_neighbour_radius: 1
+  buildings_within_probe_radius: 1
+  neighbour_sources_within_radius:
+  - egib
+  roads:
+  - road: R1
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 60.0
+    contact: shared_edge
+  protection: []
+- id: P10
+  parcel_identifier: 999901_9.9001.11
+  rectangle:
+  - 601000.0
+  - 601060.0
+  - 503000.0
+  - 503060.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 601000.0
+  - 503000.0
+  land_use_class: B
+  teryt_gmina: '999901'
+  straddles:
+  - teryt: '999901'
+    area_m2: 3600.0
+  own_buildings: []
+  nearest_neighbour_building: C1
+  nearest_neighbour_distance_m: 2490.0
+  nearest_neighbour_centroid_distance_m: 2520.079
+  buildings_within_good_neighbour_radius: 0
+  buildings_within_probe_radius: 0
+  neighbour_sources_within_radius: []
+  roads: []
+  protection: []
+- id: P11
+  parcel_identifier: 999905_9.9005.1
+  rectangle:
+  - 612500.0
+  - 612560.0
+  - 500000.0
+  - 500060.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 612500.0
+  - 500000.0
+  land_use_class: B
+  teryt_gmina: '999905'
+  straddles:
+  - teryt: '999905'
+    area_m2: 3600.0
+  own_buildings: []
+  nearest_neighbour_building: B11
+  nearest_neighbour_distance_m: 30.0
+  nearest_neighbour_centroid_distance_m: 60.0
+  buildings_within_good_neighbour_radius: 1
+  buildings_within_probe_radius: 1
+  neighbour_sources_within_radius:
+  - osm
+  roads:
+  - road: R1
+    register_class: dr
+    osm_highway_class: residential
+    ownership_confirmed: false
+    shared_edge_m: 60.0
+    contact: shared_edge
+  protection: []
+- id: P12
+  parcel_identifier: 999901_9.9001.12
+  rectangle:
+  - 604470.0
+  - 604530.0
+  - 500200.0
+  - 500260.0
+  area_m2: 3600.0
+  south_west_corner:
+  - 604470.0
+  - 500200.0
+  land_use_class: R
+  teryt_gmina: '999901'
+  straddles:
+  - teryt: '999901'
+    area_m2: 1800.0
+  - teryt: '999903'
+    area_m2: 1800.0
+  own_buildings: []
+  nearest_neighbour_building: B7
+  nearest_neighbour_distance_m: 448.135
+  nearest_neighbour_centroid_distance_m: 483.865
+  buildings_within_good_neighbour_radius: 0
+  buildings_within_probe_radius: 3
+  neighbour_sources_within_radius: []
+  roads: []
+  protection: []
+degree_controls:
+  origin_4326:
+  - 19.0
+  - 53.0
+  ellipsoid: WGS84
+  metres_per_degree_latitude: 111295.65
+  metres_per_degree_longitude: 67136.68
+  flat_metres_per_degree: 111320.0
+  baselines:
+  - name: C_short_north_south
+    orientation: north_south
+    separation_m: 300.0
+    separation_kind: geodesic
+    point_a_4326:
+    - 19.0
+    - 53.0
+    point_b_4326:
+    - 19.0
+    - 53.00269575
+    naive_degree_distance: 0.00269575
+    flat_degree_distance_m: 300.091
+  - name: C_short_east_west
+    orientation: east_west
+    separation_m: 300.0
+    separation_kind: geodesic
+    point_a_4326:
+    - 19.0
+    - 53.0
+    point_b_4326:
+    - 19.00446846
+    - 52.999999916
+    naive_degree_distance: 0.004468460001
+    flat_degree_distance_m: 497.429
+  - name: C_ring_north_south
+    orientation: north_south
+    separation_m: 25000.0
+    separation_kind: geodesic
+    point_a_4326:
+    - 19.0
+    - 53.0
+    point_b_4326:
+    - 19.0
+    - 53.224641596
+    naive_degree_distance: 0.224641596
+    flat_degree_distance_m: 25007.102
+  - name: C_ring_east_west
+    orientation: east_west
+    separation_m: 25000.0
+    separation_kind: geodesic
+    point_a_4326:
+    - 19.0
+    - 53.0
+    point_b_4326:
+    - 19.372368309
+    - 52.999417001
+    naive_degree_distance: 0.372368765386
+    flat_degree_distance_m: 41452.091

@@ -138,7 +138,8 @@ produce, and the plan above did not say which.
 | The portal `robots.txt` reading (O10) | S12 | **Blocked on you** |
 | The KOWR, auction and BIP `robots.txt` readings (Q9) | S13 | **Blocked on you** |
 | County building data, or OSM as the fallback | S14 | **Blocked** |
-| The two acts read against their consolidated text (O40) | S15 | **Blocked on you** |
+| The two acts read against their consolidated text (O40) | S15 | **Blocked on you.** The badge refuses to render until then, so the stage ships in a refusing state rather than a wrong one |
+| The 20-parcel hand-labelled set (`tests/labelled/wz_parcels.yml`) | S14 | **Blocked on you, and not automatable.** Ten to fourteen hours of orthophoto inspection with the building layer hidden. Without it V60 has no ground truth and D102/D103 have no arbiter, so the shipped radius and probe values rest on nothing |
 
 **Where the eleven built stages stand.** Every one of them runs against synthetic
 data, recorded fixtures or the database, and none needs a network. The four that

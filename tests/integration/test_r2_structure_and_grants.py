@@ -124,5 +124,13 @@ def test_every_expected_table_exists(conn) -> None:
         # ships with the thing it records rather than after it.
         "valuation_log",
         "valuation_exclusion",
+        # Added by 0005, with the WZ good-neighbour test. `building_coverage`
+        # ships beside the verdict rather than after it: without it an `unlikely`
+        # verdict has no evidence that anybody looked, and the check constraint
+        # on `parcel_wz_feasibility` refuses the row.
+        "parcel",
+        "parcel_building",
+        "building_coverage",
+        "parcel_wz_feasibility",
     }
     assert present - postgis_owned - tooling == expected

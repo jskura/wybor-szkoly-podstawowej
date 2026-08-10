@@ -223,9 +223,6 @@ PENDING_STAGES = {
     "crawl.count_tolerance": "S12 — the portal corpus check",
     "crawl.retry_after_max_s": "S12 — the crawl runner",
     "crawl.default_rate_limit_rpm": "S12 — the crawl runner",
-    "feasibility.good_neighbour_radius_m": "S14 — the good-neighbour test",
-    "feasibility.coverage_probe_radius_m": "S14 — the coverage probe",
-    "feasibility.coverage_probe_min_buildings": "S14 — the coverage probe",
 }
 
 

@@ -63,7 +63,7 @@ Every unit is a vertical strip spanning N 495 000 – 505 000.
 |---|---|---|---|---|
 | **SYNTH-A** | `999901` | 599 000 – 604 500 | `source='egib', has_coverage=true, checked_at=2026-08-01` | The normal, well-mapped case |
 | **SYNTH-C** | `999903` | 604 500 – 607 000 | `source='egib', has_coverage=true, checked_at=2026-08-01` | Carries the protected areas |
-| **SYNTH-D** | `999904` | 607 000 – 609 000 | `source='egib', has_coverage=true, checked_at=2025-01-01` | **Stale** record — 585 days old at the fixture's build date of 2026-08-08 |
+| **SYNTH-D** | `999904` | 607 000 – 609 000 | `source='egib', has_coverage=true, checked_at=2025-01-01` | **Stale** record — 584 days old at the fixture's build date of 2026-08-08 (the plan said 585; the arithmetic says 584) |
 | **SYNTH-B** | `999902` | 609 000 – 612 000 | `source='none', has_coverage=false, checked_at=2026-08-01` | Publishes parcels, **no building layer** — the §1.1 case of pass 1 |
 | **SYNTH-E** | `999905` | 612 000 – 614 000 | `source='osm', has_coverage=true, checked_at=2026-08-01` | OSM-only county |
 
