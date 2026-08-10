@@ -39,7 +39,7 @@ Every rendering helper is a pure function from a data payload to an immutable
 **render tree**, and the assertions are made about that tree.
 
 ```
-src/lpc/app/
+src/dzialki/app/        # package name: D112
 ├── render/            # pure. No streamlit import, no I/O, no clock, no config read
 │   ├── contract.py    # RenderNode, Role, Prominence, Disclosure, walkers
 │   ├── format.py      # Polish number, date, unit formatting
@@ -70,7 +70,8 @@ src/lpc/app/
 ### 2.2 The contract under test
 
 ```python
-Role       = Literal["aggregate_block", "value", "sample_size", "spread",
+Role       = Literal["section", "header",          # neutral containers (D101)
+                     "aggregate_block", "value", "sample_size", "spread",
                      "price", "price_type_label", "price_kind_label",
                      "flow_window_label", "basis", "unknown", "absence",
                      "staleness", "provenance", "verdict", "comparable_set",
@@ -148,7 +149,7 @@ to register fails `test_registry_covers_every_render_module_export()` (§12.1).
 
 ## 4. Architectural tests (run at step 2, enforced forever)
 
-- `test_no_render_module_imports_streamlit()` — AST scan of `src/lpc/app/render/`;
+- `test_no_render_module_imports_streamlit()` — AST scan of `src/dzialki/app/render/`;
   the only permitted importer is `shell/adapter.py`.
 - `test_render_modules_perform_no_io()` — AST scan forbidding `open`, `requests`,
   `httpx`, `psycopg`, `datetime.now`, `date.today`, `random` in `render/`.
@@ -158,7 +159,8 @@ to register fails `test_registry_covers_every_render_module_export()` (§12.1).
   public callables in `render/`.
 - `test_render_helpers_are_deterministic()` — each helper called twice on the same
   fixture returns equal trees.
-- `test_app_does_not_import_lpc_model()` — the v0 surface shows comparable-based
+- `test_app_does_not_import_the_model_package()` — asserts no import of
+  `dzialki.model` (D112). The v0 surface shows comparable-based
   numbers only; a `ModelEstimate` would need the `szacunek modelu` marker (`09` §1
   rule 6) and is out of v0 scope. Mirrors V21.
 
@@ -188,8 +190,15 @@ representative component, once as a sweep over `COMPONENT_REGISTRY × STATES`.
   raises `BareAggregateError`; likewise missing `range`. The violation is
   unrepresentable, matching the API's `Aggregate` type (`14` §2.2).
 - `test_spread_kind_follows_n()` — `n >= 5` → `range.kind == "iqr"` and the text
-  reads `zakres międzykwartylowy`; `n < 5` → `min_max` and `zakres`. Falsified by
-  an IQR label on `n=4`.
+  reads `zakres międzykwartylowy` (D100, the full term, never `zakres` alone);
+  `n < 5` → `min_max` and `zakres`. Falsified by an IQR label on `n=4`, and by an
+  interquartile range written as `zakres`.
+- `test_a_source_with_no_spread_renders_the_unavailable_text()` — D69: a payload
+  whose source publishes a central value only carries
+  `range.kind == "unavailable"` with `low` and `high` `None`, and the `spread`
+  node reads `zakres niedostępny — GUS publikuje tylko średnią`. The node is
+  present, at `equal` prominence, outside any hover. Falsified by a missing
+  `spread` node, by a raised error, and by an empty string.
 - `test_thin_aggregate_still_renders_its_number()` — `AGG_THIN_N4` renders
   `mediana 118` plus `61–240` plus `n = 4`; asserts the string
   `"za mało danych"` does **not** appear in place of the number (D17, rule 7).
@@ -202,11 +211,16 @@ representative component, once as a sweep over `COMPONENT_REGISTRY × STATES`.
 
 `tests/unit/app/test_price_labels.py`
 
-- `test_price_node_carries_type_and_kind_labels()` — parametrized over the six
-  combinations; asserts sibling `price_type_label` and `price_kind_label` with
-  exact Polish text: `offering→"cena ofertowa"`, `sales→"cena transakcyjna"`,
+- `test_price_node_carries_type_and_kind_labels()` — parametrized over the four
+  legal combinations; asserts sibling `price_type_label` and `price_kind_label`
+  with exact Polish text: `offering→"cena ofertowa"`, `sales→"cena transakcyjna"`,
   `asking→"oferta"`, `auction_start→"cena wywoławcza"`,
-  `tender→"cena przetargowa"`.
+  `tender→"cena przetargowa"`, `transaction→"transakcja"` (D68).
+- `test_price_pair_matrix_is_exhaustive()` — D68 makes `transaction` legal only
+  with `price_type = "sales"`, and the three offering kinds legal only with
+  `offering`. The test walks all eight pairs and asserts the other four raise
+  `IllegalPriceCombinationError`. Rule 6 is unaffected: `price_type` still
+  separates offering from sales, and `price_kind` is the finer axis inside each.
 - `test_render_price_rejects_a_price_without_kind()` — raises
   `UnlabelledPriceError`; and without `price_type` likewise. FR-64, V46.
 - `test_price_labels_are_not_hover_only()` — `disclosure_chain` contains no
@@ -243,6 +257,9 @@ representative component, once as a sweep over `COMPONENT_REGISTRY × STATES`.
 
 `tests/unit/app/test_flow_stock.py` (V62)
 
+D107 sets the flow window at **90 days**. The label states it beside every flow
+figure, so `mediana przepływu` never appears without the period it covers.
+
 - `test_flow_window_label_is_a_sibling_of_every_flow_figure()` — every node with
   `meta["basis"] == "flow"` has a `flow_window_label` sibling reading
   `"ostatnie 90 dni"`.
@@ -261,6 +278,9 @@ representative component, once as a sweep over `COMPONENT_REGISTRY × STATES`.
 
 - `test_verdict_block_is_collapsed_by_default()` — the `verdict` node has
   `disclosure == "expander"` and `meta["expanded"] is False`.
+- `test_verdict_is_the_last_node_of_the_screen()` — D98: the `verdict` node is the
+  final top-level node in document order. The screen sketch in `21` §2.1 now draws
+  it there. Falsified by any node rendered after the verdict.
 - `test_collapsed_verdict_leaks_no_conclusion_text()` — the collapsed node's own
   `text` is exactly `"WERDYKT"`; assert no token from
   `{"powyżej", "poniżej", "w zakresie"}` is reachable without expanding.
@@ -423,8 +443,16 @@ and the user does not have one (D63).
 
 `tests/unit/app/test_verdict_block.py`
 
+D98 settles the order. The rule wins and the sketch in `21` §2.1 follows it: the
+verdict sits last, and shut.
+
 - `test_comparable_set_precedes_the_verdict_block()` —
   `index_of(comparable_set) < index_of(verdict)`.
+- `test_every_evidence_node_precedes_the_verdict()` — every `aggregate_block`,
+  `comparable_set`, `unknown`, `sensitivity_note` and `disclosure_banner` node
+  has a lower document index than the `verdict` node. This is the sweep form of
+  D98; the single-pair assertion above would pass a screen that put one warning
+  after the verdict.
 - `test_every_comparable_is_listed_with_its_own_price_area_and_distance()` — one
   `comparable` node per member of `COMP_SET_N23`, each with price (type + kind),
   area, gmina, listing date.
@@ -449,13 +477,19 @@ a number with its qualifiers stripped off.
 - `test_map_refuses_features_spanning_price_types()` — mixed input raises
   `MixedPriceTypeError`. "The most dangerous screen in the product" is made
   unrepresentable rather than merely discouraged.
-- `test_gmina_below_n5_renders_hatched_and_still_coloured()` — `pattern ==
-  "hatch"` **and** `fill is not None` (O13 + rule 7: the hatch says thin, the
-  colour is not withheld).
+- `test_gmina_below_n5_renders_faded_and_still_coloured()` — D113: `opacity` is
+  the configured faded value, `pattern == "none"`, and `fill is not None`
+  (rule 7: the colour is not withheld). Falsified by a hatched tile and by a
+  withheld fill.
+- `test_a_faded_tile_still_carries_its_n_on_the_label()` — D113 again, and the
+  reason the fade alone is not enough: a faded tile can read as "less of
+  something" rather than "less certain", so the count carries the meaning. The
+  label of every thin gmina matches `r"^.+ · n = \d+$"`.
 - `test_the_four_absence_reasons_and_thin_have_pairwise_distinct_treatments()` —
   over `{thin, not_yet_crawled, no_listings, out_of_scope, too_few_comparables}`,
-  the `(fill, pattern, legend_key)` triples are pairwise distinct. Falsified by
-  "no listings" and "not yet crawled" sharing grey.
+  the `(fill, pattern, opacity, legend_key)` tuples are pairwise distinct.
+  `opacity` joins the tuple because D113 makes the fade the thin treatment.
+  Falsified by "no listings" and "not yet crawled" sharing grey.
 - `test_every_gmina_label_carries_n_inline()` — label text matches
   `r"^.+ · n = \d+$"`, or the gmina's absence reason.
 - `test_gmina_table_row_carries_flow_stock_gus_and_benchmark()` — each with median,
@@ -539,18 +573,29 @@ a number with its qualifiers stripped off.
 
 ### 8.3 Terminology lint against the glossary — `scripts/lint_ui_terms.py`
 
+D99 gives the protected terms one home: the **Protected terms** section of
+[`12-glossary.md`](../12-glossary.md). The lint reads that section and no other
+copy. Every document that mentions the list points there.
+
 - `test_protected_terms_are_never_loosely_translated()` — for each protected term
-  in `12-glossary.md` §4 (*plan ogólny*, *MPZP*, *wypis i wyrys*, *działka*,
-  *media*, *droga dojazdowa*, *cena ofertowa*, *cena transakcyjna*), the lint fails
-  on the forbidden renderings: `cena ofertowa → "cena rynkowa" | "market price"`,
+  in the glossary's Protected terms section (*cena ofertowa*, *cena transakcyjna*,
+  *działka*, *plan ogólny*, *MPZP*, *wypis i wyrys*, *media*, *droga dojazdowa*,
+  *zakres międzykwartylowy*, *warunki zabudowy*), the lint fails on the forbidden
+  renderings: `cena ofertowa → "cena rynkowa" | "market price"`,
   `cena transakcyjna → "cena"` unqualified, `droga dojazdowa → "dojazd"` alone,
-  `MPZP → "plan"` alone.
+  `MPZP → "plan"` alone, `zakres międzykwartylowy → "IQR"` or
+  `"interquartile range"`.
+- `test_the_interquartile_range_is_never_labelled_zakres_alone()` — D100 in its
+  testable form. The template that renders `range.kind == "iqr"` contains
+  `zakres międzykwartylowy`; the bare word `zakres` is legal only for
+  `kind == "min_max"`. Falsified by an IQR rendered as `zakres 96–141`.
 - `test_every_domain_term_used_in_the_ui_exists_in_the_glossary()` — the lint
   extracts domain nouns from UI strings and asserts each appears in the glossary's
   Polish column; an invented synonym fails.
-- `test_glossary_protected_list_is_read_from_the_document()` — parsed from
-  `docs/12-glossary.md`, not duplicated in code, so adding a term to the glossary
-  extends the lint automatically.
+- `test_glossary_protected_list_is_read_from_the_document()` — parsed from the
+  Protected terms section of `docs/12-glossary.md`, not duplicated in code, so
+  adding a term to the glossary extends the lint automatically. Falsified by a
+  second copy of the list inside `scripts/lint_ui_terms.py`.
 - `test_lint_flags_a_seeded_violation()` — a fixture module containing
   `"cena rynkowa"` must fail the lint. Without this meta-test the lint could pass
   by doing nothing (the §12.2 principle).
@@ -665,7 +710,7 @@ never a street).
 | `AGG_THIN_N4` | median 118, min–max 61–240, n=4 | §5.1, §5.10, §7 |
 | `AGG_WIDE_N40` | large n, IQR/median above the ratio threshold | §5.10 |
 | `AGG_TIGHT_N61` | large n, narrow IQR | §5.10 |
-| `AGG_SALES_GUS` | mean 104, powiat level, 2025Q4, sales/— | §5.2, §7 |
+| `AGG_SALES_GUS` | mean 104, n=41, powiat level, 2025Q4, `sales`/`transaction` (D68), `range.kind = "unavailable"` (D69) | §5.1, §5.2, §7 |
 | `AGG_STALE_12D` | `as_of` 12 days before injected `now` | §5.8 |
 | `COMP_SET_N23`, `COMP_SET_N3`, `COMP_SET_N6_CONSTRUCTED` | comparable sets | §5.11, §5.14, §10 |
 | `SUBJECT_UNKNOWN_BUILDABILITY` | 3 200 m², gmina Skierniewice, 142 zł/m² | §5.6, §5.13 |
@@ -693,6 +738,8 @@ spirit of V52:
 - `test_sweep_flags_a_blank_where_unknown_belongs()`
 - `test_sweep_flags_two_absence_reasons_sharing_one_string()`
 - `test_sweep_flags_a_flow_figure_without_its_window()`
+- `test_sweep_flags_an_interquartile_range_labelled_zakres_alone()` (D100)
+- `test_sweep_flags_a_faded_map_tile_whose_label_drops_its_n()` (D113)
 
 A sweep that passes against a deliberately dishonest component is not testing
 honesty.
@@ -727,17 +774,25 @@ Generated payloads, three relations:
 | U11 | `test_below_the_comparable_threshold_the_notice_leads` | a confident band on three comparables |
 | U12 | `test_export_line_containing_a_number_also_contains_n_and_range` | a screenshot-able bare figure |
 | U13 | `test_notes_are_derived_from_the_subject_s_missing_attributes` | a constant, generic caveat |
-| U14 | `test_comparable_set_precedes_the_verdict_block` | verdict above the evidence |
+| U14, D98 | `test_comparable_set_precedes_the_verdict_block` | verdict above the evidence |
+| D68 | `test_price_pair_matrix_is_exhaustive` | a sales price with an offering kind |
+| D69 | `test_a_source_with_no_spread_renders_the_unavailable_text` | a GUS mean rendered bare, or an error |
+| D100 | `test_the_interquartile_range_is_never_labelled_zakres_alone` | an IQR shown as `zakres 96–141` |
+| D113 | `test_a_faded_tile_still_carries_its_n_on_the_label` | a faded tile with no count |
 | V36 | `test_a_failed_sales_query_does_not_blank_the_offering_block` | one failure blanking unrelated data |
 | V37 | `test_protected_terms_are_never_loosely_translated` | *cena ofertowa* as "market price" |
 | V51c | `test_exclusion_is_logged_with_subject_comparable_and_change` | exclusion that does not recompute |
 | Item 12 | `test_the_four_absence_reasons_and_thin_have_pairwise_distinct_treatments` | "no listings" coloured like "not crawled" |
 
+Decisions applied in this document: D68, D69, D98, D99, D100, D101, D107, D112,
+D113.
+
 ## 14. Definition of done (`16` §6)
 
 Items 11 and 12 are done when: every test above exists and was written before its
 implementation; the sweeps run over the full `COMPONENT_REGISTRY` and flag every
-seeded dishonest fixture; the terminology lint reads its protected terms from
-`12-glossary.md`; the exclusion log and its report exist with rows produced by a
-real exclusion; and `docs/04-validation.md` V59 and V51c can be marked verified
-against named tests rather than against a description of intent.
+seeded dishonest fixture; the terminology lint reads its protected terms from the
+Protected terms section of `12-glossary.md`; the exclusion log and its report
+exist with rows produced by a real exclusion; and `docs/04-validation.md` V59 and
+V51c can be marked verified against named tests rather than against a description
+of intent.

@@ -202,7 +202,7 @@ one lives in `docs/evidence/robots/`).
 | 2.2 | `test_disallowed_path_is_never_requested` | Fixture `disallow-oferta.txt` (`Disallow: /oferta/`): `policy.allows("/oferta/123") is False`, `policy.allows("/szukaj?...") is True`; after a full `fetch()`, `[c.path for c in transport.calls if c.path.startswith("/oferta/")] == []` | V14 |
 | 2.3 | `test_user_agent_specific_rules_win_over_wildcard` | Fixture with `User-agent: *  Disallow: /` and a named-agent block allowing `/szukaj`: with our configured agent, `allows("/szukaj") is True`; with agent `"other"`, `False` | V14 |
 | 2.4 | `test_missing_robots_is_not_permission` | **Our own rule, D92 part 1.** Transport returns 404 for `/robots.txt` → `policy.state == "unknown"`; the runner raises `RobotsEvidenceMissing` unless `source.robots_ok` was set from recorded evidence. Assert `transport.calls == ["/robots.txt"]` | V14, §0.4 |
-| 2.4b | `test_a_served_file_with_no_matching_group_allows` | **RFC 9309, D92 part 2.** Fixture `unparseable.txt` (a served 200 with zero recognisable groups) → `allows("/szukaj?q=x") is True`, `allows("/oferta/1") is True`, and `"robots_no_matching_group" in policy.warnings`. The test states this rule on its own and never reads it off test 2.4 | V14, §0.4 |
+| 2.4b | `test_a_served_file_with_no_matching_group_allows` | **RFC 9309, D92 part 2.** Fixtures `no-group.txt` and `other-agent-only.txt` (a served 200 with no group that matches us) → `allows("/szukaj?q=x") is True`, `allows("/oferta/1") is True`, and `"robots_no_matching_group" in policy.warnings`. The test states this rule on its own and never reads it off test 2.4 | V14, §0.4 |
 | 2.5 | `test_robots_5xx_is_treated_as_disallow` | 503 on `/robots.txt` → zero content requests, alarm `robots_unavailable`. A failing robots endpoint must not read as an open door | V14 |
 | 2.6 | `test_crawl_delay_overrides_config_when_stricter` | `Crawl-delay: 20` with `rate_limit_rpm: 9` (6.67 s) → `effective_interval_s == 20.0`; with `Crawl-delay: 2` → `effective_interval_s == pytest.approx(6.667, abs=1e-3)` (ours is stricter, ours wins) | V14 |
 | 2.7 | `test_partial_permission_yields_list_only_mode` | List path allowed, detail path disallowed → `connector.mode == "list_only"`, and every emitted item has `detail_fetched is False` | V14, §0.3 |
@@ -216,6 +216,7 @@ one lives in `docs/evidence/robots/`).
 | 2.10 | `test_limit_is_per_host_not_global` | 100 requests alternating two hosts; assert per-host minimum intervals both hold, and that wall-clock advanced ~half of what a global limiter would need | V14 |
 | 2.11 | `test_429_backs_off_exponentially` | Transport returns 429×4 then 200; assert `clock.sleeps == [1, 2, 4, 8]` and the 5th call succeeds | V14 |
 | 2.12 | `test_retry_after_header_overrides_the_backoff_curve` | 429 with `Retry-After: 120` → `clock.sleeps == [120]`, not `[1]` | V14 |
+| 2.12b | `test_retry_after_longer_than_an_hour_ends_the_run` | **D93.** `Retry-After: 3600` → `clock.sleeps == [3600.0]` and the run continues; `Retry-After: 3601` → `clock.sleeps == []`, raises `SourceUnavailable(reason="retry_after_exceeds_budget")`, `result.published is False`, and yesterday's rows stay in place | V14, V8 |
 | 2.13 | `test_5xx_gives_up_after_max_attempts_without_publishing` | 5×503 → raises `SourceUnavailable`; `result.published is False`; prior day's rows untouched (row count and max `observed_at` unchanged) | V14, V8, `11` §4 |
 | 2.14 | `test_backoff_never_shortens_the_interval` | After a backoff sleep the limiter's next-slot calculation is not reset — assert the interval following a 120 s `Retry-After` is still ≥ the configured minimum | V14 |
 | 2.15 | `test_off_peak_window_is_honoured` | With `window: 01:00–06:00 Europe/Warsaw` and a clock at 14:00, `runner.should_run() is False`; at 02:00, `True`. Europe/Warsaw explicit, per F10 | FR-4 |
@@ -235,7 +236,8 @@ pagination case of F5.
 
 | # | Test | Assertion | Discharges |
 |---|---|---|---|
-| 3.1 | `test_request_shape_is_built_from_config_not_hardcoded` | `client.build_url(var_id=cfg.land_sales_var_id, unit="1415", page=0)` equals the exact string `".../data/by-unit/1415?var-id=<id>&format=json&page-size=100"`; and the var id comes from `config/sources.yml`, asserted by changing the config value and re-checking the URL | V13 |
+| 3.1 | `test_request_shape_is_built_from_config_not_hardcoded` | `client.build_url(var_id=cfg.land_sales_var_id, teryt="1415", page=0)` equals the exact string `".../data/by-unit/011415000000?var-id=<id>&format=json&page-size=100"`; the var id comes from `config/sources.yml`, asserted by changing the config value and re-checking the URL | V13 |
+| 3.1b | `test_teryt_to_bdl_unit_id_mapping_is_recorded_not_derived` | **D97.** `mapping["1415"] == "011415000000"`, read from config; every in-scope powiat TERYT has an entry; a TERYT absent from the map raises `UnmappedUnit`. A static scan asserts the connector builds no unit id by string concatenation, padding or slicing | V13 |
 | 3.2 | `test_parse_pins_every_value_in_the_fixture` | Against `2026-08-08_by-unit_1415_land-sales.json`: `[(p.period, p.value) for p in items] == [("2025-Q1", 61.20), ("2025-Q2", 64.80), ("2025-Q3", 66.10), ("2025-Q4", 68.40)]`, and `len(items) == 4` | V13 |
 | 3.3 | `test_every_item_is_labelled_sales` | `{p.price_type for p in items} == {"sales"}`; `{p.unit_level} == {"powiat"}`; `{p.teryt} == {"1415"}` | V13, V1 |
 | 3.4 | `test_as_of_and_transacted_are_distinct_fields` | Fixture's publication date `2026-05-20` with period `2025-Q4`: `item.transacted_at == date(2025,12,31)`, `item.as_of == date(2026,5,20)`, and `as_of > transacted_at`. Assert the `published_after_transacted` CHECK accepts it and rejects the swap | V13, V32 |
@@ -243,7 +245,7 @@ pagination case of F5.
 | 3.6 | `test_missing_rural_split_is_absence_not_zero` | Fixture `..._no-rural-split.json`: `item.rural_value is None`, `item.rural_absence_reason == "not_published"`, and `0 not in [i.value for i in items]` | V13 |
 | 3.7 | `test_pagination_collects_every_page_and_matches_stated_total` | 3-page fixture with `totalRecords: 250`: `len(items) == 250`, `result.stated_total == 250`, `result.alarms == []` | V13, V43 |
 | 3.8 | `test_truncated_pagination_alarms_and_blocks_publication` | Same fixture with page 3 removed: `len(items) == 200`, `"corpus_incomplete" in result.alarms`, `result.published is False` | V43 |
-| 3.9 | `test_emit_writes_transaction_rows_with_provenance` | After `emit`: every row has `price_type == "sales"`, non-null `as_of`, `source_ids` of length ≥ 1; attempting `price_type='offering'` raises the DB CHECK | V13, V1, V5 |
+| 3.9 | `test_emit_writes_transaction_rows_with_provenance` | After `emit`: every row has `price_type == "sales"` and `price_kind == "transaction"` (D68), non-null `as_of`, `source_ids` of length ≥ 1; attempting `price_type='offering'` raises the DB CHECK, and so does any other `price_kind` | V13, V1, V5 |
 | 3.10 | `test_reimport_is_idempotent` | Running `emit` twice on the same fixture leaves the row count unchanged and no duplicate `(teryt_unit, transacted_at, property_kind)` | V13 |
 | 3.11 | `test_coverage_assertion_names_the_missing_powiat` | Δ assertion over a fixture missing powiat `2804`: assertion fails, and its `observed` JSON contains `{"missing": ["2804"]}` — naming it, not just counting | V13 |
 | 3.12 | `test_handcheck_matches_the_bdl_web_interface` | Golden comparison against `2026-08-08_web-handcheck.csv` (three powiats, transcribed by hand from the BDL web UI, one per target unit): every value equal to the published precision. **This is the only test in item 4 that does not go through our own client** | V13 |
@@ -411,12 +413,25 @@ tests/unit/ingest/portal/test_completeness.py
     assert assertion_run.blocked_publication is True
 
   test_small_churn_during_a_crawl_does_not_alarm
-    collected 246 of stated 248, tolerance from config
+    tolerance = max(3 listings, 2% of the stated total)          # D95
+    collected 246 of stated 248, allowance 5
     assert result.alarms == []
 
+  test_the_tolerance_boundary_is_inclusive                       # D95
+    collected 243 of stated 248 -> shortfall 5, allowance 5 -> no alarm
+    collected 242 of stated 248 -> shortfall 6, allowance 5 -> corpus_incomplete
+    collected 17 of stated 20   -> shortfall 3, allowance 3 -> no alarm
+    (the absolute floor exists because 2% of 20 is less than one listing)
+
+  test_an_approximate_stated_total_never_blocks_publication      # D96
+    stated "ponad 1 000", collected 987
+    assert result.alarms == []
+    assert result.published is True
+    assert assertion_run.passed is True and its observed records the comparison
+
   test_the_tolerance_is_read_from_config_not_hardcoded
-    set tolerance to 0.0 -> the 246/248 case now alarms
-    (the tolerance value itself is an O25-style number set from the first run)
+    set churn_relative to 0.0 and churn_abs_floor to 0
+    -> the 246/248 case now alarms
 
   test_a_missing_next_link_is_distinguished_from_a_last_page
     last page without a next link and count satisfied -> no alarm
@@ -495,11 +510,20 @@ Tier **A/B**. `kind = "registry"`. Silent-failure modes: F1 (ha areas — KOWR
 states almost everything in hectares), F5 (pagination), F9 (tender prices
 blending with asks), F12 (quarantine swallowing a segment).
 
+**Where a KOWR record lives (D91).** Every emitted KOWR record is a row in
+`notice`, never in `listing`. A `notice` row carries a notice date and an auction
+date; `listing` carries neither and requires a non-null price and area. Each row
+carries `price_type = 'offering'` and `price_kind = 'tender'` (D65, D68).
+
+D91 leaves the quarantine path alone. A notice with no price, no area or an
+unresolvable gmina still goes to `listing_quarantine` with its reason and its
+identifying JSON, exactly as 5.5 to 5.9 state.
+
 ### 5.1 Red-green sequence
 
 | # | Test | Assertion | Discharges |
 |---|---|---|---|
-| 5.1 | `test_price_kind_is_tender_for_every_kowr_item` | `{i.price_kind for i in items} == {"tender"}`; and `price_kind` is a required constructor argument — omitting it raises, so it cannot default | V53, V46 |
+| 5.1 | `test_price_kind_is_tender_for_every_kowr_item` | `{i.price_kind for i in items} == {"tender"}` and `{i.price_type for i in items} == {"offering"}` (D65); `price_kind` is a required constructor argument — omitting it raises, so it cannot default | V53, V46 |
 | 5.2 | `test_parse_pins_the_notice_values` | `items[0].price_pln == Decimal("145000.00")`, `area_m2 == Decimal("12400.00")`, `area_raw == "1,2400 ha"`, `teryt_gmina == "1015052"`, `notice_date == date(2026,7,14)` | V53 |
 | 5.3 | `test_hectares_convert_exactly_including_decimal_comma` | `"1,2400 ha" → 12400`, `"0,1500 ha" → 1500`, `"15 a" → 1500`, `"12 arów" → 1200`. Assert `parse("0,15 ha") == parse("15 a") == parse("1500 m²")` | V53, V28, F1 |
 | 5.4 | `test_area_without_a_unit_is_quarantined` | `"1,24"` → quarantine `area_unit_missing`; assert **no** hectare assumption, since assuming ha here is a 10 000× error | V53, F1 |
@@ -507,11 +531,13 @@ blending with asks), F12 (quarantine swallowing a segment).
 | 5.6 | `test_price_stated_as_a_range_keeps_both_endpoints` | `"cena wywoławcza od 120 000 do 150 000 zł"` → quarantine `price_is_range`, `listing_ref["price_low"] == 120000`, `listing_ref["price_high"] == 150000`. Never a midpoint of 135 000 | V53 |
 | 5.7 | `test_notice_without_a_usable_area_is_quarantined_with_its_reason` | Fixture `*_no-area`: reason `area_missing`; assert `quarantine_count == 1` and `emitted_count == 0` for that notice | V53 |
 | 5.8 | `test_teryt_is_resolved_by_code_never_by_name` | Notice naming *"Skierniewice"* resolves to the **rural** gmina `1015052`, not the city `1062011`; and a static scan asserts no `WHERE name =` gmina lookup in the connector | V53, V30 |
-| 5.9 | `test_unresolvable_gmina_is_quarantined_not_guessed` | Ambiguous locality → reason `teryt_unresolved`; assert no row with a null `teryt_gmina` reaches `listing` | V53 |
+| 5.9 | `test_unresolvable_gmina_is_quarantined_not_guessed` | Ambiguous locality → reason `teryt_unresolved`; assert no row with a null `teryt_gmina` reaches `notice` | V53 |
 | 5.10 | `test_collected_count_matches_kowrs_own_stated_total` | Stated 87, collected 87 → no alarm; truncated at 60 → `corpus_incomplete`, `published is False` | V53, V43 |
 | 5.11 | `test_missing_coordinates_yield_gmina_precision` | KOWR notices carry no coordinates: `location_precision == "gmina"`, `geom is None`, and (per V29) parcel/nature enrichment is unreachable for the row | V53, V29 |
 | 5.12 | `test_tender_rows_never_move_an_asking_median` | Asking fixture median `80.00`, `n = 20`. Add 5 KOWR rows at `20.00`. Assert the asking aggregate is still `median == 80.00` **and** `n == 20`; assert a separate `tender` aggregate exists with `n == 5, median == 20.00` | **V46** |
 | 5.13 | `test_the_aggregation_key_includes_price_kind` | Architecture test: the aggregate group-by tuple contains `price_kind`; removing it from the key makes 5.12 fail (verified by the mutation run, V52) | **V46** |
+| 5.14 | `test_kowr_rows_are_written_to_notice_not_listing` | **D91.** After `emit` on the nominal fixture: `count(notice) == 87`, `count(listing) == 0`; every notice row carries a non-null `notice_date`; the connector's target table name is read from the mapping, and a static scan asserts the token `listing` never appears as an insert target in `src/lpc/ingest/kowr/` | V53 |
+| 5.15 | `test_a_notice_keeps_its_notice_date_and_has_no_auction_date` | KOWR sale notices are tenders, not auctions: `notice_date == date(2026,7,14)`, `auction_at is None`. Assert the two columns are distinct fields, so a later auction source cannot overwrite one with the other | V53 |
 
 ### 5.2 Fixtures
 
@@ -528,14 +554,21 @@ blending with asks), F12 (quarantine swallowing a segment).
 
 ---
 
-## 6. Work item 8 — bailiff / bankruptcy auctions (V54, V46)
+## 6. Work item 8 — bailiff and bankruptcy auctions (V54, V46)
 
-**Source selection is O16** (proposed: the central e-auction service first,
-*Monitor Sądowy i Gospodarczy* only if that proves thin). Fixtures cannot be
-recorded before it is decided, so §6 is *writable* but not *greenable* until O16
-closes — a smaller gate than O10, and one the owner can settle in a sitting.
+**Both auction sources are built (D111):** the central e-auction service
+(`auction_central`) and the bankruptcy gazette (`auction_gazette`). They are two
+connectors, because they are two hosts with two document formats. Each one needs
+its own robots evidence under §0.4, and that evidence is the only gate left on
+this work item.
 
-Tier **A** for the fraction arithmetic, **B** for counts.
+**Where an auction record lives (D91).** Every emitted auction record is a row in
+`notice`, never in `listing`. The row carries the notice date and the auction
+date. Each row carries `price_type = 'offering'` and
+`price_kind = 'auction_start'` (D65, D68).
+
+Tier **A** for the fraction arithmetic, **B** for counts. The fraction
+arithmetic needs no recorded document, so it is greenable now.
 
 ### 6.1 The statutory fraction — the load-bearing part
 
@@ -576,14 +609,27 @@ tests/unit/ingest/auction/test_fraction.py
     assert item.price_pln == 90000 and item.valuation_pln == 130000
     assert "fraction_mismatch" in item.flags
     # we record the disagreement; we do not recompute the source's arithmetic
+
+  test_the_arithmetic_must_agree_within_one_zloty            # D94
+    fraction_consistent is True iff
+      abs(price_pln - valuation_pln * statutory_fraction) <= Decimal("1.00")
+    "2/3 sumy oszacowania 130 000 zł, cena wywoławcza 86 667,00 zł"
+      -> difference 0,33 zł -> fraction_consistent is True
+    "2/3 sumy oszacowania 130 000 zł, cena wywoławcza 86 668,00 zł"
+      -> difference 1,33 zł -> fraction_consistent is False
+    assert the tolerance is read from config, not written into the parser
 ```
+
+The tolerance is one złoty, and D94 settles it. Notices round to the whole
+złoty, so a smaller tolerance flags every second-auction notice.
 
 ### 6.2 The rest of the sequence
 
 | # | Test | Assertion | Discharges |
 |---|---|---|---|
-| 6.7 | `test_price_kind_is_auction_start` | `{i.price_kind} == {"auction_start"}`, required argument, no default | V54, V46 |
-| 6.8 | `test_auction_date_is_captured` | `item.auction_at == datetime(2026,9,12,10,0, tz=Europe/Warsaw)`; tz explicit (F10) | V54 |
+| 6.7 | `test_price_kind_is_auction_start` | `{i.price_kind} == {"auction_start"}` and `{i.price_type} == {"offering"}` (D65), required argument, no default | V54, V46 |
+| 6.8 | `test_auction_date_is_captured` | `item.auction_at == datetime(2026,9,12,10,0, tz=Europe/Warsaw)`; tz explicit (F10). After `emit` the value lands in `notice.auction_at`, and `notice.notice_date` holds the publication date — two distinct columns (D91) | V54 |
+| 6.8b | `test_auction_rows_are_written_to_notice_not_listing` | **D91.** `count(notice) == n`, `count(listing) == 0`; a static scan asserts no insert targets `listing` in either auction connector | V54 |
 | 6.9 | `test_a_notice_without_a_date_is_quarantined` | Reason `auction_date_missing` — *"a past auction is not supply"*, so an undated one cannot be treated as supply | V54 |
 | 6.10 | `test_a_past_auction_is_retained_but_not_counted_as_supply` | Auction date before `now` → `is_supply is False`, row retained; assert it is excluded from the active-supply count and included in the historical one | V54 |
 | 6.11 | `test_parcel_identifier_is_extracted_when_present` | `"101505_2.0012.123/4"` → `parcel_identifier` pinned exactly; auctions carry these far more often than adverts do | V54 |
@@ -592,15 +638,23 @@ tests/unit/ingest/auction/test_fraction.py
 | 6.14 | `test_auction_rows_never_move_an_asking_median` | Asking median `80.00`, `n = 20`; add 5 auction rows at `30.00`; assert asking median `== 80.00`, `n == 20`; separate `auction_start` aggregate `n == 5` | **V46** |
 | 6.15 | `test_collected_count_matches_the_services_stated_total` | As V43; truncation alarms and blocks | V54, V43 |
 | 6.16 | `test_each_source_layout_has_its_own_fixture_and_parser` | Parametrised over the layout registry; assert every registered layout has ≥1 dated fixture, and every fixture directory has a registered layout | V54 |
+| 6.17 | `test_both_auction_sources_are_registered` | **D111.** `{s.name for s in auction_sources} == {"auction_central","auction_gazette"}`; each source has ≥1 layout in the layout registry; dropping either source fails the test. This is what stops the gazette from being postponed and then forgotten | V54 |
+| 6.18 | `test_the_same_auction_published_by_both_sources_is_one_notice` | The central service and the gazette both publish one auction: assert `count(notice) == 1` after both connectors run, and that the surviving row records both `source_ids`. The match key is D78's (area, price, gmina, asset class) | V54, V56 |
 
 ### 6.3 Fixtures
 
-`…/auction/2026-08-08_<layout>_first-auction-3-4.html` ·
+One directory per source, then one per layout:
+`…/auction/<source>/<layout>/2026-08-08_*.html`, with `<source>` in
+`{auction_central, auction_gazette}` (D111).
+
+Variants per layout: `…_first-auction-3-4.html` ·
 `…_second-auction-2-3.html` · `…_fraction-in-words.html` ·
 `…_fraction-no-valuation.html` · `…_inconsistent-fraction.html` ·
 `…_no-date.html` · `…_past-date.html` · `…_ha-area.html` ·
 `…_with-parcel-id.html` · `…_list-truncated.html` ·
 `…_drift-renamed-price.html`
+
+Plus `…/auction/cross-source_same-auction.html` per source, the pair 6.18 needs.
 
 ---
 
@@ -630,11 +684,12 @@ publishable, unlike *"50 gminas, 0 listings"*.
 | 7.5 | `test_the_delta_assertion_matches_registry_to_coverage_report` | Δ: `covered_count_in_report == len(parser_registry)`; drop a parser from the registry without updating the report → assertion fails | **V55** |
 | 7.6 | `test_layout_family_parse_pins_values[<family>]` | Parametrised over layout families; each pins `price_pln`, `area_m2`, `notice_date`, `parcel_identifier`, `teryt_gmina` exactly, e.g. `("bip_gov_table", 46000, 1500, date(2026,6,2), "101505_2.0012.123/4")` | **V55** |
 | 7.7 | `test_ares_are_the_default_trap_here` | `"15 a" → 1500`, `"15 arów" → 1500`, `"0,15 ha" → 1500`, `"1500 m²" → 1500` — assert all four equal. BIP notices state ares more often than any other source | **V55**, F1 |
-| 7.8 | `test_a_pdf_only_notice_registers_as_uncovered_not_empty` | Fixture whose notice body is a scanned PDF: gmina appears in `uncovered` with `pdf_scan_no_text`, and zero listings are emitted for it | **V55** |
+| 7.8 | `test_a_pdf_only_notice_registers_as_uncovered_not_empty` | Fixture whose notice body is a scanned PDF: gmina appears in `uncovered` with `pdf_scan_no_text`, and zero `notice` rows are emitted for it | **V55** |
 | 7.9 | `test_paginated_bulletin_truncation_alarms` | Bulletin index truncating at page 2 of 5 → `corpus_incomplete` for that gmina only; the other gminas still publish | **V55**, V43 |
 | 7.10 | `test_one_gminas_failure_does_not_block_the_others` | Transport raises for gmina A; assert gmina B's rows are emitted, A is marked `failed` in the coverage report, and `published` is per-gmina | **V55**, `11` §4 |
 | 7.11 | `test_missing_coordinates_yield_locality_precision_from_obreb` | `geom is None`, `location_precision in {"locality","gmina"}`, and nature/parcel enrichment unreachable | **V55**, V29 |
-| 7.12 | `test_price_kind_is_tender` | BIP sale notices are *przetarg* → `price_kind == "tender"`; assert a BIP row cannot enter an asking aggregate (as 5.12) | **V55**, V46 |
+| 7.12 | `test_price_kind_is_tender` | BIP sale notices are *przetarg* → `price_kind == "tender"`, `price_type == "offering"` (D65); assert a BIP row cannot enter an asking aggregate (as 5.12) | **V55**, V46 |
+| 7.14 | `test_bip_rows_are_written_to_notice_not_listing` | **D91.** `count(notice) == n`, `count(listing) == 0`; every row carries a non-null `notice_date` and a null `auction_at` unless the bulletin states an auction date | **V55** |
 | 7.13 | `test_adding_a_gmina_to_the_rings_fails_the_registry_test` | Add a synthetic gmina to the ring fixture; assert 7.1 fails until it is classified. This is what stops the coverage table from silently going stale | **V55** |
 
 ### 7.2 Fixtures
@@ -654,9 +709,12 @@ Every variant named in the brief, mapped to the connector that must handle it.
 [`04-validation.md`](../04-validation.md) §Fixtures policy rule 4 requires at
 least one fixture per variant; this is that list, made explicit.
 
+The **Auction** column covers both sources (D111). Every variant in that column
+needs one fixture per source, and 6.17 fails if a source has none.
+
 | Variant | GUS BDL | Portal | KOWR | Auction | BIP |
 |---|:--:|:--:|:--:|:--:|:--:|
-| Nominal | ✓ | ✓ (O10) | ✓ | ✓ (O16) | ✓ per family |
+| Nominal | ✓ | ✓ (O10) | ✓ | ✓ per source | ✓ per family |
 | **Price on request / absent** | — | ✓ | ✓ | — | ✓ |
 | **Price stated as a range** | — | — | ✓ | — | ✓ |
 | **Area in ares** | — | ✓ | ✓ | — | ✓ |
@@ -664,7 +722,8 @@ least one fixture per variant; this is that list, made explicit.
 | Area with no unit | — | ✓ | ✓ | ✓ | ✓ |
 | **Missing coordinates** | n/a | ✓ | ✓ (always) | ✓ | ✓ (always) |
 | **Paginated, truncating** | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **Statutory fraction of valuation** | — | — | — | ✓ (3/4, 2/3, words, %, no valuation, inconsistent) | — |
+| **Statutory fraction of valuation** | — | — | — | ✓ (3/4, 2/3, words, %, no valuation, inconsistent, ±1 zł boundary) | — |
+| Same auction published by both sources | — | — | — | ✓ (D111, test 6.18) | — |
 | Missing date | — | — | — | ✓ | ✓ |
 | Unmapped category | — | ✓ | ✓ | — | — |
 | Schema drift (renamed price field) | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -686,11 +745,14 @@ and a fixture older than two quarters fails
 | 2. Validation method | V13, V16 | V12, V14, V43, V44, V57, V58 | V53, V46 | V54, V46 | V55 |
 | 3. Verification tier | A/B | A (parse), B (counts) | A/B | A (fraction), B (counts) | A (per layout), B |
 | 4. Silent-failure detectors | F8, F10 | F1, F2, F5, F6, F7, F8 | F1, F5, F9, F12 | F1, F9, F10 | F1, F5, F12 |
-| 5. Fixtures exist and are scrubbed | ✓ (recordable now) | **blocked O10** | ✓ | **blocked O16** | ✓ |
+| 5. Fixtures exist and are scrubbed | ✓ (recordable now) | **blocked O10** | **blocked, robots evidence** | **blocked, robots evidence** | **blocked, robots evidence** |
 | 6. Metamorphic properties listed | §10 | §10 | §10 | §10 | §10 |
 
-Item 5 and item 8 therefore **fail criterion 5 today**. Per rule 4 their tests may
-be written; they may not be greened against invented fixtures.
+Items 5, 7, 8 and 13 therefore **fail criterion 5 today**. Item 5 waits on O10.
+Items 7, 8 and 13 wait on the §0.4 robots evidence for their own hosts, which is
+an afternoon of recording rather than a product decision. D111 removed the source
+question from item 8, so recording is now the only thing left there. Per rule 4
+their tests may be written; they may not be greened against invented fixtures.
 
 ## 10. Metamorphic properties that apply at the connector layer
 
@@ -705,26 +767,43 @@ arguments.
 | `parse("12 arów") == parse("0,12 ha") == parse("1200 m²")` | portal, KOWR, BIP |
 | Doubling every price in a fixture ⇒ every emitted `price_pln` doubles, `area_m2` unchanged | all parsers |
 | Adding an exact duplicate item to a page ⇒ emitted count unchanged after v0 dedup (V56) | portal, KOWR, BIP |
-| Adding a `tender`/`auction_start` row ⇒ the asking aggregate is **unchanged** | 5.12, 6.14 — the V46 property, and the most important one here |
+| Adding a `tender`/`auction_start` row to `notice` ⇒ the asking aggregate over `listing` is **unchanged** | 5.12, 6.14 — the V46 property, and the most important one here |
+| The same auction from both auction sources ⇒ one `notice` row, two `source_ids` | 6.18 (D111) |
 | Re-fetching an unchanged page ⇒ `raw_document` row count unchanged | §4.1 |
 
 ---
 
-## 11. Open questions that block a green suite
+## 11. Settled rules, and what still blocks a green suite
 
-Per rule 2 these are asked, not assumed. Each one currently prevents a test in
-this document from being written truthfully.
+### 11.1 Settled — write these as stated
+
+Each rule below is decided. No test may treat one as open, and no test may derive
+one rule from another.
+
+| Decision | The rule the tests state | Where |
+|---|---|---|
+| **D91** | KOWR, auction and BIP records live in `notice`, never in `listing`. A `notice` row carries a notice date and an auction date. `listing` keeps its non-null price and area constraint | 5.14, 5.15, 6.8, 6.8b, 7.14 |
+| **D92** | A served `robots.txt` that parses to no matching group is an **allow** (RFC 9309). A **missing** `robots.txt` is not permission and stops the run. Both rules are stated on their own | 2.4, 2.4b, §0.4 |
+| **D93** | A `Retry-After` longer than one hour ends the run and publishes nothing | 2.12b |
+| **D94** | The auction fraction arithmetic must agree within 1 zł | §6.1 |
+| **D95** | The count-agreement tolerance is `max(3 listings, 2%)` | §4.5, 5.10, 6.15 |
+| **D96** | An approximate stated total is report-only and never blocks publication | §4.5 |
+| **D97** | The TERYT to BDL unit-id mapping is data in config. No test derives it by string operations | 3.1 |
+| **D111** | Both auction sources are built: the central e-auction service and the bankruptcy gazette | §6, 6.17, 6.18 |
+| **D65, D68** | `price_kind ∈ {asking, auction_start, tender, transaction}`. Auction and tender rows carry `price_type = 'offering'`. Transaction rows carry `price_type = 'sales'` | 5.1, 6.7, 7.12, 3.9 |
+
+### 11.2 Still open
+
+Per rule 2 these are asked, not assumed. Each one prevents a test in this
+document from being written truthfully.
 
 | # | Question | Blocks | Note |
 |---|---|---|---|
 | **Q1** | **O10 — do the portals' `robots.txt` permit crawling listing and search paths?** Human gate, minutes to check, unresolved | All of §4.4–§4.8 | The branch table is §0.3 |
 | **Q2** | O1 — which portal, once O10 answers | §4 fixtures | Downstream of Q1 |
-| **Q3** | O16 — which auction source(s) | §6 fixtures | Proposal on the table (`00` O16) |
-| **Q4** | **`price_kind` does not exist in [`15-database-schema.md`](../15-database-schema.md).** FR-64 and V46 require it as an enum, a column on `listing`, and part of `metric_unit_month`'s primary key. Work item 2's schema must add it | 5.1, 5.12, 5.13, 6.7, 6.14, 7.12 | A real documentation gap, not an implementation detail — V46's architecture test has nothing to assert against until it lands |
-| **Q5** | What `price_type` does a tender or auction-start row carry? `listing.price_type` is CHECK-pinned to `offering`, and neither a tender floor nor a statutory starting price is an ask or a recorded sale. Options: (a) `offering` + `price_kind`, (b) a third `price_type`, (c) a separate table | 5.1, 6.7 | Rule 6 makes this a first-class question. **No test below assumes an answer** |
-| **Q6** | Where do KOWR/BIP/auction records live? `listing` requires non-null `price_pln` and `area_m2`, which the price-range and no-area notices (5.6, 5.7) cannot satisfy — they quarantine correctly, but a notice with a price *and* an area still needs a home with a `notice_date` and an `auction_at` | 5.2, 6.8 | |
-| **Q7** | GUS BDL variable IDs for the land-price series are marked **verify** in `03`. 3.1 reads them from config; the actual IDs must be recorded in `docs/evidence/` before 3.2 can pin values | 3.2, 3.12 | |
-| **Q8** | Thresholds: V43 churn tolerance, V58 disagreement rate, V44 divergence bound, V8 parse-failure rate and zero-item floor. Per O25 these are set from first-run actuals | Their tests pin *behaviour given a threshold*, never a number | Recorded so the numbers are chosen deliberately rather than drifted into |
+| **Q9** | Who records the `robots.txt` evidence for KOWR, the two auction hosts and the ~50 BIP hosts, and when? §0.4 makes it a precondition of fetching | Every KOWR, auction and BIP fixture | The gate is blocking and it covers three source families. An afternoon of recording, not a product decision |
+| **Q7** | GUS BDL variable IDs for the land-price series are marked **verify** in `03`. 3.1 reads them from config; the actual IDs must be recorded in `docs/evidence/` before 3.2 can pin values | 3.2, 3.12 | D97 settles the unit-id mapping. The variable IDs are a separate recording job |
+| **Q8** | Thresholds: V58 disagreement rate, V44 divergence bound, V8 parse-failure rate and zero-item floor. Per O25 these are set from first-run actuals | Their tests pin *behaviour given a threshold*, never a number | The V43 churn tolerance left this list — D95 sets it |
 
 ---
 
@@ -734,10 +813,12 @@ this document from being written truthfully.
    everything else inherits them.
 2. §3 GUS BDL — the only connector with no gate, and the one that gives a working
    sales baseline before any scraping exists (`03` §Source priority).
-3. §5 KOWR — off-portal, no O10 dependency, and it forces Q4/Q5 to be answered.
-4. §6 auctions — after O16.
-5. §4 portal — after O10, and only then.
-6. §7 BIP — coverage registry first (7.1–7.5), parsers after.
+3. §6.1 auction fraction arithmetic — it needs no recorded document, and it is
+   the highest-risk arithmetic in this layer.
+4. §5 KOWR — off-portal, no O10 dependency. Its document parses wait on Q9.
+5. §6 auction documents — both sources (D111), after their robots evidence.
+6. §4 portal — after O10, and only then.
+7. §7 BIP — coverage registry first (7.1–7.5), parsers after.
 
 Note that this order is **not** `18` §6's numeric order. Items 7 and 13's
 registry half are unblocked while item 5 is not, and starting with a blocked item

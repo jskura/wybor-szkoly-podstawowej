@@ -17,7 +17,7 @@ in §9.
 |---|---|
 | **S** | Synthetic — hand-written, committed now, tests *our* code against markup or text we own |
 | **R‑portal** | Recorded from a live portal — **cannot exist until O10 resolves** |
-| **R‑host** | Recorded from KOWR / auction / BIP hosts — needs that host's own `robots.txt` evidence first (§0.4 of pass 1), and for auctions also O16 |
+| **R‑host** | Recorded from KOWR / auction / BIP hosts — needs that host's own `robots.txt` evidence first (§0.4 of pass 1). D111 settles which auction sources: both of them |
 | **✎** | A literal value pinned in a test; changing the fixture without changing the literal is a fixture-policy violation |
 
 ---
@@ -46,13 +46,13 @@ Applied:
 | **R‑portal** | §4.4–§4.8 of pass 1 | — |
 | **R‑host** | §5 (KOWR), §6 (auction), §7.6–§7.11 (BIP layouts) | — |
 
-**The consequence nobody has written down yet:** pass 1 §9 marks KOWR and BIP
-fixtures "✓ recordable now", but §0.4 requires recorded `robots.txt` evidence for
-*every* host before it is fetched, and no evidence file exists for any host. KOWR
-and the ~50 BIP hosts are therefore **also blocked**, just by a much smaller gate
-than O10 — an afternoon of recording, not a product decision. Recorded as **Q9**
-(§10). Until it clears, the only recordable source is GUS BDL, and even that needs
-Q7 (variable IDs).
+**The robots gate is blocking, and it covers three source families.** §0.4
+requires recorded `robots.txt` evidence for *every* host before it is fetched, and
+no evidence file exists for any host. KOWR, the two auction hosts (D111) and the
+~50 BIP hosts are therefore **blocked**, just by a much smaller gate than O10 — an
+afternoon of recording, not a product decision. Recorded as **Q9** (§10). Until it
+clears, the only recordable source is GUS BDL, and even that needs Q7 (variable
+IDs). Pass 1 §9 now carries the same statement, so the two documents agree.
 
 ---
 
@@ -65,7 +65,7 @@ stale; a recorded one does).
 
 ### 2.1 `robots.txt` — `tests/fixtures/robots/` (S, all of them)
 
-Nine files. Each is given verbatim; trailing newline present in every file.
+Ten files. Each is given verbatim; trailing newline present in every file.
 
 **`allow-all.txt`**
 
@@ -131,11 +131,21 @@ User-agent: *
 Disallow: /admin/
 ```
 
-**`unparseable.txt`** — no recognisable group at all
+**`no-group.txt`** (renamed from `unparseable.txt` by D92 — the file parses, it
+simply holds no group that matches us)
 
 ```
 <!DOCTYPE html>
 <html><body>404 Not Found</body></html>
+```
+
+**`other-agent-only.txt`** — a well-formed file whose only group names an agent
+that is not ours. It is the second half of the D92 case, and it must give the
+same answer as `no-group.txt`.
+
+```
+User-agent: googlebot
+Disallow: /
 ```
 
 **`empty.txt`** — zero bytes.
@@ -143,8 +153,9 @@ Disallow: /admin/
 Two further cases are **response scripts, not files**: `/robots.txt` → `404`
 (2.4) and `/robots.txt` → `503` (2.5).
 
-**Parsing semantics pinned by the tests** (RFC 9309 where it decides, our
-fail-closed rule where it does not):
+**Parsing semantics pinned by the tests.** RFC 9309 decides the served-file
+cases. Our own stricter rule decides the missing-file case. D92 fixes both, and
+the table states each one on its own row:
 
 | Input | `policy.state` | `allows("/szukaj?q=x")` | `allows("/oferta/1")` | Notes |
 |---|---|---|---|---|
@@ -155,16 +166,38 @@ fail-closed rule where it does not):
 | `agent-specific.txt`, agent `lpc-research-bot` | `partial` | `True` ✎ | `False` ✎ | Named group wins outright; the `*` group is not merged in |
 | `agent-specific.txt`, agent `other` | `disallow_all` | `False` ✎ | `False` ✎ | |
 | `malformed.txt` | `partial` | `True` ✎ | `True` ✎ | Unrecognised lines dropped **per line**; `warnings == ["line 2: unknown directive 'Disalow'", "line 3: unparseable Crawl-delay 'soon'", "line 4: missing colon"]` ✎ |
-| `unparseable.txt` | `unparseable` | `False` ✎ | `False` ✎ | Zero recognisable groups ⇒ fail closed, alarm `robots_unparseable` |
-| 404 | `unknown` | raises `RobotsEvidenceMissing` | — | Absence is not permission |
+| `no-group.txt` | `allow_all` ✎ | `True` ✎ | `True` ✎ | **D92.** A served file with no matching group is an allow (RFC 9309). `policy.warnings == ["no matching group"]` ✎, no alarm, and the run continues |
+| `other-agent-only.txt` | `allow_all` ✎ | `True` ✎ | `True` ✎ | **D92**, same rule by a different route: the only group names another agent, so no group matches us |
+| 404 | `unknown` | raises `RobotsEvidenceMissing` | — | **D92, our own stricter rule.** A missing file is not permission |
 | 503 | `unavailable` | `False` ✎ | `False` ✎ | Alarm `robots_unavailable`, zero content requests |
 
 Longest-match precedence gets its own case, because it is the rule most parsers
 get wrong: against `disallow-oferta.txt` extended with `Allow: /oferta/public/`,
 `allows("/oferta/public/1") is True` ✎ and `allows("/oferta/1") is False` ✎.
 
-The line-tolerant-but-document-fail-closed split is a decision, not a reading of
-the RFC. Recorded as **Q10** (§10).
+**The two rules are tested separately, and neither is derived from the other**
+(D92). Two tests state this, and a third stops the pair collapsing into one:
+
+```
+tests/unit/ingest/test_robots_rules.py
+
+  test_a_served_file_with_no_matching_group_allows          # RFC 9309
+    for fixture in ("no-group.txt", "other-agent-only.txt"):
+      assert policy.state == "allow_all"
+      assert policy.allows("/oferta/1") is True
+      assert policy.warnings == ["no matching group"]
+      assert policy.alarms == []
+
+  test_a_missing_file_is_not_permission                     # our own rule
+    /robots.txt -> 404
+    assert policy.state == "unknown"
+    assert runner raises RobotsEvidenceMissing
+    assert transport.content_calls() == []
+
+  test_the_two_rules_are_independent                        # non-vacuity
+    a parser that answers the 404 case from the no-group branch,
+    or the no-group case from the 404 branch, fails one of the two above
+```
 
 ### 2.2 GUS BDL — `tests/fixtures/gus_bdl/`
 
@@ -298,19 +331,25 @@ teryt,unit_name,period,variable_name,value_pln_m2,bdl_url,transcribed_by,transcr
 The third row is deliberately not invented here — it comes from work item 3's ring
 manifest, which does not exist yet.
 
-**A gap this fixture exposed.** The pass-1 URL assertion (3.1) uses
-`unit="1415"`, but BDL addresses units by a 12-character identifier
-(`011415000000` in the envelope above), not by a bare TERYT code. The
-TERYT → BDL-unit-id mapping is data we must record, not derive. New test:
+**A gap this fixture exposed, now settled by D97.** The original pass-1 URL
+assertion used `unit="1415"`, but BDL addresses units by a 12-character
+identifier (`011415000000` in the envelope above), not by a bare TERYT code. The
+TERYT → BDL-unit-id mapping is **data in config**. No code derives it by string
+operations. Test 3.1b of pass 1:
 
 ```
 tests/unit/ingest/gus_bdl/test_unit_ids.py
 
-  test_teryt_to_bdl_unit_id_mapping_is_recorded_not_derived
+  test_teryt_to_bdl_unit_id_mapping_is_recorded_not_derived        # D97
     assert mapping["1415"] == "011415000000"          # from config, ✎ at capture
     assert every in-scope powiat TERYT has a mapping entry
-    assert the loader raises UnmappedUnit for a TERYT absent from the map,
-           rather than constructing an id by string surgery
+    assert the loader raises UnmappedUnit for a TERYT absent from the map
+  test_no_unit_id_is_built_by_string_operations                    # D97
+    AST walk over src/lpc/ingest/gus_bdl/:
+      no zfill, ljust, rjust, % formatting or f-string that consumes a TERYT
+      and produces a unit id
+    assert offenders == []
+    # the failure this prevents shows only as missing data, never as an error
 ```
 
 ### 2.3 The synthetic listing corpus — `tests/fixtures/fake_source/` (S)
@@ -390,7 +429,7 @@ in the file. The change and the expected output:
 | `_no-next-link-mid.html` | page 3 without the `next` anchor, count unsatisfied | alarm `pagination_broken` ✎ |
 
 **The fake connector is not in the production registry.** Contract test 1.1 pins
-`set(registry) == {"gus_bdl","portal","kowr","auction","gmina_bip"}`, so
+`set(registry) == {"gus_bdl","portal","kowr","auction_central","auction_gazette","gmina_bip"}`, so
 `FakeConnector` lives in `tests/support/fake_connector.py` and is injected into a
 *copy* of the registry by fixture. Its companion is the non-vacuity double:
 
@@ -412,7 +451,9 @@ The wording of a *cena wywoławcza* clause is fixed by the Code of Civil
 Procedure, not by a website; the sentence is therefore ours to write, while the
 **document** it sits in is not. So: the fraction arithmetic (pass 1 §6.1) is
 tested against plain-text phrase fixtures **now**, and the document-level
-extraction (which element holds the sentence) waits on O16.
+extraction (which element holds the sentence) waits on the host robots evidence.
+The phrases serve both auction sources (D111), because the statute words the
+clause the same way in each.
 
 Each file is one line, UTF-8, no trailing whitespace.
 
@@ -443,10 +484,19 @@ And two that must **not** parse to a price: `90 000,00 zł/m²` → flag
 same class of error as the ares trap); `90 000 000,00 zł` → parses to
 `Decimal("90000000.00")` and is left to the outlier band, not silently rescaled.
 
-**Consistency rule, pinned once:** `fraction_consistent` is `True` iff
+**Consistency rule, pinned once (D94):** `fraction_consistent` is `True` iff
 `abs(price_pln − valuation_pln × fraction) ≤ Decimal("1.00")`; `None` when either
-side is absent; `False` otherwise. The 1,00 zł tolerance is a threshold to ratify
-(**Q11**, §10) — notices round to the full złoty.
+side is absent; `False` otherwise. The tolerance is one złoty and D94 settles it,
+because notices round to the whole złoty. `second-auction-rounded.txt` above sits
+inside the boundary at `0,33 zł`. One more file sits outside it:
+
+| File | Verbatim content | Difference | `fraction_consistent` |
+|---|---|---|---|
+| `tolerance-outside.txt` | `Cena wywoławcza stanowi 2/3 sumy oszacowania i wynosi 86 668,00 zł. Suma oszacowania: 130 000,00 zł.` | `1,33 zł` | `False` ✎, `flags == ["fraction_mismatch"]` |
+
+The tolerance is read from config, so the boundary moves without a code change.
+`test_the_tolerance_is_read_from_config_not_hardcoded` sets it to `0.00` and
+asserts `second-auction-rounded.txt` then reports `False`.
 
 The auction **date** fixture, for 6.8: `phrases/date.txt` containing
 `Licytacja odbędzie się w dniu 12 września 2026 r. o godz. 10:00.` →
@@ -471,14 +521,33 @@ No markup is written here. What a capture session must produce, per source:
 | `<date>_list_truncated-p2of4.html` | Index truncated | `corpus_incomplete` |
 | `<date>_drift-renamed-price.html` | The nominal notice with the price element renamed | `schema_drift` |
 
-**Auctions** — `tests/fixtures/auction/<layout>/` (R‑host, blocked on Q9 **and**
-O16). One directory per layout the layout registry declares; the phrase fixtures
-above supply the arithmetic, the recorded documents supply "the phrase is in this
-part of the page". Test 6.16 asserts every registered layout has ≥ 1 dated
-fixture and every fixture directory has a registered layout — that test is green
-today with **zero** layouts and zero directories, so it needs its non-vacuity
-companion: `test_a_layout_without_a_fixture_fails_the_registry_check`, which
-registers a synthetic layout and asserts 6.16 fails.
+**Auctions** — `tests/fixtures/auction/<source>/<layout>/` (R‑host, blocked on Q9
+only; D111 settles the sources). `<source>` is `auction_central` or
+`auction_gazette`, and **both are built**. One directory per layout the layout
+registry declares; the phrase fixtures above supply the arithmetic, the recorded
+documents supply "the phrase is in this part of the page".
+
+Test 6.16 asserts every registered layout has ≥ 1 dated fixture and every fixture
+directory has a registered layout. Test 6.17 asserts both sources are registered
+and each holds ≥ 1 layout. Both tests are green today over an empty set, so both
+need their non-vacuity companions:
+
+```
+tests/architecture/test_auction_registry.py
+
+  test_a_layout_without_a_fixture_fails_the_registry_check
+    register a synthetic layout with no directory; assert 6.16 fails
+  test_dropping_either_auction_source_fails_the_registry_check      # D111
+    remove auction_gazette from the registry; assert 6.17 fails
+    remove auction_central from the registry; assert 6.17 fails
+    # this is what stops the gazette being postponed and then forgotten
+```
+
+The cross-source pair for 6.18 is one auction published by both sources. Its
+files are `…/auction/auction_central/<layout>/<date>_cross-source.html` and
+`…/auction/auction_gazette/<layout>/<date>_cross-source.html`. Expected:
+`count(notice) == 1` ✎ after both connectors run, `len(row.source_ids) == 2` ✎,
+and the surviving row's `price_pln` and `area_m2` unchanged by the merge.
 
 **BIP** — `tests/fixtures/gmina_bip/<family>/` (R‑host, blocked on Q9). Families
 to seed: `bip_gov_table`, `wordpress_attachment_list`, `plain_html_ordinance`,
@@ -506,16 +575,19 @@ analysis corrected.
 ### 2.6 The V46 separation fixture — `tests/fixtures/aggregates/price-kinds.json` (S)
 
 The one fixture in this document whose numbers must be exactly right, because it
-is the only test that proves D65 works. Thirty rows, every `area_m2 = 1000.00`,
-so `price_per_m2` equals `price_pln / 1000` exactly.
+is the only test that proves D65 and D91 work together. Thirty rows, every
+`area_m2 = 1000.00`, so `price_per_m2` equals `price_pln / 1000` exactly.
 
-| Group | n | `price_kind` | `price_per_m2` values |
-|---|---|---|---|
-| Asking | 20 | `asking` | `71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89` |
-| Tender (KOWR) | 5 | `tender` | `20, 20, 20, 20, 20` |
-| Auction | 5 | `auction_start` | `30, 30, 30, 30, 30` |
+| Group | n | Table (D91) | `price_kind` | `price_per_m2` values |
+|---|---|---|---|---|
+| Asking | 20 | `listing` | `asking` | `71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89` |
+| Tender (KOWR, BIP) | 5 | `notice` | `tender` | `20, 20, 20, 20, 20` |
+| Auction | 5 | `notice` | `auction_start` | `30, 30, 30, 30, 30` |
 
 Every row carries `price_type = "offering"` (D65) and a distinct `price_kind`.
+The ten offering rows that are not asks live in `notice`, and the loader asserts
+`count(listing) == 20` ✎ and `count(notice) == 10` ✎ before it aggregates. A
+fixture that loaded all thirty into one table would prove nothing about D91.
 
 | Assertion | Expected |
 |---|---|
@@ -524,7 +596,7 @@ Every row carries `price_type = "offering"` (D65) and a distinct `price_kind`.
 | asking p25 / p75 | `Decimal("75.75")` / `Decimal("84.25")` ✎ (linear interpolation, `idx = q(n−1)`) |
 | tender `n`, median | `5`, `Decimal("20.00")` ✎ |
 | auction `n`, median | `5`, `Decimal("30.00")` ✎ |
-| asking median **after** loading tender and auction rows | still `Decimal("80.00")`, `n` still `20` ✎ |
+| asking median **after** loading tender and auction rows into `notice` | still `Decimal("80.00")`, `n` still `20` ✎ |
 | **non-vacuity control** — a deliberately blended computation over all 30 | `Decimal("75.50")` ✎ |
 | blended over asking + tender only | `Decimal("78.00")` ✎ |
 
@@ -742,7 +814,7 @@ the full URL: `test_two_paths_on_one_host_share_a_limiter` — requests to
 |---|---|---|---|
 | `test_429_backs_off_exponentially` (rpm **60**, interval 1.0) | `429, 429, 429, 429, 200` | `[1.0, 2.0, 4.0, 8.0]` ✎ | 5th attempt succeeds; `result.published is True` |
 | `test_backoff_never_shortens_the_interval` (rpm 9, interval 6.667) | `429, 429, 429, 429, 200` | `[20/3, 20/3, 20/3, 8.0]` ✎ | the curve only wins once it exceeds the interval |
-| `test_5xx_gives_up_after_max_attempts` | `503 × 5` | `[1.0, 2.0, 4.0, 8.0]` ✎ — four sleeps, five attempts, **no fifth sleep** | raises `SourceUnavailable`; `result.published is False`; prior day's `listing` row count and `max(observed_at)` unchanged ✎ |
+| `test_5xx_gives_up_after_max_attempts` | `503 × 5` | `[1.0, 2.0, 4.0, 8.0]` ✎ — four sleeps, five attempts, **no fifth sleep** | raises `SourceUnavailable`; `result.published is False`; prior day's `listing` and `notice` row counts and `max(observed_at)` unchanged ✎ |
 | `test_the_cap_bounds_the_curve` (`max_attempts: 12`, `cap_s: 300`) | `429 × 12` | `[1, 2, 4, 8, 16, 32, 64, 128, 256, 300, 300]` ✎ | eleven sleeps, twelve attempts |
 | `test_backoff_is_per_host` | host A `429×2` then `200`; host B all `200` | A sleeps `[1.0, 2.0]`; B's schedule untouched | B's `min(diffs) >= 60/9` still holds |
 | `test_a_429_on_robots_backs_off_and_fetches_no_content` | `/robots.txt` → `429, 429, 200(allow-all)` | `[1.0, 2.0]` | `transport.content_calls()` is empty until robots succeeds ✎ |
@@ -763,7 +835,24 @@ Clock wall time for these tests: `2026-08-08T02:00:00+02:00` (= `00:00Z`).
 | `Retry-After: Sat, 08 Aug 2026 00:00:00 GMT` (now) | `[20/3]` ✎ | A past or present date floors to the interval, never negative |
 | `Retry-After: soon` | `[1.0]` ✎ | Unparseable ⇒ fall back to the curve; `"retry_after_unparseable" in result.warnings` |
 | `Retry-After: -5` | `[1.0]` ✎ | Same treatment |
-| `Retry-After: 86400` | `[]` ✎ | Exceeds `retry_after_max_s`; raises `SourceUnavailable(reason="retry_after_exceeds_budget")` immediately, publishes nothing — we do not hold a crawl open for a day |
+| `Retry-After: 3600` | `[3600.0]` ✎ | **D93**, the boundary. One hour exactly is honoured and the run continues |
+| `Retry-After: 3601` | `[]` ✎ | **D93**, one second past the boundary. Raises `SourceUnavailable(reason="retry_after_exceeds_budget")` |
+| `Retry-After: 86400` | `[]` ✎ | Same rule, far past the boundary |
+| `Retry-After: Sun, 09 Aug 2026 00:00:00 GMT` | `[]` ✎ | **D93** applies to the HTTP-date form too: 24 hours ahead exceeds the budget |
+
+**D93, stated as the rule the code follows:** a `Retry-After` longer than one
+hour ends the run and publishes nothing. `retry_after_max_s: 3600` holds the
+boundary, and the run keeps yesterday's data:
+
+```
+  test_a_long_retry_after_ends_the_run_and_keeps_yesterdays_data     # D93
+    Retry-After: 3601 on content #1
+    assert clock.sleeps == []                                  ✎
+    assert raises SourceUnavailable(reason="retry_after_exceeds_budget")
+    assert result.published is False                           ✎
+    assert count(listing) and count(notice) and max(observed_at) unchanged  ✎
+    # a crawl held open for a day cannot be told apart from a hang
+```
 
 Plus the resumption test, which is where a naive limiter produces a burst:
 
@@ -884,7 +973,8 @@ that returns `iter([])` would otherwise pass:
 | `gus_bdl` | `synthetic/by-unit_1415_land-sales.json` | `4` ✎ |
 | `portal` | R‑portal | blocked — parametrisation skips with reason |
 | `kowr` | R‑host | blocked |
-| `auction` | R‑host | blocked |
+| `auction_central` | R‑host | blocked |
+| `auction_gazette` | R‑host | blocked |
 | `gmina_bip` | R‑host | blocked |
 
 Which is worth saying plainly: **today this test can only be green for one
@@ -998,11 +1088,12 @@ never a bare `int`. The forms it must handle, each its own one-line fixture unde
 | (element absent) | `None` ✎ |
 | `Strona 3 z 7` alone | `None` ✎ — a page count is not a result count, and reading it as one gives a shortfall of 241 |
 
-**An approximate total never blocks publication.** `is_approximate=True` puts the
-check in report-only mode: it writes `assertion_run(passed=True,
-observed={"stated": 1000, "approximate": true, "collected": 987})` and raises no
-alarm. Falsifying a real count against a rounded one manufactures alarms, and an
-alarm that cries wolf is worse than no alarm.
+**An approximate total never blocks publication (D96).** `is_approximate=True`
+puts the check in report-only mode: it writes `assertion_run(passed=True,
+observed={"stated": 1000, "approximate": true, "collected": 987})`, raises no
+alarm and leaves `published is True`. Falsifying a real count against a rounded
+one manufactures alarms, and an alarm that cries wolf trains the reader to ignore
+it. Rounding is not a shortfall.
 
 For GUS the stated total is `"totalRecords": 250` — exact, never approximate. For
 KOWR it is the index page's own figure (pass 1 uses 87), R‑host.
@@ -1031,8 +1122,10 @@ allowance  = max(churn_abs_floor, ceil(churn_relative × stated_total))
 alarm      = shortfall > allowance   or   distinct_emitted > stated_total + allowance
 ```
 
-Proposed config (a threshold to ratify, **Q12** — pass 1's Q8 family):
-`churn_relative: 0.02`, `churn_abs_floor: 3`.
+**D95 settles the tolerance: `max(3 listings, 2%)`.** Config:
+`churn_relative: 0.02`, `churn_abs_floor: 3`. The absolute floor exists because
+2 % of a 20-result query is less than one listing. The values stay in config, so
+the boundary moves without a code change.
 
 | Stated | Collected | Shortfall | Allowance | Alarm | Note |
 |---|---|---|---|---|---|
@@ -1044,9 +1137,11 @@ Proposed config (a threshold to ratify, **Q12** — pass 1's Q8 family):
 | 248 | 72 | 176 | 5 | yes ✎ | pass 1's page-3-of-10 case |
 | 20 | 17 | 3 | 3 | no ✎ | why the absolute floor exists — 2 % of 20 is 0.4 |
 | 20 | 16 | 4 | 3 | yes ✎ | |
+| 150 | 147 | 3 | 3 | no ✎ | where the two arms of `max()` cross: 2 % of 150 is exactly 3 |
+| 151 | 147 | 4 | 4 | no ✎ | one past the crossing, the relative arm takes over |
 | 248 | 254 | −6 | 5 | **yes** ✎ | `corpus_overshoot` — collecting more than the source claims means the filter or the pagination is wrong |
 | 248 | 0 | 248 | 5 | yes ✎ | `zero_items` fires too; both alarms, one block |
-| 1000 (approx.) | 987 | 13 | 20 | no, report-only ✎ | approximate totals never alarm |
+| 1000 (approx.) | 987 | 13 | 20 | no, report-only ✎ | D96 — an approximate total never alarms and never blocks |
 | `None` | 248 | — | — | `stated_total_missing`, **no block** ✎ | |
 
 ```
@@ -1084,15 +1179,15 @@ is widened by the drift's magnitude.
 |---|---|---|---|
 | Shortfall beyond allowance | `corpus_incomplete` | `False` | `passed=False, blocked_publication=True` |
 | Overshoot beyond allowance | `corpus_overshoot` | `False` | `passed=False, blocked_publication=True` |
-| Approximate stated total | — | `True` | `passed=True`, observed records the comparison |
+| Approximate stated total | — | `True` (D96) | `passed=True`, observed records the comparison |
 | No stated total | `stated_total_missing` | `True` | `passed=False, blocked_publication=False` |
 | Unstable stated total | `stated_total_unstable` | `False` | `passed=False, blocked_publication=True` |
 | Zero items, prior run 200 | `zero_items` | `False` | `passed=False, blocked_publication=True` |
 | Zero items, first ever run | — | `False` | no row — nothing to drift from (pass 1 §1.2) |
 
 `published is False` must be proved by absence, not by a flag:
-`count(metric_unit_month rows written) == 0` ✎ and `count(listing rows written) ==
-0` ✎ in every blocking row above.
+`count(metric_unit_month rows written) == 0` ✎, `count(listing rows written) == 0`
+✎ and `count(notice rows written) == 0` ✎ (D91) in every blocking row above.
 
 ---
 
@@ -1105,7 +1200,7 @@ Tests already given in full above are cross-referenced rather than repeated.
 
 | # | Input | Expected output |
 |---|---|---|
-| 1.1 | the production registry | `set(registry) == {"gus_bdl","portal","kowr","auction","gmina_bip"}` ✎ |
+| 1.1 | the production registry | `set(registry) == {"gus_bdl","portal","kowr","auction_central","auction_gazette","gmina_bip"}` ✎ (D111) |
 | 1.2 | each class | `name: str`; `kind in {"portal","registry","api"}`; `fetch(since: datetime\|None)`, `parse(doc: RawDocument)`, `emit(items)`; `__init__` has a required `client` parameter |
 | 1.3 | §4.2 table | item counts per connector; `gus_bdl` → `4` ✎ |
 | 1.4 | §4.3 | two frozen clocks × two `TZ` values, `a == b` and `repr` equal |
@@ -1120,7 +1215,7 @@ Health (§1.2 of pass 1), against the fake corpus:
 
 | Test | Input | Expected |
 |---|---|---|
-| zero items, prior 200 | `_zero-items.html`, `source.last_item_count = 200`, floor 10 | `items_emitted == 0` ✎; `"zero_items" in alarms`; `publish_called is False`; 0 metric rows; 0 listing rows; `assertion_run(passed=False, blocked_publication=True)` |
+| zero items, prior 200 | `_zero-items.html`, `source.last_item_count = 200`, floor 10 | `items_emitted == 0` ✎; `"zero_items" in alarms`; `publish_called is False`; 0 metric rows; 0 listing rows; 0 notice rows (D91); `assertion_run(passed=False, blocked_publication=True)` |
 | zero items, first run | same page, `last_item_count IS NULL` | `alarms == []` ✎, `published is False` ✎ |
 | full drift | `_drift-renamed-price.html` | `parse_failure_rate == 1.0` ✎, `schema_drift`, `items_emitted == 0` ✎, no insert attempted with a null price |
 | partial failure | 40 items, 1 unparseable | `items_emitted == 39` ✎, `parse_failure_rate == pytest.approx(0.025)` ✎, `alarms == []` ✎ |
@@ -1145,10 +1240,11 @@ input spelled out beyond the fixture:
 
 | # | Input | Expected |
 |---|---|---|
-| 3.1 | `cfg.land_sales_var_id = 633712`, `unit = "1415"`, `page = 0` | the exact URL string ✎; then `cfg.land_sales_var_id = 999999` and re-check — the id must move with the config, proving it is not hardcoded; plus the new mapping test of §2.2 |
+| 3.1 | `cfg.land_sales_var_id = 633712`, `teryt = "1415"`, `page = 0` | the exact URL string ✎, with the unit segment `011415000000` taken from the config mapping (D97); then `cfg.land_sales_var_id = 999999` and re-check — the id must move with the config, proving it is not hardcoded |
+| 3.1b | the config mapping | `mapping["1415"] == "011415000000"` ✎; an unmapped TERYT raises `UnmappedUnit` ✎; the string-operation scan of §2.2 finds no offender ✎ (D97) |
 | 3.4 | nominal fixture, `lastUpdate 2026-05-20`, period `2025-Q4` | `transacted_at == date(2025,12,31)` ✎, `as_of == date(2026,5,20)` ✎, `as_of > transacted_at`; the swap `as_of=2025-12-31, transacted_at=2026-05-20` raises `IntegrityError` on `published_after_transacted` ✎ |
 | 3.5 | nominal fixture | identical `transacted_at` under `TZ=UTC`, `TZ=America/New_York`, `TZ=Europe/Warsaw` ✎ |
-| 3.9 | after `emit` | every row `price_type == "sales"` ✎, `as_of` non-null, `len(source_ids) >= 1`; inserting the same row with `price_type='offering'` raises the CHECK ✎ |
+| 3.9 | after `emit` | every row `price_type == "sales"` ✎ and `price_kind == "transaction"` ✎ (D68), `as_of` non-null, `len(source_ids) >= 1`; inserting the same row with `price_type='offering'` raises the CHECK ✎, and so does `price_kind='asking'` ✎ |
 | 3.10 | `emit` twice | row count unchanged ✎; no duplicate `(teryt_unit, transacted_at, property_kind)` ✎ |
 | 3.11 | fixture missing powiat `2804` | assertion fails; `observed == {"missing": ["2804"]}` ✎ — the code, not just a count |
 | 3.13 | ratio 2.4 with `band: null` | `passed is True`, `observed == {"ratio": 2.4}` ✎; then ratio 0.8 with `band: [1.05, 2.5]` → `passed is False`, `reason == "offering_below_sales"` ✎ |
@@ -1215,19 +1311,33 @@ TERYT (5.8): the notice names *Skierniewice*; expected `teryt_gmina ==
 "1015052"` (rural gmina) ✎, **not** `"1062011"` (the city), plus a static scan
 asserting no `WHERE name =` gmina lookup exists in the connector ✎.
 
-V46 (5.12, 5.13): the fixture and every number are in §2.6.
+The target table (5.14, 5.15) is `notice` (D91):
+
+| Test | Input | Expected |
+|---|---|---|
+| 5.14 | the nominal list, 87 notices | `count(notice) == 87` ✎; `count(listing) == 0` ✎; every row `price_type == "offering"`, `price_kind == "tender"` ✎ (D65); the static scan finds no insert targeting `listing` in `src/lpc/ingest/kowr/` ✎ |
+| 5.15 | the `ha-area` notice | `notice_date == date(2026, 7, 14)` ✎ (provisional until capture); `auction_at is None` ✎ — a KOWR tender has a notice date and no auction date |
+
+V46 (5.12, 5.13): the fixture and every number are in §2.6. The asking arm reads
+`listing`, the tender arm reads `notice`, and 5.12 fails if the aggregate reads
+one table for both.
 
 ### 6.6 §6 — auctions
 
+Both sources are built (D111): `auction_central` and `auction_gazette`. Every row
+in the table below is parametrised over the two, so neither source can be skipped
+quietly.
+
 The fraction arithmetic is fully specified in §2.4 and is **writable and greenable
-now** against phrase fixtures — which is a change from pass 1's "not greenable
-until O16" (§9, refinement R5). What O16 still blocks: which element of which
-document the phrase is extracted from, and the count-agreement fixture.
+now** against phrase fixtures (§9, refinement R5). What the robots evidence still
+blocks: which element of which document the phrase is extracted from, and the
+count-agreement fixture.
 
 | # | Input | Expected |
 |---|---|---|
 | 6.7 | any auction item | `price_kind == "auction_start"` ✎; `price_type == "offering"` (D65) ✎; `price_kind` is a required constructor argument — omitting it raises `TypeError` ✎ |
-| 6.8 | `phrases/date.txt` | `datetime(2026,9,12,10,0, tzinfo=ZoneInfo("Europe/Warsaw"))` ✎, under three `TZ` values |
+| 6.8 | `phrases/date.txt` | `datetime(2026,9,12,10,0, tzinfo=ZoneInfo("Europe/Warsaw"))` ✎, under three `TZ` values; after `emit` the value is `notice.auction_at`, and `notice.notice_date` holds the publication date — two columns, never one (D91) ✎ |
+| 6.8b | after `emit` | `count(notice) == n` ✎, `count(listing) == 0` ✎; the static scan finds no insert targeting `listing` in either auction connector ✎ (D91) |
 | 6.9 | `phrases/no-date.txt` | quarantine `auction_date_missing` ✎ |
 | 6.10 | auction dated `2026-07-01`, `now = 2026-08-08` | `is_supply is False` ✎; row retained ✎; excluded from the active-supply count and included in the historical one ✎ |
 | 6.11 | `101505_2.0012.123/4` | `parcel_identifier == "101505_2.0012.123/4"` ✎ and `statutory_fraction is None` (the parcel-trap case of §2.4) |
@@ -1235,6 +1345,8 @@ document the phrase is extracted from, and the count-agreement fixture.
 | 6.13 | no coords, parcel id present | `location_precision == "parcel"` after resolution ✎, `geom is None` at parse time ✎ |
 | 6.14 | §2.6 fixture | asking median `Decimal("80.00")`, `n == 20`; `auction_start` aggregate `n == 5`, median `Decimal("30.00")`; blended control `Decimal("75.50")` |
 | 6.16 | layout registry | every layout has ≥ 1 dated fixture; every fixture directory has a layout; **plus** the non-vacuity companion of §2.5 |
+| 6.17 | source registry | `{s.name for s in auction_sources} == {"auction_central","auction_gazette"}` ✎ (D111); each source holds ≥ 1 layout ✎; dropping either source fails ✎ |
+| 6.18 | the cross-source pair of §2.5 | `count(notice) == 1` ✎; `len(row.source_ids) == 2` ✎; `price_pln` and `area_m2` unchanged by the merge ✎ (match key from D78) |
 
 ### 6.7 §7 — gmina BIP
 
@@ -1250,7 +1362,8 @@ Coverage first (7.1–7.5), and all five are **S** — they run against
 | 7.5 | Δ assertion | `covered_count_in_report == len(parser_registry)` ✎; dropping a parser without updating the report fails ✎ |
 | 7.13 | manifest + one synthetic gmina | 7.1 fails until the new gmina is classified ✎ — the staleness guard |
 | 7.10 | transport raises for gmina A | gmina B's rows emitted ✎; A marked `failed` ✎; `published` is per-gmina ✎ |
-| 7.12 | any BIP item | `price_kind == "tender"` ✎, `price_type == "offering"` ✎; a BIP row cannot enter an asking aggregate (§2.6) |
+| 7.12 | any BIP item | `price_kind == "tender"` ✎, `price_type == "offering"` ✎ (D65); a BIP row cannot enter an asking aggregate (§2.6) |
+| 7.14 | after `emit` for one gmina | `count(notice) == n` ✎, `count(listing) == 0` ✎ (D91); every row has a non-null `notice_date` ✎; `auction_at is None` unless the bulletin states an auction date ✎ |
 
 **The first green state is `50 gminas, 0 covered, 50 uncovered with reasons`** —
 honest and publishable. 7.6–7.9 and 7.11 need R‑host fixtures.
@@ -1332,7 +1445,8 @@ tests/architecture/test_skip_manifest.py
 |---|---|---|
 | portal | O10, then O1 | §4.4–§4.8 |
 | kowr | Q9 (host robots evidence) | §5 document parses |
-| auction | Q9 + O16 | §6 document parses (**not** the fraction arithmetic) |
+| auction_central | Q9 (host robots evidence) | §6 document parses (**not** the fraction arithmetic) |
+| auction_gazette | Q9 (host robots evidence) | §6 document parses (**not** the fraction arithmetic) |
 | gmina_bip | Q9 | §7.6–§7.11 |
 | gus_bdl | Q7 (variable IDs) | 3.2 value pinning, 3.12 hand-check |
 
@@ -1340,10 +1454,9 @@ tests/architecture/test_skip_manifest.py
 
 | Milestone | Turns green |
 |---|---|
-| **Today, offline** | §1 contract (parametrised, `gus_bdl` param only), §2 robots and limiter in full, §4.1 raw store, §4.3 snapshots, §1.2 health, §5 count-agreement arithmetic, §6.1 fraction arithmetic, §7.1–§7.5 and §7.13 coverage registry, §2.6 V46 separation, all architecture tests |
+| **Today, offline** | §1 contract (parametrised, `gus_bdl` param only), §2 robots and limiter in full including both D92 rules, §4.1 raw store, §4.3 snapshots, §1.2 health, §5 count-agreement arithmetic, §6.1 fraction arithmetic with the D94 boundary, §7.1–§7.5 and §7.13 coverage registry, §2.6 V46 separation across `listing` and `notice`, 6.17, all architecture tests |
 | **After Q7** (BDL variable IDs recorded) | 3.2, 3.12, and the envelope-match test |
-| **After Q9** (per-host robots evidence) | §5 KOWR document parses, §7.6–§7.11 BIP layouts |
-| **After Q9 + O16** | §6 document parses, 6.15, 6.16 with real layouts |
+| **After Q9** (per-host robots evidence) | §5 KOWR document parses, §7.6–§7.11 BIP layouts, §6 document parses for both sources, 6.15, 6.16 and 6.18 |
 | **After O10 + O1** | §4.4–§4.7; §4.8 remains live-only |
 
 Roughly two-thirds of the tests in pass 1 are writable **and** greenable before
@@ -1361,14 +1474,14 @@ the highest-risk arithmetic in the connector layer.
    `PoisonedSession`, and the four harness self-tests of §3.1. Nothing else is
    trustworthy until these are.
 2. §1 contract + `BadConnector` teeth test.
-3. §2 / §3 robots and limiter, against the nine `robots.txt` fixtures.
+3. §2 / §3 robots and limiter, against the ten `robots.txt` fixtures.
 4. §4.1 raw store, §4.3 snapshots, §1.2 health — all against the fake corpus.
 5. §5 count-agreement arithmetic and §2.6 V46 separation.
 6. §6.1 auction fraction arithmetic, against the phrase fixtures.
 7. §3 GUS BDL, synthetic first, recorded when Q7 closes.
 8. §7.1–§7.5 BIP coverage registry.
-9. Everything gated, in gate order: Q9 → KOWR and BIP layouts; O16 → auction
-   documents; O10 → portal.
+9. Everything gated, in gate order: Q9 → KOWR, BIP layouts and both auction
+   sources (D111); O10 → portal.
 
 ---
 
@@ -1380,23 +1493,40 @@ the highest-risk arithmetic in the connector layer.
 | **R2** | 2.9 asserts only `min(diffs) >= 6.666` | also `max(diffs) <= 60/9 + 1e-6` and no accumulated drift at request 500 | A limiter that sleeps a minute between requests also passes "never below the minimum" |
 | **R3** | 2.11 `sleeps == [1,2,4,8]` and 2.14 "never shortens the interval" | one composition rule, `sleep(max(interval_remaining, backoff))`; 2.11 runs at rpm 60 so the curve dominates, 2.14 at rpm 9 so the interval does | As written the two tests contradicted each other at rpm 9 |
 | **R4** | V43 compares "rows emitted" to the stated total | compares **distinct `external_id`s**, and adds the overshoot alarm | Cross-page duplicates during a re-sort would mask a shortfall |
-| **R5** | §6 is "writable but not greenable until O16" | the **fraction arithmetic** is greenable now against statutory phrase fixtures; only the document-level extraction waits on O16 | The wording of a *cena wywoławcza* clause comes from the Code of Civil Procedure, not from a website |
+| **R5** | §6 is "writable but not greenable until O16" | the **fraction arithmetic** is greenable now against statutory phrase fixtures; only the document-level extraction waits on the host robots evidence. D111 has since closed the source question — both sources are built — and pass 1 §6 now says so | The wording of a *cena wywoławcza* clause comes from the Code of Civil Procedure, not from a website |
 | **R6** | §9 marks KOWR and BIP fixtures "✓ recordable now" | blocked on **Q9** — per-host `robots.txt` evidence, which §0.4 requires and which nobody has recorded | §0.4 and §9 of pass 1 contradicted each other |
 
 ---
 
-## 10. New questions this pass raised
+## 10. Decisions this pass now follows, and the one question left
 
-Per rule 2, asked rather than assumed. O-numbers are allocated only in
-[`00-decisions.md`](../../00-decisions.md), so these carry local Q-numbers until
-they are.
+### 10.1 Settled
 
-| # | Question | Blocks | Proposal on the table |
+Batches 19, 20 and 21 answered every question this pass raised except Q9. Each
+rule below is settled. No test treats one as open, and no test derives one rule
+from another.
+
+| Decision | The rule | Where this plan states it |
+|---|---|---|
+| **D91** | KOWR, auction and BIP records live in `notice`. A `notice` row carries a notice date and an auction date. `listing` keeps its non-null price and area constraint | §2.6, §5.5, §6.5, §6.6, §6.7 |
+| **D92** | A served `robots.txt` with no matching group is an **allow** (RFC 9309). A **missing** file is not permission | §2.1, both rules on separate rows and in separate tests |
+| **D93** | A `Retry-After` longer than one hour ends the run and publishes nothing | §3.6, boundary at 3600 and 3601 |
+| **D94** | The auction fraction arithmetic must agree within 1 zł | §2.4 |
+| **D95** | The count-agreement tolerance is `max(3 listings, 2%)` | §5.3 |
+| **D96** | An approximate stated total is report-only and never blocks publication | §5.1, §5.3, §5.5 |
+| **D97** | The TERYT to BDL unit-id mapping is data in config, never derived by string operations | §2.2 |
+| **D111** | Both auction sources are built: `auction_central` and `auction_gazette` | §2.5, §6.1, §6.6 |
+| **D65, D68** | `price_kind ∈ {asking, auction_start, tender, transaction}`. Auction and tender rows are `price_type = 'offering'`. Transaction rows are `price_type = 'sales'` | §2.6, §6.3, §6.6, §6.7 |
+
+Q10 to Q15 are closed by D92, D94, D95, D93, D97 and D96 in that order. Q4, Q5
+and Q6 of pass 1 are closed by D65, D68 and D91.
+
+### 10.2 Still open
+
+| # | Question | Blocks | Note |
 |---|---|---|---|
-| **Q9** | **Who records `robots.txt` evidence for KOWR, the auction service and the ~50 BIP hosts, and when?** §0.4 makes it a precondition of fetching; §9 assumed it was done | Every KOWR, auction and BIP fixture | An afternoon's work, same procedure as O10 — but it must actually happen before anything is recorded |
-| **Q10** | Is a `robots.txt` with **no recognisable group** a disallow, or an allow-all? | The `unparseable.txt` row of §2.1 | Fail closed, consistent with 2.4 (missing ≠ permission) and 2.5 (5xx ⇒ disallow). Individual malformed *lines* are still dropped per RFC 9309 |
-| **Q11** | The `fraction_consistent` tolerance | §2.4 | `≤ 1,00 zł`, because notices round to the full złoty. A larger tolerance would swallow a real mismatch; a smaller one would flag every 2/3 notice |
-| **Q12** | V43 churn tolerance (pass 1's Q8, made concrete) | §5.3 | `max(3, 2 % of stated)`. The absolute floor exists because 2 % of a 20-result query is 0.4 |
-| **Q13** | Does a `Retry-After` longer than an hour end the run, or is it honoured? | §3.6 | End the run — `SourceUnavailable`, publish nothing. Holding a crawl open for a day is indistinguishable from a hang |
-| **Q14** | What does BDL call our units? The URL in 3.1 uses TERYT `1415`, the envelope uses `011415000000` | 3.1, 3.2, the coverage assertion | Record the TERYT → BDL-unit-id mapping in config as data; never derive it by string surgery |
-| **Q15** | Does an **approximate** stated total ("ponad 1 000") ever block publication? | §5.1, §5.3 | No — report-only. An alarm that cries wolf is worse than no alarm, and rounding is not shortfall |
+| **Q9** | **Who records the `robots.txt` evidence for KOWR, the two auction hosts and the ~50 BIP hosts, and when?** §0.4 makes it a precondition of fetching | Every KOWR, auction and BIP fixture | The gate is **blocking** and it covers three source families. An afternoon's work, same procedure as O10 — but it must happen before anything is recorded |
+
+One naming choice sits inside D111 and the owner may overturn it: the two
+connectors are called `auction_central` and `auction_gazette`, in English per
+D15. Nothing else in this plan depends on the names.

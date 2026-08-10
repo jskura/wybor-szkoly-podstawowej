@@ -8,10 +8,17 @@ without making a single further decision on their own.
 
 | | |
 |---|---|
-| **Covers** | `18` §6 items 14, 15 · FR-65, FR-66 · V60, V61 · constrained by V29, V31 |
-| **Reads from** | [`19-legal-and-feasibility.md`](../../19-legal-and-feasibility.md) §1–§2, [`15-database-schema.md`](../../15-database-schema.md) §7, [`04-validation.md`](../../04-validation.md) V29/V31/V60/V61, [`00-gap-analysis.md`](../00-gap-analysis.md) A4 |
+| **Covers** | `18` §6 items 14, 15 · FR-65, FR-66, **FR-73**, **FR-74** · V60, V61, **V63**, **V64** · constrained by V29, V31 |
+| **Reads from** | [`19-legal-and-feasibility.md`](../../19-legal-and-feasibility.md) §1–§2, [`15-database-schema.md`](../../15-database-schema.md) §7, [`04-validation.md`](../../04-validation.md) V29/V31/V60/V61/V63/V64, [`00-decisions.md`](../../00-decisions.md) batch 21 (D102–D106), [`00-gap-analysis.md`](../00-gap-analysis.md) A4 |
 | **Status** | Written before any code exists. Every number below is either computed here and checkable, or explicitly marked as not yet obtainable |
-| **Blocking** | The V60 hand-labelled set (§7) still does not exist. §1's synthetic scene does **not** substitute for it and is not offered as one |
+| **Blocking** | Two things. The V60 hand-labelled set (§7) still does not exist, and §1's synthetic scene does **not** substitute for it. And `19` carries no forest section, so §5.5's copy is proposed here rather than read from a ratified source |
+
+**What batch 21 changed in this document.** D102 and D103 make the radius and the
+coverage-probe values configuration, and make the labelled set of §7 their arbiter
+(§1.5, §1.7). D104 deletes the citation expiry and D105 replaces it with a
+once-per-session prompt (§6.1, §6.6). **D106 adds a second badge for forest land**
+(§5.1, §5.5, §5.6) — new scope, roughly a day, and the reason §5.1's table now
+carries a regime instead of a boolean.
 
 > ### Everything in §1 is synthetic. Nothing in it refers to real land.
 >
@@ -102,8 +109,15 @@ tests would stop discriminating.
 
 Configuration assumed throughout: `good_neighbour_radius_m = 100`,
 `control_radius_m = 2000`, `min_control_buildings = 5`,
-`coverage_max_age_days = 90`, build date 2026-08-08. **All four are unratified**
-(O28, O29 in `05` §12) — §1.7 states exactly which expectations move if they change.
+`coverage_max_age_days = 90`, build date 2026-08-08.
+
+**D102 and D103 settle the shape of the first three: they are configuration, and the
+20-parcel labelled set of §7 arbitrates the values we ship.** The values above are
+the fixture's working values, chosen so §1.5's arithmetic stays exact. They are not
+the shipped values, and §1.7 states exactly which expectations move if the shipped
+values differ. `coverage_max_age_days` is unaffected by D104, which governs the
+*legal* citation record and not the coverage record — a coverage record does go
+stale, because the map underneath it changes.
 
 | # | Parcel id | Geometry (E · N) | Area | Nearest **neighbour** building | Buildings ≤ 100 m | in 2 km | Road | Land use | Expected verdict |
 |---|---|---|---|---|---|---|---|---|---|
@@ -160,11 +174,20 @@ building, which is the overreach `19` §1.2 explicitly rules out.
 | `test_osm_fallback_cannot_produce_likely` | P11 | `source == "osm"`, verdict `uncertain`, never `likely` |
 | `test_fixture_ordinates_are_easting_first` | P1 | first ordinate ∈ [599 000, 614 000]; and P1 reprojected to 4326 falls **inside SYNTH-A's polygon** — see §3.5 on why a distance test cannot catch a transposition |
 
-### 1.7 Which expectations move when the unratified parameters move
+### 1.7 Which expectations move when the configured parameters move
 
 Only parcels with **no** neighbour depend on `min_control_buildings` (K), because a
 neighbour found at all proves the map is populated here (§2.1). That gives a small,
-exact sensitivity table — and it is the evidence O29 asks for.
+exact sensitivity table — and it is the evidence D103 asks for.
+
+> **Read the K column as the error it produces.** Move K too high and P2 and P3 turn
+> `unknown`: we hold buildings from those places and we still refuse to answer, so
+> the feature stops working where it works best. Move K too low and P8 turns
+> `unlikely` on three observed buildings, which asserts an empty landscape we never
+> looked at. **That second error is the one the `unknown` verdict exists to
+> prevent**, and a badly chosen K reproduces it exactly, one parcel at a time,
+> invisibly. The 20-parcel labelled set decides K, and this table is how the decision
+> is read off.
 
 | Parcel | `n` in control radius | Verdict at K≤3 | K=4…8 | K=9…11 | K≥12 |
 |---|---|---|---|---|---|
@@ -173,6 +196,15 @@ exact sensitivity table — and it is the evidence O29 asks for.
 | P8 | 3 | `unlikely` | `unknown` | `unknown` | `unknown` |
 | P10 | 0 | `unknown` | `unknown` | `unknown` | `unknown` |
 | P4 | 0 | `unknown` at every K — the gmina record decides before the count is consulted | | | |
+
+Three tests read this table directly, and they are the mechanical form of D102 and
+D103:
+
+| Test | Assertion |
+|---|---|
+| `test_sensitivity_table_matches_the_fixture` | Recomputing the table above from the synthetic scene reproduces it cell for cell. A table that drifts from the fixture is evidence of nothing |
+| `test_shipped_radius_agrees_with_the_labelled_set` | The configured radius scores at least as well against the 20 labels as every other radius on the sweep (`05` §5.1) |
+| `test_shipped_coverage_probe_values_agree_with_the_labelled_set` | The same, scored on the 10 isolated parcels, where a wrong K shows up |
 
 Radius sensitivity, for `scripts/wz_radius_sensitivity.py` (`05` §5): **P2 is the
 only parcel that flips on radius alone** — `absent` at 50/75/100/150/200 m,
@@ -200,6 +232,15 @@ answer the question P3 and P4 pose: *when we found nothing, was there nothing, o
 did we not look?* Defining coverage this way keeps the control count out of the
 positive branch entirely, where it would otherwise cap perfectly good verdicts in
 thinly-built but well-mapped areas.
+
+**`control_radius_m` and K are the only things standing between block 3 and block
+4** — between nine `unlikely` cells and nine `unknown` ones. D103 makes both
+configuration and gives the labelled set the casting vote. Set them wrong and rows
+land in block 3 that belong in block 4: the code states that nobody built here, on
+evidence that nobody looked. **That is the exact error the `unknown` verdict exists
+to prevent**, and no test in §2.2 catches it, because every cell in the table is
+correct for the axis values it is given. The axis values are what go wrong. §1.7 and
+the labelled set are the only defence.
 
 ### 2.2 The table — all 54 combinations
 
@@ -467,23 +508,42 @@ interpretation makes the test pass.
 
 ### 3.5 A transposition cannot be caught by a distance test
 
-`05` §3.1 says two baselines of different orientation mean "a transposed
-easting/northing passes neither". **That is not true.** Swapping `(E, N) → (N, E)`
-is a reflection about the line E = N, and reflections are isometries: if *both*
-points are transposed, every pairwise distance is preserved **exactly**, at every
-orientation, at every scale. A consistently transposed pipeline passes every
-distance assertion in this document.
+An earlier version of `05` §3.1 said two baselines of different orientation mean "a
+transposed easting/northing passes neither". **That was not true.** Swapping
+`(E, N) → (N, E)` is a reflection about the line E = N, and reflections are
+isometries: if *both* points are transposed, every pairwise distance is preserved
+**exactly**, at every orientation, at every scale. A consistently transposed
+pipeline passes every distance assertion in this document. `05` §3.1 now carries the
+correction and the four tests below.
 
-What catches it is an **absolute** check, not a relative one:
+What catches it is an **absolute** check — an assertion about where a point *is*,
+not about how far it sits from another point. Here are the numbers.
 
-| Test | Assertion |
-|---|---|
-| `test_reprojected_point_matches_the_recorded_4326_coordinates` | Compare the reprojected 2180 fixture against the recorded 4326 values, ≤ 1e-7° (≈ 1 cm) |
-| `test_parcel_falls_inside_its_declared_gmina` | P1 transposed lands at (500 000, 600 000) — still inside Poland, still a valid coordinate, and **outside SYNTH-A**. Containment is what fails |
-| `test_distance_is_invariant_under_transposition_and_this_is_why_containment_is_required` | Asserts the invariance *deliberately*, with the comment that records why the containment test above cannot be deleted |
+**Absolute coordinates, tier S.** P1's south-west corner is `(600 000, 500 000)` in
+2180. Transposed, it is `(500 000, 600 000)`. Both are valid coordinates inside
+Poland's 2180 extent, so a range check against the national extent does not catch
+the pair — the easting and northing ranges overlap over most of their length. The
+**scene's** ranges do not overlap, which is why the fourth test below uses them and
+not the national ones.
 
-The third test looks perverse and is the important one: it documents the hole in
-the obvious approach, in the suite, where the next person will find it.
+| Test | Fixture | Exact expected value |
+|---|---|---|
+| `test_reprojected_point_matches_the_recorded_4326_coordinates` | The §3.4 known-answer pair | Reproject from 2180, compare against the **recorded** 4326 values, ≤ 1e-7° (about 1 cm). This is the primary absolute check. It fails on a transposition by roughly 1.4° of latitude, which is 10⁷ times the tolerance |
+| `test_parcel_corner_coordinates_match_the_scene_declaration` | P1 | The stored geometry's south-west corner equals `(600 000.000, 500 000.000)` to ±0.001 m, ordinate by ordinate. A transposed P1 gives `(500 000, 600 000)` and fails on both ordinates |
+| `test_parcel_falls_inside_its_declared_gmina` | P1 / SYNTH-A | SYNTH-A spans E 599 000 – 604 500. Transposed P1 sits at E 500 000, which is **outside** it. Containment fails while area (3 600 m²), perimeter (240 m) and every distance in §1.6 stay exactly right |
+| `test_ordinate_order_is_easting_first` | Every scene geometry | The first ordinate falls in the scene's easting range 599 000 – 614 000, the second in its northing range 495 000 – 505 000. The two ranges do not overlap, so the check is decisive per coordinate |
+| `test_distance_is_invariant_under_transposition_and_this_is_why_containment_is_required` | P1 / B1 | Transpose both, recompute: `30.000 m`, unchanged to 1e-9. Asserts the invariance **deliberately**, with the comment that records why the three tests above cannot be deleted |
+
+The last test looks perverse and is the important one. It puts the hole in the
+obvious approach into the suite, where the next person meets it before repeating the
+mistake. It is also the one a reviewer will try to delete, so its comment names this
+section.
+
+Note what the transposed scene preserves, because it explains why the fixture alone
+cannot find the bug: all 11 subject parcels keep their areas, all shared road edges
+keep their lengths, all overlap fractions keep their values, and every one of §1.6's
+tier-S assertions still passes. The verdicts come out identical. Only §1.2's gmina
+strips, which are absolute positions, disagree.
 
 ---
 
@@ -572,63 +632,82 @@ def test_disclaimer_characters_are_the_declared_ones():
 
 ---
 
-## 5. The purchasability badge cases
+## 5. The purchase-restriction badge cases
 
 ### 5.1 The register-class table, class by class
 
-`config/register_classes.yml`. **The `agricultural?` column below is drawn from the
-EGiB classification of *użytki rolne* and is NOT independently verified.** Per O31
-and §6, every row must carry a citation to a dated consolidated text before the
-badge ships, and `test_register_class_table_rows_all_carry_a_citation` fails while
-any row lacks one. The tests below assert that the **badge follows the table**; they
-do not assert that the table is legally correct. That is §6's job.
+`config/register_classes.yml`. **The `regime` column below is drawn from the EGiB
+classification of *użytki rolne* and from the general shape of the forest act. It is
+NOT independently verified.** Per O31 and §6, every row must carry a citation to a
+dated consolidated text before either badge ships, and
+`test_register_class_table_rows_all_carry_a_citation` fails while any row lacks one.
+The tests below assert that the **badge follows the table**; they do not assert that
+the table is legally correct. That is §6's job.
 
-| Symbol | Name | Agricultural? | Badge | Notes |
+**D106 replaces the `is_agricultural` boolean with `regime ∈ {agricultural, forest,
+none}`.** Two states cannot hold three outcomes. The old boolean forced forest into
+the same cell as a housing plot, which is what made "forest gets no badge" look
+correct. The new column matches `parcel_purchase_restriction.regime` in doc 15, so
+the table, the row and the badge all use one vocabulary.
+
+| Symbol | Name | Regime | Badge | Notes |
 |---|---|---|---|---|
-| `R` | grunty orne | yes | **yes** | The canonical case |
-| `S` | sady | yes | **yes** | |
-| `Ł` | łąki trwałe | yes | **yes** | Non-ASCII symbol — see §5.4 |
-| `Ps` | pastwiska trwałe | yes | **yes** | |
-| `Br` | grunty rolne zabudowane | yes | **yes** | **One character from `B`, opposite verdict** |
-| `Wsr` | grunty pod stawami | yes | **yes** | **Two characters from `Ws`, opposite verdict** |
-| `W` | grunty pod rowami | yes | **yes** | |
-| `Lzr` | grunty zadrzewione i zakrzewione na użytkach rolnych | yes | **yes** | **One character from `Lz`, opposite verdict** |
-| `Ls` | lasy | no | **no** | Restricted under the *ustawa o lasach*, a different act with a different pre-emption holder. Must **not** borrow this badge's copy (O33) |
-| `Lz` | grunty zadrzewione i zakrzewione | no | **no** | |
-| `B` | tereny mieszkaniowe | no | **no** | |
-| `Ba` | tereny przemysłowe | no | **no** | |
-| `Bi` | inne tereny zabudowane | no | **no** | |
-| `Bp` | zurbanizowane tereny niezabudowane | no | **no** | |
-| `Bz` | tereny rekreacyjno-wypoczynkowe | no | **no** | |
-| `dr` | drogi | no | **no** | Lower-case symbol — see §5.4 |
-| `Tk` | tereny kolejowe | no | **no** | |
-| `Ti` | inne tereny komunikacyjne | no | **no** | |
-| `Tp` | grunty przeznaczone pod budowę dróg i kolei | no | **no** | |
-| `Ws` | wody powierzchniowe płynące | no | **no** | |
-| `Wp` | wody powierzchniowe stojące | no | **no** | |
-| `Wm` | morskie wody wewnętrzne | no | **no** | Relevant to the Elbląg ring |
-| `Tr` | tereny różne | no | **no** | |
-| `N` | nieużytki | no | **no** | Frequently *assumed* agricultural. It is not, in this table, and the assumption is exactly what the parametrized test catches |
+| `R` | grunty orne | `agricultural` | **farmland** | The canonical case |
+| `S` | sady | `agricultural` | **farmland** | |
+| `Ł` | łąki trwałe | `agricultural` | **farmland** | Non-ASCII symbol — see §5.4 |
+| `Ps` | pastwiska trwałe | `agricultural` | **farmland** | |
+| `Br` | grunty rolne zabudowane | `agricultural` | **farmland** | **One character from `B`, different regime** |
+| `Wsr` | grunty pod stawami | `agricultural` | **farmland** | **Two characters from `Ws`, different regime** |
+| `W` | grunty pod rowami | `agricultural` | **farmland** | |
+| `Lzr` | grunty zadrzewione i zakrzewione na użytkach rolnych | `agricultural` | **farmland** | **One character from `Lz`, different regime.** Wooded, and a *użytek rolny*, so it stays agricultural. §8.3 records this as open until the forest act is read |
+| `Ls` | lasy | **`forest`** | **forest** | **Changed by D106.** A different act, a different pre-emption holder. It gets its own badge, and it must never carry the farmland copy |
+| `Lz` | grunty zadrzewione i zakrzewione | `none` | **none** | Wooded but outside the agricultural register. Whether the forest act reaches it is open (§8.3) |
+| `B` | tereny mieszkaniowe | `none` | **none** | |
+| `Ba` | tereny przemysłowe | `none` | **none** | |
+| `Bi` | inne tereny zabudowane | `none` | **none** | |
+| `Bp` | zurbanizowane tereny niezabudowane | `none` | **none** | |
+| `Bz` | tereny rekreacyjno-wypoczynkowe | `none` | **none** | |
+| `dr` | drogi | `none` | **none** | Lower-case symbol — see §5.4 |
+| `Tk` | tereny kolejowe | `none` | **none** | |
+| `Ti` | inne tereny komunikacyjne | `none` | **none** | |
+| `Tp` | grunty przeznaczone pod budowę dróg i kolei | `none` | **none** | |
+| `Ws` | wody powierzchniowe płynące | `none` | **none** | |
+| `Wp` | wody powierzchniowe stojące | `none` | **none** | |
+| `Wm` | morskie wody wewnętrzne | `none` | **none** | Relevant to the Elbląg ring |
+| `Tr` | tereny różne | `none` | **none** | |
+| `N` | nieużytki | `none` | **none** | Frequently *assumed* agricultural. It is not, in this table, and the assumption is exactly what the parametrized test catches |
 
-**Three adversarial pairs — `B`/`Br`, `Ws`/`Wsr`, `Lz`/`Lzr` — differ by one or two
-characters and fall on opposite sides.** `test_adversarial_class_pairs_do_not_share_a_verdict`
-asserts each pair produces different badge presence. A prefix match, a `startswith`,
-a case-folded comparison or a truncation bug breaks at least one pair.
+Counts: **8 `agricultural`, 1 `forest`, 15 `none`** — 24 rows. `Ls` is the only row
+that moved, and it moved from "no badge" to "its own badge".
+
+**Four adversarial pairs now.** `B`/`Br`, `Ws`/`Wsr` and `Lz`/`Lzr` differ by one or
+two characters and fall in different regimes. **D106 adds `Ls`/`Lz`** — two
+characters apart, and now `forest` against `none`, where before both were "no
+badge". That pair is new and it is the sharpest: a `startswith("L")` implementation
+used to be harmless and is now wrong.
+`test_adversarial_class_pairs_do_not_share_a_regime` asserts each pair produces a
+different regime. A prefix match, a `startswith`, a case-folded comparison or a
+truncation bug breaks at least one pair.
 
 Parametrisation is **generated from the table file**, never hand-listed
 (`05` §10.1), so a class added later is covered on the day it is added:
 
 ```python
 @pytest.mark.parametrize("row", load_register_classes())
-def test_badge_presence_follows_the_table(row):
+def test_badge_presence_and_regime_follow_the_table(row):
     page = render_plot(register_class=row.symbol, area_m2=3400, area_source="register")
-    assert (page.badge is not None) == row.is_agricultural
+    assert page.badge_regime == (None if row.regime == "none" else row.regime)
     assert NO_REASSURANCE_TOKEN.search(page.text) is None     # every class, not only unknown
 ```
 
-### 5.2 The badge copy, exactly
+**The old assertion is now wrong, and deleting it is part of the work.**
+`test_no_non_agricultural_class_produces_the_badge` listed `Ls` among the rows that
+render nothing. Under D106 that test blocks correct behaviour. Replace it with the
+generated one above; do not extend it with an exception for `Ls`.
 
-Rendered for every agricultural class, and for no other:
+### 5.2 The farmland badge copy, exactly
+
+Rendered for every `agricultural` class, and for no other:
 
 ```
 ⚠ Grunt rolny — 3 400 m²
@@ -662,6 +741,13 @@ EM DASH, and the area formatted by one declared formatter.
 | `test_badge_is_driven_by_register_class_not_advert_claim` | Advert `działka budowlana` + register `R` → badge. Advert `rolna` + register `B` → no badge (FR-48, V25) |
 | `test_badge_is_never_a_filter` | A badged plot appears in an unfiltered result set; plus an architecture check that no SQL predicate references the badge (D51) |
 | `test_badge_renders_at_both_ends_of_the_d48_band` | 2 000 m² and 4 000 m² both badged, with **identical copy** — the band's ends differ in legal consequence but the badge makes no numeric claim, so its text must not vary (§6) |
+| `test_farmland_badge_holder_matches_the_citation_record` | `BADGE_PREEMPTION_LINE` names KOWR as a literal, because `19` §2.2's ratified copy does. The test asserts that literal equals `preemption_holder` of the `agricultural` citation entry. Two places hold the name, so a test holds them together |
+
+**Why the farmland line keeps its literal while the forest line does not.** `19`
+§2.2 ratified this copy with KOWR spelled out, and rewriting ratified UI copy is not
+this document's decision to make. The forest copy does not exist yet (§5.5), so it
+starts in the better shape: the holder renders from the record. The test above stops
+the two from drifting in the meantime.
 
 ### 5.3 The unknown class — neither badge nor reassurance
 
@@ -676,15 +762,17 @@ symbol absent from the table (fixture value `"Xx"`).
 | `test_unknown_class_page_contains_no_reassurance_token` | **Whole-page** scan for `{"brak ograniczeń", "bez ograniczeń", "można kupić", "nie dotyczy", "nieograniczony", "dowolny nabywca"}`, case-insensitive, after HTML tag stripping |
 
 **The scan runs on every class, not only the unknown one.** V61's falsifier is a
-plot *presented* as unrestricted, and a known non-agricultural class is just as
-capable of being presented that way — `Ls` most of all, because forest **is**
-restricted, under a different act we say nothing about. So:
+plot *presented* as unrestricted, and a class in the `none` regime is just as capable
+of being presented that way. `Ls` used to be the sharpest example here: forest **is**
+restricted, under an act we said nothing about. D106 fixes the substance of that
+complaint by giving forest a badge, and the scan stays, because a `none` row is
+still a page that must promise nothing.
 
 | Test | Assertion |
 |---|---|
 | `test_no_class_produces_a_reassurance_token` | Parametrized over all 24 table rows plus the four unknown inputs — 28 renders, zero reassurance tokens |
-| `test_non_agricultural_class_makes_no_purchasability_statement` | For every non-agricultural row the page contains no sentence about acquisition at all — neither restriction nor permission. Absence of a badge is not a statement, and must not be dressed as one |
-| `test_forest_does_not_borrow_the_farmland_copy` | `Ls` page contains none of the three badge constants |
+| `test_none_regime_makes_no_purchasability_statement` | For every row with regime `none` the page contains no sentence about acquisition at all — neither restriction nor permission. Absence of a badge is not a statement, and must not be dressed as one. **Parametrized over the 15 `none` rows, not over "non-agricultural"** — the old wording swept `Ls` in, and `Ls` now carries a statement by design |
+| `test_forest_does_not_borrow_the_farmland_copy` | The `Ls` page contains none of the three farmland constants of §5.2, and does not contain `KOWR` |
 
 ### 5.4 Encoding and formatting traps
 

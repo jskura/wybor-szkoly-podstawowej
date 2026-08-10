@@ -48,11 +48,12 @@ Read from config, never literal in `render/` (V62, D67).
 
 | Key | Value in these cases | Consumed by |
 |---|---|---|
-| `flow_window_days` | `90` | U4, §5 |
-| `thin_n_threshold` | `5` | range kind switch, map hatch |
+| `flow_window_days` | `90` (D107) | U4, §5 |
+| `thin_n_threshold` | `5` | range kind switch, map fade |
 | `out_of_depth_min_comparables` | `4` | U11 |
 | `wide_spread_ratio` | `0.60` | U10 |
 | `staleness_threshold_days` | `7` | U8 |
+| `thin_tile_opacity` | `0.45` (D113) | §9 map fade |
 | `method_version` | `"cmp-2026.08.1"` | U9 |
 
 `thin_n_threshold` and `out_of_depth_min_comparables` are **two different
@@ -75,10 +76,10 @@ so it can be checked without running code.
 ### 1.1 The dataclass
 
 ```python
-# src/lpc/app/render/contract.py
+# src/dzialki/app/render/contract.py                        # package name: D112
 
 Role = Literal[
-    "section", "header",                                    # containers — see OPEN-S5
+    "section", "header",                                    # containers (D101)
     "aggregate_block", "value", "sample_size", "spread",
     "price", "price_type_label", "price_kind_label",
     "flow_window_label", "basis", "unknown", "absence",
@@ -118,9 +119,9 @@ smuggle in an unqualified figure under a private key name.
 | `state` | `"normal"\|"loading"\|"empty"\|"thin"\|"stale"\|"error"` | every registry component root | derived, never passed (§7 spec) |
 | `n` | `int` | `aggregate_block`, `sample_size`, `comparable_set` | sample size |
 | `median` | `Decimal` | `aggregate_block`, `value` | |
-| `range` | `{"low": Decimal\|None, "high": Decimal\|None, "kind": "iqr"\|"min_max"\|"unavailable"}` | `aggregate_block`, `spread` | |
+| `range` | `{"low": Decimal\|None, "high": Decimal\|None, "kind": "iqr"\|"min_max"\|"unavailable"}` | `aggregate_block`, `spread` | `"unavailable"` — D69 |
 | `price_type` | `"offering"\|"sales"` | `price`, `aggregate_block`, `map_feature` | |
-| `price_kind` | `"asking"\|"auction_start"\|"tender"\|"transaction"` | as above | `"transaction"` — see OPEN-S3 |
+| `price_kind` | `"asking"\|"auction_start"\|"tender"\|"transaction"` | as above | `"transaction"` — D68, legal only with `price_type = "sales"` |
 | `basis` | `"flow"\|"stock"\|"gus_powiat"\|"derived"` | `aggregate_block`, `value` | |
 | `flow_window_days` | `int` | every node with `basis == "flow"` | |
 | `as_of` | `date` | every `value`, every `aggregate_block` | |
@@ -131,7 +132,8 @@ smuggle in an unqualified figure under a private key name.
 | `exclude_control` | `{"comparable_id": str, "label": "nie pasuje"}` | `comparable` | V51c |
 | `comparable_id` | `str` | `comparable` | stable across recompute |
 | `action` | `{"office": str, "document": str}` | `sensitivity_note` | U13 |
-| `fill` / `pattern` / `legend_key` | `str` | `map_feature`, `legend` | §6 |
+| `fill` / `pattern` / `legend_key` | `str` | `map_feature`, `legend` | §9 |
+| `opacity` | `float` | `map_feature` | the D113 fade; `1.0` on every non-thin tile |
 | `field` | `str` | `value`, `error`, `fallback_form` children | which attribute failed |
 | `subject_id` | `str` | screen root | V51c log join key |
 
@@ -183,17 +185,22 @@ every other test in this plan asserts one property of it.
 | `utilities` | `known` (prąd, woda w granicy) |
 | `soil_class` | `known` (V) |
 
-### 2.2 Ordering — one documented deviation from the §2.1 mockup
+### 2.2 Ordering — the verdict sits last (D98)
 
-The mockup places the collapsed `WERDYKT` bar **above** the evidence. U14 and
-`test_comparable_set_precedes_the_verdict_block` require
-`index_of(comparable_set) < index_of(verdict)`.
+D98 settles this. The rule wins and the sketch is redrawn: `21` §2.1 now draws the
+collapsed `WERDYKT` bar as the **last** row of the screen. The golden tree below
+matches that order.
 
-**Resolution:** U14 wins, because §7 of `21` is explicitly stated to constrain the
-surfaces described earlier in that document, and because §5.14 of the TDD spec
-encodes it as a hard assertion. The verdict bar moves below the comparable set.
-Nothing else in the mockup moves. Recorded as **OPEN-S1**; it needs a one-line
-amendment to `21` §2.1's ASCII sketch, not a design change.
+Two assertions carry it, and both are needed:
+
+- `index_of(comparable_set) < index_of(verdict)` — U14, the pair the rule names.
+- the `verdict` node is the final top-level node — D98, the stronger form.
+  The pair assertion alone would pass a screen that put a warning or the honest
+  disclosure after the verdict, which is the arrangement D98 removes.
+
+The disclosure banner therefore sits **above** the verdict, not below it. `21`
+§7.2 asks for it "somewhere you will actually read it — not a footer", and a node
+after the collapsed verdict is a footer.
 
 ### 2.3 The golden tree
 
@@ -339,18 +346,6 @@ section[primary,always] "Sprawdzenie działki"
         … 20 further `comparable` nodes, identical in shape, ids cmp_0004…cmp_0023,
           values listed in `tests/fixtures/app/COMP_SET_N23.json`
 
-    verdict[secondary,expander] "WERDYKT"
-        {component:"verdict_block", state:"normal", expanded:False}
-
-        value[equal,always] "Powyżej górnej granicy zakresu przepływu (96–141)"
-            {basis:"flow", as_of:2026-08-01,
-             provenance:{source:("portal_a","portal_b"), as_of:2026-08-01,
-                         method_version:"cmp-2026.08.1", n:23}}
-
-        basis[equal,always]
-            "Podstawa: 23 oferty, ta sama gmina, 1 600–4 800 m², ostatnie 90 dni"
-            {basis:"flow", flow_window_days:90, n:23}
-
     unknown[equal,always] "Nie sprawdzamy planu — nie wiemy, czy można budować"
         {field:"buildability", tone:"warning"}
 
@@ -372,6 +367,19 @@ section[primary,always] "Sprawdzenie działki"
 
     disclosure_banner[equal,always]
         "Ten tool porównuje ceny ofertowe. Nie jest wyceną rzeczoznawcy i nie sprawdza, czy na działce można budować. Przy małej liczbie porównań wynik jest orientacyjny."
+
+    verdict[secondary,expander] "WERDYKT"
+        {component:"verdict_block", state:"normal", expanded:False}
+        # last, and shut (D98)
+
+        value[equal,always] "Powyżej górnej granicy zakresu przepływu (96–141)"
+            {basis:"flow", as_of:2026-08-01,
+             provenance:{source:("portal_a","portal_b"), as_of:2026-08-01,
+                         method_version:"cmp-2026.08.1", n:23}}
+
+        basis[equal,always]
+            "Podstawa: 23 oferty, ta sama gmina, 1 600–4 800 m², ostatnie 90 dni"
+            {basis:"flow", flow_window_days:90, n:23}
 ```
 
 ### 2.4 What the golden tree is asserted to satisfy
@@ -380,10 +388,12 @@ Assertions that run against this exact tree, each in its own test:
 
 | Assertion | Rule |
 |---|---|
-| `len(nodes_by_role(t,"uncertainty_note")) == 0` — flow ratio (141−96)/118 = 0.381 < 0.60, stock 0.543 < 0.60 | U10, closed vocabulary §4.4 |
+| `len(nodes_by_role(t,"uncertainty_note")) == 0` — flow ratio (141−96)/118 = 0.381 < 0.60, stock 0.543 < 0.60 | U10, closed vocabulary §3.10 |
 | `len(nodes_by_role(t,"out_of_depth_notice")) == 0` — n = 23 ≥ 4 | U11 |
 | `len(nodes_by_role(t,"staleness")) == 0` — `as_of` 2026-08-01, now 2026-08-08, 7 days, not `> 7` | U8 |
 | `index_of(comparable_set) < index_of(verdict)` | U14 |
+| the `verdict` node is the last top-level node of the screen | D98 |
+| `index_of(disclosure_banner) < index_of(verdict)` | D98, `21` §7.2 |
 | `index_of(flow_block) < index_of(stock_block)` | U3 |
 | every node with `meta["basis"] == "flow"` has a `flow_window_label` sibling | U4 |
 | the two `sensitivity_note` nodes are ordered buildability-first (larger stratum gap in the fixture) | U13 |
@@ -401,8 +411,8 @@ Assertions that run against this exact tree, each in its own test:
 | `AGG_WIDE_N40` | 62 | 160 | 120 | 0.8167 | yes |
 | `AGG_TIGHT_N61` | 118 | 136 | 127 | 0.1417 | no |
 
-`AGG_SALES_GUS` has `kind == "unavailable"`; its ratio is `None` and it takes the
-`unavailable` row of the §4.4 vocabulary table.
+`AGG_SALES_GUS` has `kind == "unavailable"` (D69); its ratio is `None` and it
+takes the `unavailable` row of the §3.10 vocabulary table.
 
 ---
 
@@ -519,11 +529,12 @@ The dishonest tree has no `price_kind_label` sibling. The builder-level twin,
 | | | `tender` | `cena przetargowa` |
 | | | `transaction` | `transakcja` |
 
-Legal pairs: `offering × {asking, auction_start, tender}` and
+Legal pairs (D68): `offering × {asking, auction_start, tender}` and
 `sales × {transaction}`. Four pairs; every other pair raises
 `IllegalPriceCombinationError`. `test_price_pair_matrix_is_exhaustive`
 parametrizes all 8 combinations of the two types and four kinds and asserts
-exactly these four are legal.
+exactly these four are legal. Rule 6 is untouched: `price_type` still separates
+offering from sales, and `price_kind` is the finer axis inside each.
 
 **Fails** — `dishonest/mixed_kinds.py`: an `aggregate_block` whose
 `meta["sources"]` span `asking` and `auction_start`. Builder raises
@@ -621,7 +632,9 @@ def test_flow_window_is_read_from_config_not_hardcoded():
 ```
 
 Paired structural test `test_no_render_module_contains_a_literal_window_length`:
-AST scan of `src/lpc/app/render/` for `ast.Constant` integers in `{30, 60, 90, 180}`.
+AST scan of `src/dzialki/app/render/` for `ast.Constant` integers in
+`{30, 60, 90, 180}`. D107 fixes the shipped window at 90 days; the scan proves the
+number lives in configuration, not in the renderer.
 
 ### 3.5 U5 — verdict collapsed until expanded
 
@@ -649,9 +662,15 @@ def test_collapsed_verdict_leaks_no_conclusion_text(tree):
     for child in walk(v):
         if child is not v:
             assert "expander" in disclosure_chain(tree, child)
+
+def test_verdict_is_the_last_node_of_the_screen(tree):
+    top_level = [n for n in walk(tree) if ancestors_of(tree, n) == (tree,)]
+    assert top_level[-1].role == "verdict"
 ```
 
 The dishonest tree fails on `v.text == "WERDYKT"` and on `disclosure`.
+`dishonest/verdict_then_warning.py` places an `unknown` node after the verdict and
+fails only `test_verdict_is_the_last_node_of_the_screen` — the D98 fixture.
 
 **The three sanctioned expanded forms**, asserted by
 `test_expanded_verdict_is_phrased_relative_to_the_range` as a closed set:
@@ -855,8 +874,21 @@ aggregate_block[primary,always] "Podobne oferty (przepływ, ostatnie 90 dni)"  {
 ```
 
 Note `zakres`, not `zakres międzykwartylowy` — `n = 4 < 5` so `kind == "min_max"`.
-`test_spread_kind_follows_n` parametrizes `n ∈ {3,4,5,6,23}` against
-`kind ∈ {min_max, min_max, iqr, iqr, iqr}` and the two label prefixes.
+D100 requires the precise term wherever the range **is** the interquartile range,
+because the short word does not say which range it is. It does not rename the
+min–max range, which is a different range. `test_spread_kind_follows_n`
+parametrizes `n ∈ {3,4,5,6,23}` against `kind ∈ {min_max, min_max, iqr, iqr, iqr}`
+and the three label forms:
+
+| `kind` | label form | Decision |
+|---|---|---|
+| `iqr` | `zakres międzykwartylowy {low}–{high}` | D100 |
+| `min_max` | `zakres {low}–{high}` | — |
+| `unavailable` | `zakres niedostępny — GUS publikuje tylko średnią` | D69 |
+
+`test_the_interquartile_range_is_never_labelled_zakres_alone` is the D100 guard:
+the `iqr` template contains `zakres międzykwartylowy`, and `IQR`,
+`rozstęp ćwiartkowy` and `interquartile range` appear in no UI string.
 
 **Fails** — `dishonest/silent_thin.py`: the same block with the
 `uncertainty_note` removed. Numerically correct, and exactly the failure U10
@@ -884,10 +916,17 @@ def test_thin_aggregate_carries_a_worded_uncertainty_note(tree):
 | `5 ≤ n < 20` | ratio ≥ 0.60 | `Zakres szeroki — ceny w tej gminie bardzo się różnią` |
 | `n ≥ 20` | ratio < 0.60 | *(no node)* |
 | `n ≥ 20` | ratio ≥ 0.60 | `Zakres szeroki — ceny w tej gminie bardzo się różnią` |
-| any | `kind == "unavailable"` | `Nie znamy rozrzutu — GUS publikuje tylko średnią` |
+| any | `kind == "unavailable"` (D69) | `Nie znamy rozrzutu — GUS publikuje tylko średnią` |
 
 Seven cells, all parametrized. A new band that produced `""` would fail
 `test_no_rendered_text_is_blank_or_a_dash_sweep` as well.
+
+The last row is D69 in its worded form. A source that publishes a central value
+with no spread renders explicit Polish text, never an error and never a missing
+field. `test_an_unavailable_range_renders_text_and_never_raises` builds
+`AGG_SALES_GUS` and asserts `render_aggregate_block` returns a tree with a
+`spread` node, raises no `BareAggregateError`, and carries `low is None` and
+`high is None` in `meta`.
 
 `test_tight_and_well_supported_aggregate_gets_no_note` runs `AGG_TIGHT_N61`
 (ratio 0.1417, n = 61) and asserts zero `uncertainty_note` nodes — the guard
@@ -964,16 +1003,20 @@ Ceny transakcyjne · powiat skierniewicki · GUS 2025Q4
   średnia 104 zł/m² · zakres niedostępny — GUS publikuje tylko średnią · n = 41
   cena transakcyjna · transakcja · poziom powiatu, dane kwartalne · stan na 31.12.2025
 
-WERDYKT
-  Powyżej górnej granicy zakresu przepływu (96–141)
-  Podstawa: 23 oferty, ta sama gmina, 1 600–4 800 m², ostatnie 90 dni
-
 Nie sprawdzamy planu — nie wiemy, czy można budować
 gdyby ta działka miała plan miejscowy, porównania byłyby inne
 
 Ten tool porównuje ceny ofertowe. Nie jest wyceną rzeczoznawcy i nie sprawdza,
 czy na działce można budować. Przy małej liczbie porównań wynik jest orientacyjny.
+
+WERDYKT
+  Powyżej górnej granicy zakresu przepływu (96–141)
+  Podstawa: 23 oferty, ta sama gmina, 1 600–4 800 m², ostatnie 90 dni
 ```
+
+The verdict block closes the export because D98 puts it last on the screen, and
+`test_export_preserves_the_tree_order` asserts the export lines follow
+`walk(tree)`. One order, two renderings.
 
 **Fails** — `dishonest/bare_export.txt`
 
@@ -1059,7 +1102,9 @@ fixture whose stratum gaps are `buildability: 34 zł/m²`, `road_access: 11 zł/
 
 ### 3.14 U14 — the comparable set is shown before the verdict
 
-**Passes** — §2.3: `comparable_set` at document index 7, `verdict` at 8.
+**Passes** — §2.3: the `comparable_set` node precedes the `verdict` node, and the
+verdict is the last top-level node (D98). The plan asserts the relation, never a
+literal index, so adding a node to the screen does not rewrite the test.
 
 **Fails** — `dishonest/verdict_first.py`: the same two nodes, swapped.
 
@@ -1070,6 +1115,14 @@ def test_comparable_set_precedes_the_verdict_block(tree):
     cs = one(nodes_by_role(tree, "comparable_set"))
     v  = one(nodes_by_role(tree, "verdict"))
     assert index_of(tree, cs) < index_of(tree, v)
+
+def test_every_evidence_node_precedes_the_verdict(tree):
+    v = one(nodes_by_role(tree, "verdict"))
+    evidence = ("aggregate_block", "comparable_set", "unknown",
+                "sensitivity_note", "disclosure_banner")
+    for node in walk(tree):
+        if node.role in evidence:
+            assert index_of(tree, node) < index_of(tree, v)
 
 def test_every_comparable_carries_its_nie_pasuje_control(tree):
     for c in nodes_by_role(tree, "comparable"):
@@ -1130,7 +1183,15 @@ All four carry `tone: "warning"`, `prominence: "equal"`, `disclosure: "always"`.
 | `not_yet_crawled` | `not_yet_crawled` |
 | `out_of_scope` | `out_of_scope` |
 | `too_few_comparables` | `no_comparables` |
-| `no_listings` | **no counterpart** — see OPEN-S6 |
+| `no_listings` | `no_listings` |
+
+All four map. `14` §2.3 already lists `no_listings`, so the render enum is a
+subset of the API list and the test passes as written. The API list is longer —
+it also carries `no_sales_data`, `precision_too_low`, `no_plan_data` and
+`no_building_coverage`, which v0's surface does not render. The assertion is a
+subset check, not an equality check, and
+`test_absence_reason_enum_matches_the_api_contract` states that direction
+explicitly.
 
 ### 4.3 The canonical five, written out — `flow_aggregate_block`
 
@@ -1222,7 +1283,7 @@ these 70 rows and asserts the leaf text exactly.
 | | error | `Nie udało się ocenić pewności — liczby powyżej są aktualne` |
 | `map_feature` | loading | `wczytywanie mapy…` |
 | | empty | `Brak danych — w tej gminie nie ma ofert` / `brak ofert w tej gminie` |
-| | thin | `gmina Nowy Kawęczyn · n = 3` (`pattern:"hatch"`, `fill` set) |
+| | thin | `gmina Nowy Kawęczyn · n = 3` (`opacity:0.45`, `pattern:"none"`, `fill` set — D113) |
 | | stale | `gmina Skierniewice · n = 23` + `dane sprzed 12 dni · ostatnie pobranie 27.07.2026` |
 | | error | `Nie udało się narysować mapy — tabela poniżej jest aktualna` |
 | `map_legend` | loading | `wczytywanie legendy…` |
@@ -1420,36 +1481,50 @@ allowlist of two regexes, itself asserted exercised.
 
 ### 6.1 The protected-term list
 
-Read from the document at lint time, never duplicated in code
-(`test_glossary_protected_list_is_read_from_the_document`). The list is the one
-stated in [`09-ux-specification.md`](../../09-ux-specification.md) §4 and defined
-in [`12-glossary.md`](../../12-glossary.md).
+**D99 gives the list one home:** the `## Protected terms` section of
+[`12-glossary.md`](../../12-glossary.md). The lint parses that section at run
+time and holds no copy of its own
+(`test_glossary_protected_list_is_read_from_the_document`). Every other document
+points there. Adding a term to the glossary extends the lint, with no code change.
 
-| # | Protected term | Forbidden rendering | Source of the prohibition |
-|---|---|---|---|
-| 1 | `cena ofertowa` | `cena rynkowa`, `market price`, `cena` alone | `12` §Prices, explicit |
-| 2 | `cena transakcyjna` | `cena` unqualified, `transaction price`, `cena sprzedaży` | `12` §Prices, explicit |
-| 3 | `plan ogólny` | `plan`, `studium`, `general plan` | `09` §4; `12` §Planning (replaced *studium*) |
-| 4 | `MPZP` | `plan` alone, `plan miejscowy` where the acronym is meant, `zoning plan` | `09` §4 |
-| 5 | `wypis i wyrys` | `wypis`, `wyrys`, `zaświadczenie`, `extract` | `09` §4; `12` — the binding document |
-| 6 | `działka` | `parcela`, `grunt`, `plot`, `parcel` | `09` §4; `12` distinguishes `plot` from `parcel` |
-| 7 | `media` | `infrastruktura`, `przyłącza`, `utilities` | `09` §4 |
-| 8 | `droga dojazdowa` | `dojazd` alone, `droga`, `access` | `09` §4; `12` §Infrastructure |
+The ten terms the glossary now lists, with the renderings the lint rejects:
 
-Two further terms are lint-checked because the surface uses them and the glossary
-defines them, though `09` §4 does not name them protected:
-
-| # | Term | Forbidden rendering |
+| # | Protected term | Forbidden rendering |
 |---|---|---|
-| 9 | `służebność przejazdu` | `służebność` alone, `easement` |
-| 10 | `klasa gruntu` | `klasa`, `soil class` |
+| 1 | `cena ofertowa` | `cena rynkowa`, `market price`, `cena` alone |
+| 2 | `cena transakcyjna` | `cena` unqualified, `transaction price`, `cena sprzedaży` |
+| 3 | `działka` | `parcela`, `grunt`, `plot`, `parcel` |
+| 4 | `plan ogólny` | `plan`, `studium`, `general plan` |
+| 5 | `MPZP` | `plan` alone, `plan miejscowy` where the acronym is meant, `zoning plan` |
+| 6 | `wypis i wyrys` | `wypis`, `wyrys`, `zaświadczenie`, `extract` |
+| 7 | `media` | `infrastruktura`, `przyłącza`, `utilities` |
+| 8 | `droga dojazdowa` | `dojazd` alone, `droga`, `access` |
+| 9 | `zakres międzykwartylowy` | `IQR`, `rozstęp ćwiartkowy`, `interquartile range` |
+| 10 | `warunki zabudowy` | `WZ` alone, `warunki`, `planning conditions` |
 
-**OPEN-S2.** `06-surface.md` §8.3 cites "`12-glossary.md` §4" as the location of
-the protected list. `12` has no numbered sections, and its fourth section is
-*Infrastructure and access*; the list actually lives in `09` §4. The lint needs a
-single machine-readable home. **Proposal:** add a `## Protected terms` section to
-`12-glossary.md` holding this table, and have both `09` §4 and `06-surface.md`
-§8.3 point at it. Needs ratification before step 17 of the red-green sequence.
+`test_protected_terms_match_the_glossary_exactly` asserts the ten terms above
+equal the parsed glossary list. It is the test that keeps this table from drifting
+into a second copy.
+
+**Term 9 needs a context rule, and this is it.** The bare word `zakres` is a legal
+UI string — it labels the min–max range (§3.10). What D100 forbids is an
+interquartile range written as `zakres`. So the lint checks the template, not the
+word:
+
+- the template used when `range.kind == "iqr"` must contain
+  `zakres międzykwartylowy`;
+- `zakres` without `międzykwartylowy` is legal only in the `min_max` template;
+- `IQR`, `rozstęp ćwiartkowy` and `interquartile range` appear in no UI string.
+
+`test_the_interquartile_range_is_never_labelled_zakres_alone` runs all three
+clauses.
+
+**Two terms are no longer lint-protected.** The pass-1 plan also checked
+`służebność przejazdu` and `klasa gruntu`. Neither is in the glossary's Protected
+terms section, so under D99 the lint no longer covers them. Both remain in the
+glossary body, and `test_every_domain_term_used_in_the_ui_exists_in_the_glossary`
+still checks that the UI uses them at all. Protecting them again is a one-line
+glossary edit and needs no change here.
 
 ### 6.2 Seeded violations the lint must fail
 
@@ -1461,13 +1536,14 @@ with the line number and the term named:
 # tests/fixtures/app/dishonest/bad_terms.py
 BAD_1  = "cena rynkowa 118 zł/m²"                              # → term 1
 BAD_2  = "mediana ceny w tej gminie to 104 zł/m²"              # → term 2 (cena unqualified)
-BAD_3  = "Sprawdź plan przed zakupem"                          # → terms 3, 4 (plan alone)
-BAD_4  = "Poproś o wypis w urzędzie gminy"                     # → term 5
-BAD_5  = "Ta parcela ma 3 200 m²"                              # → term 6
+BAD_3  = "Ta parcela ma 3 200 m²"                              # → term 3
+BAD_4  = "Sprawdź plan przed zakupem"                          # → terms 4, 5 (plan alone)
+BAD_5  = "Poproś o wypis w urzędzie gminy"                     # → term 6
 BAD_6  = "Przyłącza w granicy działki"                         # → term 7
 BAD_7  = "Dojazd drogą gruntową"                               # → term 8
-BAD_8  = "Działka ze służebnością"                             # → term 9
-BAD_9  = "market price 118 PLN/m2"                             # → term 1 + §8.2 + §5.4
+BAD_8  = "IQR 96–141"                                          # → term 9 (D100)
+BAD_9  = "Działka z WZ"                                        # → term 10
+BAD_10 = "market price 118 PLN/m2"                             # → term 1 + §8.2 + §5.4
 ```
 
 **The single example that must fail**, quoted for the developer to paste into the
@@ -2001,32 +2077,52 @@ alone; the terminology lint of §6 covers the report module too.
 
 `MAP_MODEL_TWO_RINGS` covers six gminas, one per treatment.
 
-| gmina | state | `fill` | `pattern` | `legend_key` | label text |
-|---|---|---|---|---|---|
-| Skierniewice | normal | `#3182bd` | `none` | `bucket_4` | `gmina Skierniewice · n = 23` |
-| Nowy Kawęczyn | thin | `#c6dbef` | `hatch` | `thin` | `gmina Nowy Kawęczyn · n = 3` |
-| Maków | not_yet_crawled | `#e8e8e8` | `dots` | `not_yet_crawled` | `gmina Maków · jeszcze nie zebraliśmy — sprawdź później` |
-| Godzianów | no_listings | `#ffffff` | `none` | `no_listings` | `gmina Godzianów · brak ofert w tej gminie` |
-| Elbląg | out_of_scope | `#f5f5f5` | `diagonal_stripe` | `out_of_scope` | `gmina Elbląg · poza zasięgiem narzędzia` |
-| Lipce Reymontowskie | too_few_comparables | `#d9d9d9` | `cross_hatch` | `too_few_comparables` | `gmina Lipce Reymontowskie · za mało podobnych ofert, żeby porównać` |
+**D113 sets the thin treatment.** A thin tile is **faded**, not hatched. It keeps
+its bucket colour and drops its opacity. The fade is simpler to draw, and it can
+read as "less of something" rather than "less certain" — so the **count on the
+label** carries the meaning, and the fade only draws the eye to it.
+
+| gmina | state | `fill` | `opacity` | `pattern` | `legend_key` | label text |
+|---|---|---|---|---|---|---|
+| Skierniewice | normal | `#3182bd` | `1.0` | `none` | `bucket_4` | `gmina Skierniewice · n = 23` |
+| Nowy Kawęczyn | thin | `#3182bd` | `0.45` | `none` | `thin` | `gmina Nowy Kawęczyn · n = 3` |
+| Maków | not_yet_crawled | `#e8e8e8` | `1.0` | `dots` | `not_yet_crawled` | `gmina Maków · jeszcze nie zebraliśmy — sprawdź później` |
+| Godzianów | no_listings | `#ffffff` | `1.0` | `none` | `no_listings` | `gmina Godzianów · brak ofert w tej gminie` |
+| Elbląg | out_of_scope | `#f5f5f5` | `1.0` | `diagonal_stripe` | `out_of_scope` | `gmina Elbląg · poza zasięgiem narzędzia` |
+| Lipce Reymontowskie | too_few_comparables | `#d9d9d9` | `1.0` | `cross_hatch` | `too_few_comparables` | `gmina Lipce Reymontowskie · za mało podobnych ofert, żeby porównać` |
+
+Nowy Kawęczyn now carries the **same** `fill` as Skierniewice, because a faded
+tile is the bucket colour at lower opacity. The colour is not withheld, which is
+what rule 7 asks. The four absence treatments keep their patterns: they answer a
+different question — which reason applies — and D113 rules only on thin tiles.
 
 ```python
 TREATMENTS = ("thin","not_yet_crawled","no_listings","out_of_scope","too_few_comparables")
 
 def test_the_four_absence_reasons_and_thin_have_pairwise_distinct_treatments(model):
-    triples = [ (f.meta["fill"], f.meta["pattern"], f.meta["legend_key"])
-                for f in features_for(model, TREATMENTS) ]
-    assert len(set(triples)) == 5
+    tuples = [ (f.meta["fill"], f.meta["opacity"],
+                f.meta["pattern"], f.meta["legend_key"])
+               for f in features_for(model, TREATMENTS) ]
+    assert len(set(tuples)) == 5
 
-def test_gmina_below_n5_renders_hatched_and_still_coloured(model):
+def test_gmina_below_n5_renders_faded_and_still_coloured(model):
     f = feature(model, "Nowy Kawęczyn")
-    assert f.meta["pattern"] == "hatch"
-    assert f.meta["fill"] is not None            # rule 7: the colour is not withheld
+    assert f.meta["opacity"] == config.thin_tile_opacity      # 0.45, D113
+    assert f.meta["pattern"] == "none"                        # never hatched
+    assert f.meta["fill"] == feature(model, "Skierniewice").meta["fill"]
 
 def test_every_gmina_label_carries_n_inline(model):
     for f in nodes_by_role(model, "map_feature"):
         assert re.match(r"^.+ · n = \d+$", f.text) or f.meta.get("absence_reason")
+
+def test_a_faded_tile_still_carries_its_n_on_the_label(model):
+    f = feature(model, "Nowy Kawęczyn")
+    assert f.text == "gmina Nowy Kawęczyn · n = 3"
 ```
+
+`dishonest/faded_tile_without_n.py` renders the faded tile with the label
+`gmina Nowy Kawęczyn` and no count. It fails the last two tests, and it is the
+exact failure D113 names: the fade alone does not say "thin".
 
 Legend, always present, never in a sidebar expander:
 
@@ -2058,7 +2154,7 @@ table_row[equal,always] "gmina Skierniewice"
         value "średnia 104 zł/m²" · spread "zakres niedostępny — GUS publikuje tylko średnią" · sample_size "n = 41"
         basis "poziom powiatu, dane kwartalne"
     aggregate_block[equal,always] "Typowa działka 3 000 m² pod zabudowę"
-        value "≈ 354 000 zł" · spread "zakres 288 000–423 000" · sample_size "n = 23"
+        value "≈ 354 000 zł" · spread "zakres międzykwartylowy 288 000–423 000" · sample_size "n = 23"
         basis "wyliczone z mediany podobnych ofert, nie zaobserwowana cena"
 ```
 
@@ -2068,21 +2164,35 @@ table_row[equal,always] "gmina Skierniewice"
 
 ---
 
-## 10. Open items this detail pass surfaced
+## 10. Open items this detail pass surfaced — all seven are closed
 
-Flagged rather than assumed, per [`CLAUDE.md`](../../../CLAUDE.md) rule 2. Each
-blocks the step named.
+Flagged rather than assumed, per [`CLAUDE.md`](../../../CLAUDE.md) rule 2. The
+owner answered six in batches 20 and 21. The seventh was already fixed in the API
+contract. Nothing in this plan waits on a decision.
 
-| # | Item | Proposal | Blocks |
+| # | Item | Settled by | Where it lands |
 |---|---|---|---|
-| **OPEN-S1** | `21` §2.1's mockup puts the collapsed verdict above the evidence; U14 and spec §5.14 put the comparable set first | Amend the `21` §2.1 sketch; U14 wins | step 10 |
-| **OPEN-S2** | `06-surface` §8.3 cites `12-glossary.md` §4 for the protected-term list; `12` has no §4 and the list is in `09` §4 | Add `## Protected terms` to `12`, point both documents at it | step 17 |
-| **OPEN-S3** | D65's `price_kind` enum is `{asking, auction_start, tender}`, all `price_type = 'offering'`. A **sales** price has no legal kind, so U2 cannot be satisfied for the GUS block | Extend the enum with `transaction`, legal only with `price_type = 'sales'`; Polish label `transakcja` | steps 5, 6 |
-| **OPEN-S4** | GUS publishes a mean with no spread. U1 requires a `spread` node; `render_aggregate_block` raises `BareAggregateError` without a range | Add `range.kind = "unavailable"` with `low`/`high` `None` and the explicit text `zakres niedostępny — GUS publikuje tylko średnią`. Structure preserved, honesty preserved | steps 4, 8 |
-| **OPEN-S5** | `Role` has no neutral container, so the screen root and the plot-check header have no legal role | Add `"section"` and `"header"` to `Role`; both are covered by `test_adapter_handles_every_role_in_the_role_enum` | step 1 |
-| **OPEN-S6** | The render absence reason `no_listings` has no counterpart in `14` §2.3, so `test_absence_reason_enum_matches_the_api_contract` cannot pass as written | Add `no_listings` to the API contract's reason list (it is a real, distinct fact — U7 exists because of it) | step 7 |
-| **OPEN-S7** | `06-surface` §5.1's spread wording (`zakres międzykwartylowy`) differs from `21` §2.1's mockup (`zakres` with n = 23) | Spec §5.1 wins; amend the `21` sketch | step 4 |
-| **O10** (existing) | Portals' `robots.txt` unreachable | — | §7.1 case 5 |
+| **OPEN-S1** | Screen order: verdict above or below the evidence | **D98** — comparables first, verdict last and collapsed; the sketch is redrawn | §2.2, §2.3, §2.4, §3.5, §3.12, §3.14 |
+| **OPEN-S2** | Where the protected-term list lives | **D99** — the `## Protected terms` section of `12-glossary.md`, one home | §6.1 |
+| **OPEN-S3** | A sales price had no legal `price_kind` | **D68** — `transaction`, legal only with `price_type = 'sales'`, Polish label `transakcja` | §1.2, §2.3, §3.2 |
+| **OPEN-S4** | GUS publishes a mean with no spread | **D69** — `range.kind = "unavailable"`, `low`/`high` `None`, explicit Polish text. Never an error, never a missing field | §1.2, §2.3, §3.10, §4.4 |
+| **OPEN-S5** | `Role` had no neutral container | **D101** — `section` and `header` added | §1.1 |
+| **OPEN-S6** | `no_listings` had no API counterpart | **Already present.** `14` §2.3 lists `no_listings`; the mapping is complete and the test passes as written | §4.2 |
+| **OPEN-S7** | Spread wording | **D100** — `zakres międzykwartylowy` wherever the range is the interquartile range | §3.10, §6.1, §9 |
+
+Three further decisions reached this plan without being raised here:
+
+| # | Decision | Where it lands |
+|---|---|---|
+| **D107** | The flow window is 90 days, stated beside every flow figure | §0.4, §3.4 |
+| **D112** | The Python package is `dzialki` | §1.1, §3.4 |
+| **D113** | A thin map tile is faded, not hatched; the count sits on the label | §0.4, §1.2, §4.4, §9 |
+
+One open item remains, and it is not ours:
+
+| # | Item | Blocks |
+|---|---|---|
+| **O10** (existing) | Portals' `robots.txt` unreachable | §7.1 case 5 |
 
 ---
 

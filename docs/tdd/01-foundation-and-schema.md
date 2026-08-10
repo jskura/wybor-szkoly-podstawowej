@@ -225,7 +225,8 @@ yet. Item 1's only complete validation method is **V7**.
 ## 2. Work item 2 — minimal schema with `price_type` CHECK constraints
 
 **1 day.** Verification tier A. Discharges **V1** fully (all three limbs),
-**V2(c)**, and the database-level limbs of V4, V5, V12, V25, V31, V32, V57.
+**V2(c)**, **V46**'s storage limb, and the database-level limbs of V4, V5, V12,
+V25, V31, V32, V57.
 
 Tables in scope for the minimal schema (from `15`): the enum types, `source`,
 `admin_unit`, `anchor`, `raw_document`, `listing`, `listing_snapshot`
@@ -241,7 +242,7 @@ the table for KOWR, auction and BIP records, which items 7, 8 and 13 write. The
 table carries `price_type` and `price_kind`, and `18` §5 says a price type cannot
 be retrofitted cheaply. Creating it now costs one `CREATE TABLE` and keeps `15`
 §13's rule true: a `price_type`-bearing table ships with its CHECK in the same
-migration. Overturn this and R2.31 moves to item 7.
+migration. Overturn this and R2.5b moves to item 7.
 
 **Blocked item:** only §4.1 remains. D64 to D69 and D91 close §4.2 to §4.4 and
 §4.6.
@@ -255,13 +256,6 @@ migration. Overturn this and R2.31 moves to item 7.
 - **Green by** `CREATE TYPE price_type AS ENUM ('offering','sales')` in migration `0002`.
 - **Discharges** **V1(a)**.
 
-#### R2.2 `test_buildability_source_enum_cannot_express_advert`
-- **Asserts** the label list equals exactly `["plan_ogolny", "mpzp", "registry"]`,
-  and `"advert" not in labels`.
-- **Green by** The enum as written in `15` §2.
-- **Discharges** **V25** at its structural limb — FR-48's violation is made
-  unrepresentable rather than merely tested.
-
 #### R2.1b `test_price_kind_enum_has_exactly_four_labels_in_order`
 - **Asserts** the label list of `price_kind` equals exactly
   `["asking","auction_start","tender","transaction"]` — list equality, in
@@ -271,6 +265,13 @@ migration. Overturn this and R2.31 moves to item 7.
 - **Discharges** **V46**'s storage limb. D65 defines the three offering-side kinds;
   D68 adds `transaction` for the sales side, which is what lets `transaction` pin
   its own kind by CHECK.
+
+#### R2.2 `test_buildability_source_enum_cannot_express_advert`
+- **Asserts** the label list equals exactly `["plan_ogolny", "mpzp", "registry"]`,
+  and `"advert" not in labels`.
+- **Green by** The enum as written in `15` §2.
+- **Discharges** **V25** at its structural limb — FR-48's violation is made
+  unrepresentable rather than merely tested.
 
 #### R2.3 `test_remaining_enums_match_the_schema_document`
 - **Asserts** five exact list equalities: `asset_class` ==
@@ -288,33 +289,55 @@ migration. Overturn this and R2.31 moves to item 7.
 
 ### 2.2 Red–green sequence — `price_type` constraints (V1)
 
-#### R2.4 `test_listing_price_type_check_constraint_exists`
+#### R2.4 `test_listing_price_type_and_price_kind_are_pinned`
 - **Asserts** exactly one row in `pg_constraint` for relation `listing` with
   `contype='c'` whose `pg_get_constraintdef(oid)` contains
-  `price_type = 'offering'::price_type`; and `pg_attribute.attnotnull` is `true`
-  for `listing.price_type`.
-- **Green by** The `listing` table with the CHECK and NOT NULL of `15` §5.
-- **Discharges** **V1(a)**.
+  `price_type = 'offering'::price_type`; `pg_attribute.attnotnull` is `true` for
+  `listing.price_type`; and — the D65 limb — `listing.price_kind` exists, has type
+  `price_kind`, is `NOT NULL`, and its `atthasdef` default renders as `'asking'`.
+- **Green by** The `listing` table with the CHECK, the NOT NULLs and the
+  `price_kind` default of `15` §5.
+- **Discharges** **V1(a)**, and **V46**'s listing limb.
 
-#### R2.5 `test_transaction_price_type_check_constraint_exists`
-- **Asserts** the same shape for `transaction` with `'sales'::price_type`, and
-  `attnotnull` true.
+#### R2.5 `test_transaction_price_type_and_price_kind_check_constraints_exist`
+- **Asserts** the same `price_type` shape for `transaction` with
+  `'sales'::price_type`, and `attnotnull` true. And the D68 limb: a second
+  `contype='c'` row whose definition contains
+  `price_kind = 'transaction'::price_kind`, with `attnotnull` true on
+  `transaction.price_kind`.
 - **Green by** The `transaction` table of `15` §8.
-- **Discharges** **V1(a)**.
+- **Discharges** **V1(a)**. D68's CHECK is what makes `transaction` exempt from
+  R2.6's second limb by its constraint rather than by its name.
 
-#### R2.6 `test_every_price_bearing_table_declares_a_price_type_column`
-- **Asserts** for every table in schema `public` having at least one column whose
-  name matches `price%`, `%_ppm2`, `median%`, `p25%` or `p75%`, that table also has
-  a column named exactly `price_type` of type `price_type`. The assertion is a set
-  difference computed to be **empty**, and the failure message lists the offending
-  tables.
-- **Green by** Nothing new — it passes once R2.4/R2.5 are green and no other
-  price-bearing table exists.
-- **Discharges** **V1(a)**, in the generic form `15` §13 demands: *"Adding a
-  `price_type`-bearing table requires its CHECK constraint in the same migration;
-  V1's constraint-existence test fails otherwise."* This is that test. It is the
-  single most valuable test in item 2, because it constrains migrations not yet
-  written.
+#### R2.5b `test_notice_pins_offering_and_restricts_its_price_kind`
+- **Asserts** for relation `notice` (D91): a `contype='c'` row containing
+  `price_type = 'offering'::price_type`; a second containing
+  `price_kind = ANY (ARRAY['auction_start'::price_kind, 'tender'::price_kind])`;
+  `attnotnull` true on both columns; and `notice_date` `NOT NULL` while
+  `auction_at`, `price_pln` and `area_m2` are nullable.
+- **Green by** The `notice` table of `15` §5.
+- **Discharges** **V1(a)** for the third price-bearing table. The nullability
+  pattern is the reason D91 created a separate table: `listing` requires a non-null
+  price and area, and a notice often states neither.
+
+#### R2.6 `test_every_price_bearing_table_declares_price_type_and_price_kind`
+- **Asserts** two set differences, both computed to be **empty**, with the
+  offending tables named in the failure message. (a) Every table in schema `public`
+  having at least one column whose name matches `price%`, `%_ppm2`, `median%`,
+  `p25%` or `p75%` also has a column named exactly `price_type` of type
+  `price_type`. (b) Every such table also has a column named exactly `price_kind`
+  of type `price_kind`.
+- **Green by** Nothing new — it passes once R2.4, R2.5 and R2.5b are green and no
+  other price-bearing table exists.
+- **Discharges** **V1(a)** and **V46**, in the generic form `15` §13 demands:
+  *"Adding a `price_type`-bearing table requires its CHECK constraint in the same
+  migration; V1's constraint-existence test fails otherwise."* This is that test.
+  It is the single most valuable test in item 2, because it constrains migrations
+  not yet written.
+- **Note** Limb (b) has no exemption list. D68 gave `price_kind` a `transaction`
+  label precisely so the sales table can carry the column too, which means every
+  price-bearing table can satisfy the same rule. An exemption keyed on a table name
+  would go stale the moment a table is renamed.
 
 #### R2.7 `test_listing_price_type_null_is_rejected`
 - **Asserts** inserting an otherwise-valid `listing` row with an explicit
@@ -335,11 +358,21 @@ migration. Overturn this and R2.31 moves to item 7.
 #### R2.9 `test_listing_price_type_out_of_domain_label_is_rejected`
 - **Asserts** inserting `price_type = 'asking'` raises
   `psycopg.errors.InvalidTextRepresentation` — the enum, not the CHECK, is what
-  rejects it, and the test asserts that class specifically. (`'asking'` is chosen
-  deliberately: it is the `price_kind` value FR-64 introduces, so this test also
-  documents that `price_kind` is not `price_type` — see §4.3.)
+  rejects it, and the test asserts that class specifically. `'asking'` is chosen
+  deliberately: it is a valid `price_kind` label and an invalid `price_type` label,
+  so the test also documents that the two axes are distinct (D65).
 - **Green by** Already green from R2.1.
 - **Discharges** **V1(b)**.
+
+#### R2.9b `test_listing_price_kind_domain_and_default`
+- **Asserts** three cases. (a) `price_kind = 'sprzedaz'` raises
+  `InvalidTextRepresentation`. (b) `price_kind = NULL` raises `NotNullViolation`
+  with `exc.diag.column_name == "price_kind"`. (c) omitting `price_kind` entirely
+  succeeds and `SELECT price_kind` returns `"asking"` — the fail-safe default.
+- **Green by** Already green from R2.4.
+- **Discharges** **V46**'s storage limb. Case (c) is the one that matters: a
+  listing whose kind nobody set is an asking price, which is what a portal advert
+  is.
 
 #### R2.10 `test_transaction_price_type_offering_and_null_are_rejected`
 - **Asserts** `'offering'` raises `CheckViolation` with constraint name
@@ -348,12 +381,16 @@ migration. Overturn this and R2.31 moves to item 7.
 - **Green by** Already green from R2.5.
 - **Discharges** **V1(b)**.
 
-#### R2.11 `test_metric_unit_month_price_type_is_part_of_the_primary_key`
+#### R2.11 `test_metric_unit_month_primary_key_separates_every_axis`
 - **Asserts** the primary-key column list of `metric_unit_month`, read from
   `pg_index`/`pg_attribute` in key order, equals exactly
-  `["teryt_unit","month","asset_class","buildability","price_type","generation"]`.
+  `["teryt_unit","month","asset_class","buildability","price_type","price_kind",
+  "series_kind","area_band","generation"]`. Separately, `"unit_level" not in
+  pk_columns` — it is carried, not keyed.
 - **Green by** The `metric_unit_month` table of `15` §9.
-- **Discharges** **V2(c)** and FR-8's structural limb.
+- **Discharges** **V2(c)** and FR-8's structural limb. D66 added the three middle
+  columns: without them a stock row and a flow row, or two area bands, collide on
+  insert and one silently overwrites the other.
 
 #### R2.12 `test_metric_unit_month_keeps_both_price_types_as_separate_rows`
 - **Asserts** inserting two rows identical in every key column except
@@ -367,6 +404,18 @@ migration. Overturn this and R2.31 moves to item 7.
 - **Discharges** **V2(c)**. The 200/100/never-150 values are `04` V2's own fixture
   values, reused here at the storage layer so the same numbers recur at the
   aggregation layer in item 10.
+
+#### R2.12b `test_metric_unit_month_keeps_price_kinds_and_series_kinds_apart`
+- **Asserts** two more inserts on top of R2.12's two rows. (a) The offering row
+  again with `price_kind = 'auction_start'` and `median_ppm2 = 60.00` succeeds;
+  `count(*)` equals `3`; `SELECT count(*) WHERE median_ppm2 = 130.00` equals `0`,
+  so asking and auction-start do not blend. (b) The offering row again with
+  `series_kind = 'flow'` and `flow_window_days = 90` succeeds; `count(*)` equals
+  `4`.
+- **Green by** Already green from R2.11.
+- **Discharges** **V46**'s storage limb and D66. It is the same argument as R2.12
+  one axis down: mixing is prevented by the key, not by a query filter someone
+  might forget.
 
 #### R2.13 `test_metric_unit_month_rejects_a_duplicate_key_within_one_price_type`
 - **Asserts** re-inserting the `'offering'` row of R2.12 verbatim raises
@@ -417,15 +466,50 @@ migration. Overturn this and R2.31 moves to item 7.
   structural. Limb (c) is the important one: it removes the drift class of bug
   entirely rather than testing for its absence.
 
-#### R2.18 `test_metric_range_kind_must_match_sample_size`
-- **Asserts** four cases against constraint `range_kind_matches_n`:
-  `n=4, range_kind='iqr'` → `CheckViolation`; `n=5, range_kind='min_max'` →
-  `CheckViolation`; `n=4, range_kind='min_max'` → succeeds; `n=5,
-  range_kind='iqr'` → succeeds. The boundary is pinned at exactly 5.
-- **Green by** The `range_kind_matches_n` CHECK of `15` §9.
-- **Discharges** **V4** at the storage layer — the IQR/min–max switch cannot be got
-  wrong even by a buggy aggregator. V4's remaining limbs (the API boundary and the
-  UI) are items 10–12.
+#### R2.18a `test_metric_range_bounds_are_ordered`
+- **Asserts** three cases against constraint `range_bounds_ordered`:
+  `min_ppm2` above `p25_ppm2` → `CheckViolation`; `p75_ppm2` below `median_ppm2` →
+  `CheckViolation`; all five percentile columns equal, with `n=1` and
+  `range_kind='min_max'` → **succeeds**. The third case is the degenerate row rule 7
+  requires: one observation is still shown, with its range collapsed to a point.
+- **Green by** The `range_bounds_ordered` CHECK of `15` §9.
+- **Discharges** **V4** at the storage layer.
+- **D67** The old `range_kind_matches_n` CHECK is gone. O11 marks n=5 unratified,
+  and a provisional parameter must not need a migration to change. The database now
+  enforces internal consistency only; the threshold moves to R2.18b.
+
+#### R2.18b `test_range_kind_threshold_is_read_from_configuration`
+- **Asserts** with `range_kind_min_n: 5` in a temporary configuration file,
+  `range_kind_for(1) == "min_max"`, `range_kind_for(4) == "min_max"`,
+  `range_kind_for(5) == "iqr"`, `range_kind_for(1000) == "iqr"`. Then, with
+  `range_kind_min_n: 8`, `range_kind_for(5) == "min_max"`. The last assertion is
+  the one that proves the threshold is not frozen: an implementation with `5`
+  written into the code passes the first four and fails the fifth.
+- **Green by** `dzialki.config.metrics.load()` and
+  `dzialki.metrics.ranges.range_kind_for(n)`.
+- **Discharges** **V4** at the application layer. Unit test, no database.
+- **Companion architecture test** A scan of `db/migrations/` for the string
+  `range_kind_matches_n` asserts **zero** occurrences. D67 removed the CHECK, and a
+  re-introduction must fail rather than pass quietly.
+
+#### R2.18c `test_metric_range_kind_unavailable_is_storable`
+- **Asserts** a row with `range_kind = 'unavailable'`, `n = 1` and all five
+  percentile columns equal succeeds. And that no CHECK forbids `'unavailable'` at
+  any `n` — asserted by inserting one such row at `n = 40` as well.
+- **Green by** Already green from R2.3's `range_kind` enum.
+- **Discharges** **V4**'s D69 limb. GUS publishes a central value with no spread.
+  Showing that absence is rule 7; raising an error on correct data is not. The
+  rendering of the explicit copy is item 11's job, not the schema's.
+
+#### R2.18d `test_metric_flow_row_states_its_window`
+- **Asserts** three cases against constraint `flow_states_its_window`:
+  `series_kind='flow'` with `flow_window_days = NULL` → `CheckViolation`;
+  `series_kind='stock'` with `flow_window_days = 90` → `CheckViolation`;
+  `series_kind='flow'` with `flow_window_days = 90` → **succeeds**.
+- **Green by** The `flow_states_its_window` CHECK of `15` §9.
+- **Discharges** **V4**. D56 made the flow series the headline number and D107 set
+  the window to 90 days. A flow row that does not say which window produced it is
+  not interpretable, and a stock row that names one is a mislabelled flow.
 
 #### R2.19 `test_metric_cannot_be_stored_without_its_spread_and_sample_size`
 - **Asserts** six separate inserts, each with exactly one of
@@ -477,6 +561,30 @@ migration. Overturn this and R2.31 moves to item 7.
 - **Green by** Typed geometry columns per `15` §3.
 - **Discharges** **V31** ("a schema test asserting no geometry column lacks an
   SRID").
+
+#### R2.30 `test_listing_foreign_keys_are_exactly_the_two_that_exist_today`
+- **Asserts** the set of tables referenced by `contype='f'` constraints on
+  `listing` equals exactly `{"source","admin_unit"}`. `parcel` and `plot_cluster`
+  are **absent**, while the columns `parcel_id` and `plot_cluster_id` exist as
+  plain `BIGINT`. The test docstring names items 9 and 14 as the migrations that
+  must add the two missing foreign keys.
+- **Green by** The `listing` table of `15` §5, whose comment marks both columns as
+  "FK added by a later migration".
+- **Discharges** none. It records a deliberate deferral so it stays deliberate: a
+  test that pins the current set forces the later migration to change this test on
+  purpose, rather than letting the foreign keys be forgotten.
+
+#### R2.31 `test_admin_unit_carries_provenance_and_a_ring_array`
+- **Asserts** the `admin_unit` column set contains `as_of` (`date`, `NOT NULL`),
+  `source_id` (`integer`, `NOT NULL`, foreign key to `source(id)`) and `in_ring`
+  (`text[]`, `NOT NULL`, default `'{}'`). And that inserting a row with
+  `as_of = NULL` raises `NotNullViolation` on `as_of`, and one with a `source_id`
+  that no `source` row holds raises `ForeignKeyViolation`.
+- **Green by** The `admin_unit` table of `15` §3.
+- **Discharges** **V5(a)** for reference data. Rule 7 applies to boundaries too:
+  PRG is republished, so a stored boundary without its as-of date cannot be dated
+  later. `in_ring` is asserted as an **array**, because a boolean cannot express
+  membership of two rings and a comma-joined string invites string matching.
 
 ### 2.4 Red–green sequence — append-only history (V12)
 
@@ -532,6 +640,11 @@ absence marker — are *aggregation* behaviour and belong to item 10. Item 2 can
 make mixing structurally impossible (R2.11–R2.13). Claiming V2 as discharged here
 would be exactly the overclaim `20` §2 warns about.
 
+**V4's threshold and V46's display limb.** R2.18b proves the n threshold comes from
+configuration, and R2.18c proves `range_kind = 'unavailable'` is storable. Neither
+proves the user sees the right words. D69 requires explicit copy for a source that
+publishes no spread, and that is item 11's job.
+
 ---
 
 ## 3. Work item 3 — PRG + TERYT for both anchor rings
@@ -541,8 +654,17 @@ independently computable correct answer exists), **B** for PRG content (the TERY
 TERC register is the independent second source). Named detector for silent failure
 **F4 — wrong gmina**.
 
-**Blocked before the first test:** §4.6 (ring membership rule) and §4.7 (import
-extent). R3.15–R3.17 cannot be written until those are answered.
+**Both former blockers are answered.** D64 fixes ring membership: a gmina belongs
+to a ring when **any part of its boundary lies within 25 km of the anchor point**.
+`15` §3 states the rule once, materialises it into `admin_unit.in_ring`, and every
+consumer reads that column. §4.7 is answered too: the import extent is the two
+rings, and V6 now asserts an **exact list from the fixture manifest** rather than
+an approximate gmina count.
+
+**No TERYT code appears as a literal in this document.** The repository gave two
+different codes for gmina Skierniewice, and I invented one of them. Both are now
+removed. The TERC register is the only source; tests read codes from the fixture
+manifest, and R3.25 fails when a document disagrees with the register.
 
 ### 3.1 Red–green sequence — the pure parser (no I/O)
 
@@ -555,21 +677,23 @@ extent). R3.15–R3.17 cannot be written until those are answered.
 - **Green by** `dzialki.ingest.official.prg.parse()`, pure, returning
   `Iterator[AdminUnitRecord]` per the `16` §2 connector contract.
 - **Discharges** **V6** (the count limb, at fixture scale).
-- **Note** The manifest is the oracle, not this document. `04` V6's "~177", "~314",
-  "~10" are approximations and therefore not falsifiable assertions; see §4.7.
+- **Note** The manifest is the oracle, not this document. V6 now asserts the exact
+  gmina list for the two rings, taken from the manifest; the earlier "~177",
+  "~314", "~10" were approximations and therefore not falsifiable.
 
 #### R3.2 `test_prg_parser_extracts_teryt_level_and_parent_for_a_known_gmina`
-- **Asserts** the parsed record whose `teryt == "1015062"` has `name == "Skierniewice"`,
-  `level == "gmina"`, `parent_teryt == "1015"`. And the record whose
-  `teryt == "1062011"` has `name == "Skierniewice"`, `level == "gmina"`,
-  `parent_teryt == "1062"`. Two units, identical names, different codes and
-  different parents.
+- **Asserts** the parsed record whose `teryt` equals
+  `manifest["teryt"]["gmina_skierniewice_rural"]` has `name == "Skierniewice"`,
+  `level == "gmina"` and `parent_teryt == manifest["teryt"]["powiat_skierniewicki"]`.
+  And the record whose `teryt` equals `manifest["teryt"]["miasto_skierniewice"]`
+  has `name == "Skierniewice"`, `level == "gmina"` and a **different**
+  `parent_teryt`. Two units, identical names, different codes, different parents.
 - **Green by** Attribute mapping in the parser.
 - **Discharges** **V30**. This is the Skierniewice trap stated as data before it is
   stated as behaviour.
-- **Note** The two codes above are the expected values to write into the test; if
-  the recorded TERC fixture disagrees, **the fixture wins and the test is corrected**
-  (`04` fixtures policy rule 2 — fixtures are never edited to make a test pass).
+- **Note** Both codes come from the manifest, which the TERC register fills. No
+  code is written into the test file. `04`'s fixtures policy rule 2 applies: a
+  fixture is never edited to make a test pass.
 
 #### R3.3 `test_prg_teryt_codes_and_names_agree_with_the_terc_register`
 - **Asserts** for every gmina record from the PRG fixture, the pair
@@ -642,9 +766,11 @@ extent). R3.15–R3.17 cannot be written until those are answered.
 #### R3.10 `test_budy_grabskie_resolves_to_rural_gmina_skierniewice`
 - **Asserts** for the Budy Grabskie **village centroid** read from
   `tests/fixtures/known_answers/known_points_2026-08-08.json`:
-  `gmina_for_point(p).teryt == "1015062"`, `.name == "Skierniewice"`,
-  `.parent_teryt == "1015"`, and the resolved powiat's name equals
-  `"skierniewicki"`.
+  `gmina_for_point(p).teryt == point["expected_teryt_gmina"]`,
+  `.name == "Skierniewice"`,
+  `.parent_teryt == point["expected_parent_teryt"]`, and the resolved powiat's name
+  equals `"skierniewicki"`. The two codes come from the fixture, which the TERC
+  register fills.
 - **Green by** Already green from R3.9 if the loader is correct; red if the
   fixture clip omits the gmina.
 - **Discharges** **V6** (the named known-answer spatial test) and **V30(b)**. This
@@ -656,9 +782,9 @@ extent). R3.15–R3.17 cannot be written until those are answered.
 
 #### R3.11 `test_city_of_skierniewice_resolves_to_a_different_unit`
 - **Asserts** for the Skierniewice city-centre point from the same fixture:
-  `gmina_for_point(p).teryt == "1062011"`; that this differs from R3.10's result
-  (`!=` asserted explicitly); that **both** resolved names equal `"Skierniewice"`;
-  and that the two `parent_teryt` values differ (`"1062"` vs `"1015"`).
+  `gmina_for_point(p).teryt == point["expected_teryt_gmina"]`; that this differs
+  from R3.10's result (`!=` asserted explicitly); that **both** resolved names
+  equal `"Skierniewice"`; and that the two `parent_teryt` values differ.
 - **Green by** Nothing beyond R3.10.
 - **Discharges** **V30(b)**. Asserting the names are *equal* while the codes
   *differ* is the whole point: it proves the resolution cannot have gone via the
@@ -732,20 +858,37 @@ extent). R3.15–R3.17 cannot be written until those are answered.
 - **Discharges** **V7** (FR-23's "no street address or house number in the
   database") and **V31**.
 
-#### R3.19 `test_ring_membership_uses_the_ratified_rule` — **BLOCKED, see §4.6**
-- **Asserts** (once the rule is decided) that a gmina whose *centroid* lies 30 km
-  from the anchor but whose *boundary* comes within 20 km is or is not in the ring,
-  per the ratified rule; the specific gmina and both distances come from the
-  fixture manifest.
-- **Blocked by** `18` never states whether ring membership is by boundary
-  intersection, centroid, or gmina seat. The three rules give different gmina sets
-  and therefore different aggregates. Cannot be written as a falsifiable assertion
-  until answered.
+#### R3.19 `test_ring_membership_is_boundary_within_25km_not_centroid` (D64)
+- **Asserts** against the synthetic ring fixture, whose four gminas sit at known
+  geodesic offsets from a synthetic anchor: the set of gminas with the anchor key
+  in `in_ring` equals exactly the manifest's `in_ring_T` list. And the
+  **discriminator**: a gmina whose nearest boundary point lies inside 25 km while
+  its centroid lies outside is a member. An implementation that used the centroid,
+  or the gmina seat, fails here and passes every other spatial test in the suite.
+  `in_ring` holds a `TEXT[]`, and the member's value equals exactly `["T"]`.
+- **Green by** `dzialki.geo.rings.assign(conn, radius_m=25000)` writing `in_ring`
+  with `ST_DWithin(unit.geom::geography, anchor.geom::geography, 25000)`, per `15`
+  §3.
+- **Discharges** **V6**'s D64 limb.
 
-#### R3.20 `test_ring_gmina_counts_match_the_manifest` — **BLOCKED, see §4.6, §4.7**
-- **Asserts** `len(ring("A")) == N_A` and `len(ring("B")) == N_B`, the integers
-  recorded in the fixture manifest.
-- **Blocked by** the same rule decision, and by §4.7's import-extent question.
+#### R3.19b `test_ring_assignment_is_idempotent`
+- **Asserts** running `assign()` twice leaves the member's `in_ring` equal to
+  `["T"]`, **not** `["T","T"]`.
+- **Green by** An assignment that replaces the array rather than appending to it.
+- **Discharges** none. The `array_append` shown in `15` §3 appends
+  unconditionally, so this test is red against the SQL as printed. That is why it
+  is written.
+
+#### R3.20 `test_ring_membership_matches_the_manifest_gmina_list`
+- **Asserts** two limbs. (a) On the synthetic fixture, the member set equals the
+  manifest's `in_ring_T` list — set equality, not a count. (b) On the recorded PRG
+  clip, `set(ring("A"))` equals `manifest["ring_gminas"]["A"]` and `set(ring("B"))`
+  equals `manifest["ring_gminas"]["B"]`, both **exact TERYT lists**.
+- **Green by** Nothing beyond R3.19.
+- **Discharges** **V6**. V6 no longer asserts an approximate gmina count. It
+  asserts the exact list for the two rings, and the manifest is the oracle. Limb
+  (b) reads the gitignored anchors, so it skips outside a developer machine with a
+  named reason; limb (a) runs everywhere.
 
 #### R3.21 `test_both_rings_are_non_empty_and_disjoint`
 - **Asserts** `len(ring("A")) > 0`, `len(ring("B")) > 0`, and
@@ -753,8 +896,7 @@ extent). R3.15–R3.17 cannot be written until those are answered.
   any overlap means the anchor points were swapped or mis-parsed.
 - **Green by** The ring builder.
 - **Discharges** none of its own; it is the cheapest available guard on D49's
-  "both rings" actually meaning two distinct places. Writable now — it does not
-  depend on the membership rule.
+  "both rings" actually meaning two distinct places.
 
 #### R3.22 `test_prg_load_is_idempotent`
 - **Asserts** running the loader twice leaves `SELECT count(*) FROM admin_unit`
@@ -771,11 +913,49 @@ extent). R3.15–R3.17 cannot be written until those are answered.
   "permute the input order → output identical", applied at the first place in the
   pipeline where it can be applied.
 
+#### R3.24 `test_loaded_admin_units_carry_their_as_of_and_source`
+- **Asserts** after the load: `count(*) WHERE as_of IS NULL` equals `0`;
+  `count(*) WHERE source_id IS NULL` equals `0`; every `as_of` equals the
+  manifest's `downloaded_at`; and every `source_id` resolves to the `source` row
+  named `prg`.
+- **Green by** The loader reading the manifest date and the source id, rather than
+  defaulting either.
+- **Discharges** **V5(a)** for `admin_unit`. R2.31 proves the columns exist and
+  reject a null; this proves the loader fills them with the right values. A column
+  that exists and always holds today's date carries no provenance.
+
+#### R3.25 `test_repository_documents_cite_the_register_teryt_codes`
+- **Asserts** an architecture test over the committed Markdown files: every 7-digit
+  string adjacent to the token `Skierniewice` equals the manifest's
+  `teryt.gmina_skierniewice_rural` or its `teryt.miasto_skierniewice`. The count of
+  mismatches equals `0`, and the failure message prints the file, the line and the
+  offending code.
+- **Green by** Nothing — a standing guard.
+- **Discharges** none. The repository once held two different codes for gmina
+  Skierniewice, in `14-api-contract.md` and in this document. I invented one of
+  them. This test keeps the register as the only source and fails when a document
+  disagrees with it. It does **not** pick a code; picking one is what caused the
+  error.
+
 ---
 
 ## 4. Blocked, ambiguous, or missing — resolve before the first test
 
 Per `CLAUDE.md` rule 2 these are asked, not assumed. Each blocks a specific test.
+
+**Eight items were raised. Six are closed.** The table records which decision
+closed each one and which test now carries it.
+
+| # | Item | Status | Test |
+|---|---|---|---|
+| 4.1 | Item 1 has no validation method | **Open** | R1.11–R1.15 |
+| 4.2 | `listing` foreign keys to future tables | **Closed** — plain `BIGINT`, foreign keys land with items 9 and 14 | R2.30 |
+| 4.3 | `price_kind` absent from `15` | **Closed by D65, D66, D68** | R2.1b, R2.4, R2.5, R2.6, R2.9b, R2.12b |
+| 4.4 | `admin_unit` carries no provenance | **Closed** — `as_of` and `source_id` added | R2.31, R3.24 |
+| 4.5 | V7(b) cannot run in CI | **Open** — pre-push only | R1.8 |
+| 4.6 | Ring membership undefined | **Closed by D64** — boundary within 25 km | R3.19, R3.19b, R3.20 |
+| 4.7 | Import extent, and V6's approximate counts | **Closed** — the two rings, exact list from the manifest | R3.20 |
+| 4.8 | The two Skierniewice TERYT codes | **Open** until the register is downloaded; the guard test stands | R3.25 |
 
 ### 4.1 Item 1 has no validation method of its own (rule 5 gap)
 `04`'s coverage table assigns item 1 to "V7 (anchor privacy); migrations covered by
@@ -786,31 +966,25 @@ entry**. Rule 5 says a validation method precedes implementation.
 reproducibility**) to `04-validation.md`, or record explicitly that these are
 preconditions exempt from rule 5. **Blocks** R1.11–R1.15.
 
-### 4.2 `listing.parcel_id` and `listing.plot_cluster_id` reference future tables
-`15` §5 gives `listing` foreign keys to `parcel` (item 14) and `plot_cluster`
-(item 9). Migration `0002` must either create those tables early, create the
-columns without FKs and add the FKs later, or omit the columns.
-**Ask:** which. **Blocks** the `listing` DDL and therefore R2.4 onward.
+### 4.2 `listing.parcel_id` and `listing.plot_cluster_id` — **closed**
+The columns exist in migration `0002` as plain `BIGINT` with no foreign key. Items
+9 and 14 add the two foreign keys when `plot_cluster` and `parcel` exist. R2.30
+pins the current set, so the later migration must change that test on purpose.
 
-### 4.3 `price_kind` is required by FR-64 and V46 but absent from `15`
-FR-64 (`02` §8) and V46 make `price_kind ∈ {asking, auction_start, tender}` a
-first-class column distinct from `price_type`, and require the **aggregation key to
-include it**. `15-database-schema.md` predates that requirement and has no such
-column. `18` §5 names `price_type` on every price as one of three things that
-"cannot be retrofitted cheaply" — the same argument applies verbatim to
-`price_kind`, and items 7 and 8 will need it.
-**Ask:** amend `15` to add `price_kind` (enum, NOT NULL, CHECK per table, part of
-`metric_unit_month`'s primary key) so it lands in migration `0002` rather than a
-retrofit. **Blocks** the final form of `listing`, `transaction` and
-`metric_unit_month`, and the tests R2.4, R2.11, R2.12 that assert their shapes.
-This is the most consequential of the open items.
+### 4.3 `price_kind` — **closed by D65, D66 and D68**
+`15` §2 now declares `price_kind AS ENUM ('asking','auction_start','tender',
+'transaction')`. D65 names the three offering-side kinds. D68 adds `transaction`,
+so a sales row can carry a kind too and `transaction` pins it by CHECK. D66 puts
+`price_kind`, `series_kind` and `area_band` into `metric_unit_month`'s primary
+key. Rule 6 is unaffected: `price_type` still separates offering from sales, and
+`price_kind` is the finer axis inside each. Tests R2.1b, R2.4, R2.5, R2.5b, R2.6,
+R2.9b, R2.11 and R2.12b carry it.
 
-### 4.4 `admin_unit` carries no provenance
-`15` §3 gives `admin_unit` no `as_of` and no `source_id`, while rule 7 and V5
-require source and as-of on stored data, and PRG is re-published periodically.
-**Ask:** add `as_of DATE NOT NULL` and `source_id INT NOT NULL REFERENCES source(id)`.
-**Blocks** a `test_admin_unit_rows_carry_as_of_and_source` in item 3 — it cannot be
-written against a schema with no such columns.
+### 4.4 `admin_unit` provenance — **closed**
+`15` §3 now gives `admin_unit` an `as_of DATE NOT NULL` and a `source_id INT NOT
+NULL REFERENCES source(id)`, plus the `in_ring TEXT[]` that D64 materialises. R2.31
+asserts the columns; R3.24 asserts the loader fills them. One consequence for the
+migration order: `source` must be created before `admin_unit`.
 
 ### 4.5 V7(b) cannot run in CI
 R1.8 needs the gitignored `config/anchors.yml` to know what strings to search for,
@@ -820,24 +994,31 @@ gitignored file, hash committed) so CI can scan without the plaintext, or accept
 that V7(b) is a local pre-commit hook only and record that.
 **Affects** R1.8's coverage, not its writability.
 
-### 4.6 Ring membership is undefined
-`18` says "both 25 km rings" and never says what makes a gmina a member: boundary
-within 25 km of the anchor, centroid within 25 km, or gmina seat within 25 km. The
-three produce different gmina sets, hence different corpora and different medians.
-**Ask:** ratify one rule and record it as a decision. **Blocks** R3.19, R3.20.
+### 4.6 Ring membership — **closed by D64**
+A gmina belongs to a ring when any part of its boundary lies within 25 km of the
+anchor point. Not the centroid, not the gmina seat. The rule is inclusive at the
+edge, which matches rule 7: a gmina half inside the ring is more useful shown with
+its `n` than silently excluded. `15` §3 states it once and materialises it into
+`admin_unit.in_ring`; every consumer reads that column and nothing recomputes it.
+R3.19 is the discriminating test, and R3.19b keeps the assignment idempotent.
 
-### 4.7 Import extent, and V6's unfalsifiable counts
-Two problems in one place. (a) `18` §6 item 3 says "PRG + TERYT for **both rings**"
-while V6's acceptance criteria demand *all* gminas of łódzkie (~177), mazowieckie
-(~314) and the Elbląg area (~10) — roughly 500 gminas versus roughly 50. These are
-different work items. (b) V6's counts are written with `~`, and `20` §1 requires
-every assertion to pin a specific value; `~177` cannot be falsified.
-**Ask:** decide ring-only or full-voivodeship import, and replace the `~` counts in
-V6 with the exact integers from the dated TERC fixture.
-**Blocks** a `test_gmina_count_per_voivodeship` test entirely, and determines the
-fixture clip extent in §3.3 below.
+### 4.7 Import extent and V6's counts — **closed**
+The v0 import extent is the **two rings**, per `18` §6 item 3. The three-voivodeship
+extent belongs to the deferred full plan. V6 no longer asserts an approximate gmina
+count: it asserts the **exact gmina list for the two rings**, taken from the fixture
+manifest, which R3.20 checks. An approximate count cannot be falsified, so no test
+in this document states one.
 
-### 4.8 Tests deferred to later items (not blocked — simply not item 1–3 work)
+### 4.8 The two Skierniewice TERYT codes — **open, and the guard stands**
+The repository gave two different codes for gmina Skierniewice: one in
+`14-api-contract.md`, one in an earlier draft of this document. I invented the
+first. Both are removed. I do **not** pick a code here, because picking one is what
+produced the error. The GUS TERYT **TERC** register is the only source. The
+recording step writes both Skierniewice codes into the fixture manifest, every test
+reads them from there, and **R3.25 fails when any committed document disagrees with
+the register**. This item closes when the register is downloaded, not before.
+
+### 4.9 Tests deferred to later items (not blocked — simply not item 1–3 work)
 
 | Deferred test | Needs | Item |
 |---|---|---|
@@ -864,8 +1045,8 @@ filename, committed, never hand-edited to make a test pass, re-recorded quarterl
 |---|---|
 | `config/anchors.example.yml` | Exactly two anchors, keys `A` and `B`, labels `PLACEHOLDER_ANCHOR_A`/`_B`, `lat: 0.0`, `lon: 0.0`. No digits in labels. Committed, not a fixture as such, but R1.5 asserts against it. |
 | `config/sources.yml` | At least one entry with only `name` and `kind` set, so R1.10 can assert the three defaults. |
-| `tests/fixtures/config/anchors_bad_kind_2026-08-08.yml` | A source entry with `kind: "scraper"`, for R1.10's rejection limb. |
-| `tests/fixtures/config/anchors_real_looking_2026-08-08.yml` | An anchor at a coordinate **inside** Poland's bbox, used as the negative control proving R1.5's bbox assertion can fail. Must be a public landmark (e.g. a city square), never an address. |
+| `tests/fixtures/config/sources_bad_kind_2026-08-08.yml` | A source entry with `kind: "scraper"`, for R1.10's rejection limb. |
+| `tests/fixtures/config/anchors_real_looking_2026-08-08.yml` | An anchor at a coordinate **inside** Poland's bounding box, used as the negative control proving R1.5's bounding-box assertion can fail. Use a round graticule crossing, never an address and never a named place. |
 
 ### 5.2 Item 2
 
@@ -879,11 +1060,13 @@ filename, committed, never hand-edited to make a test pass, re-recorded quarterl
 
 | Path | Must contain |
 |---|---|
-| `tests/fixtures/prg/prg_clip_2026-08-08.gpkg` | A **clipped** PRG extract (the full national file is too large to commit): every gmina intersecting either 25 km ring, plus **both** Skierniewice units (rural gmina and the city), plus powiat skierniewicki, powiat elbląski, m. Elbląg, m. Skierniewice, plus every parent powiat and voivodeship of every included gmina. MultiPolygon, EPSG:4326. Extent is finalised by §4.6/§4.7. |
-| `tests/fixtures/prg/manifest.json` | Source URL; download date; SHA-256 of the clip; the clip bounding box; **exact** feature counts per level (the oracle for R3.1); `N_A` and `N_B` ring counts once §4.6 is answered; the identified gmina/centroid/boundary distances used by R3.19. |
+| `tests/fixtures/prg/prg_clip_2026-08-08.gpkg` | A **clipped** PRG extract (the full national file is too large to commit). The clip rule is D64's rule, applied at clip time: every gmina with any part of its boundary within 25 km of anchor A or anchor B. Plus **both** Skierniewice units (the rural gmina and the city), powiat skierniewicki, powiat elbląski, m. Elbląg, m. Skierniewice, and every parent powiat and voivodeship of every included gmina. MultiPolygon, EPSG:4326. |
+| `tests/fixtures/prg/manifest.json` | Source URL; download date; SHA-256 of the clip; the clip bounding box; the clip rule as a string; **exact** feature counts per level (the oracle for R3.1); `ring_gminas.A` and `ring_gminas.B` as **exact TERYT lists**, which is what V6 now asserts (R3.20); and the `teryt` block holding the register codes for the two Skierniewice units, powiat skierniewicki, m. Elbląg and powiat elbląski. |
 | `tests/fixtures/teryt/terc_2026-08-08.csv` | The TERYT **TERC** register extract: `WOJ, POW, GMI, RODZ, NAZWA, NAZWA_DOD`, covering at minimum every unit in the PRG clip. The independent second source for R3.3. Recorded separately from PRG — if it is derived from PRG, R3.3 is vacuous. |
-| `tests/fixtures/known_answers/known_points_2026-08-08.json` | Five entries, each with a `note` naming its provenance: (1) Budy Grabskie **village centroid** with expected `teryt` `1015062`; (2) Skierniewice city centre with expected `1062011`; (3) Elbląg city centre with its expected teryt; (4) a pair `p_400`/`p_600` with the named boundary segment and the EPSG:2180 distances measured at recording time; (5) a two-point pair with an independently computed geodesic separation for R3.15/R3.16. **No street names, no house numbers, no anchor address** — R1.8 scans this file too. |
+| `tests/fixtures/known_answers/known_points_2026-08-08.json` | Five entries, each with a `note` naming its provenance: (1) Budy Grabskie **village centroid** with its expected gmina and powiat codes; (2) Skierniewice city centre with its expected codes; (3) Elbląg city centre with its expected codes; (4) a pair `p_400`/`p_600` with the named boundary segment and the EPSG:2180 distances measured at recording time; (5) a two-point pair with an independently computed geodesic separation for R3.15/R3.16. Every code comes from the TERC register at recording time; **this document states none of them**. **No street names, no house numbers, no anchor address** — R1.8 scans this file too. |
 | `tests/fixtures/prg/shuffled_seed.txt` | The RNG seed used by R3.23, committed so the shuffle is reproducible. |
+| `tests/fixtures/synthetic/ring_membership.json` | The D64 fixture. Four synthetic gminas at known geodesic offsets from a synthetic anchor, generated by a committed script. Two of them are members under the boundary rule and non-members under the centroid rule; one is a member under both and one under neither. This is the fixture R3.19 discriminates on, and it needs no download. |
+| `tests/fixtures/teryt/terc_2026-08-08.csv` (see above) | Recorded **before** R3.2 is typed. It resolves both Skierniewice codes into the manifest. |
 
 **Fixture size note.** If the clipped PRG file exceeds a comfortable git size,
 store it as a `.gpkg.zst` and decompress in a session fixture; do **not** reduce it
@@ -920,7 +1103,8 @@ would otherwise make the digest flaky and the test worthless.
 | **Scaling** | property test | For any `(price, area)`, inserting `(2·price, area)` yields exactly `2 ×` the first row's `price_per_m2` where both are exactly representable at 2 dp. This is `20` §4.3's "double every price → median doubles" asserted at the earliest layer it can be. |
 | **Ratio invariance** | property test | Inserting `(10·price, 10·area)` yields an **unchanged** `price_per_m2`. `20` §4.3's second relation, likewise pulled forward. |
 | **Enum closure** | property test | For any generated string not in `{offering, sales}`, the insert raises `InvalidTextRepresentation`. Generalises R2.9 from one hand-picked label to the whole complement. |
-| **Range/n coupling** | property test | For random `n ∈ [1, 1000]`, the insert succeeds iff `(n >= 5) == (range_kind == 'iqr')`. Generalises R2.18's four cases to the whole domain. |
+| **Range-bound ordering** | property test | For five generated `Decimal`s, the insert succeeds iff `min <= p25 <= median <= p75 <= max`, else raises `CheckViolation` on `range_bounds_ordered`. Generalises R2.18a to the whole domain. D67 removed the `n`-coupled CHECK, so the database property is ordering, not the threshold. |
+| **Threshold monotonicity** | property test, `unit` | For a configured `range_kind_min_n = k` and random `n ∈ [1, 1000]`: `range_kind_for(n) == "iqr"` iff `n >= k`, for `k ∈ {3, 5, 8}`. The property runs over three thresholds, so an implementation with any single value written into the code fails on the other two. |
 
 ### 6.3 Item 3 — spatial
 
@@ -944,15 +1128,18 @@ would otherwise make the digest flaky and the test worthless.
 
 Per `16` §6, and specific to these items:
 
-1. §4's open items are answered and recorded as decisions in `00-decisions.md`;
-   `15-database-schema.md` is amended for §4.2, §4.3, §4.4 before migration `0002`
-   is written; `04-validation.md` is amended for §4.1 and §4.7.
+1. §4.1 is answered and recorded in `00-decisions.md`, and §4.8 is closed by the
+   TERC download. §4.2 to §4.4, §4.6 and §4.7 are already closed, and
+   `15-database-schema.md` carries D64 to D69 and D91.
 2. Every test in §1–§3 exists, was observed red, and is now green.
-3. R3.19 and R3.20 exist rather than being silently dropped once §4.6 is answered.
+3. R3.19, R3.19b and R3.20 exist rather than being silently dropped.
 4. Fixtures in §5 are committed, dated, and carry a manifest recording source URL,
    download date and hash. The known-answers file has been checked by eye for a
    street name or house number.
-5. `V1`, `V2(c)`, `V6`, `V7`, `V12(a)`, `V30`, `V31` pass; `V2(a)`, `V2(b)` and the
-   rest of §4.8 are recorded as *not yet dischargeable* rather than claimed.
+5. `V1`, `V2(c)`, `V6`, `V7`, `V12(a)`, `V30`, `V31` and `V46`'s storage limb pass;
+   `V2(a)`, `V2(b)` and the rest of §4.9 are recorded as *not yet dischargeable*
+   rather than claimed.
 6. The Δ assertion `price_type_complete` runs in `ops/assertions/` and both R2.14
    and R2.15 pass — the second is what makes the first mean anything.
+7. No TERYT code appears as a literal in any test file or in this document. R3.25
+   is green, so no committed document disagrees with the register.

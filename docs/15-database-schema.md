@@ -406,10 +406,13 @@ CREATE TABLE metric_unit_month (
 
   n             INT NOT NULL,
   median_ppm2   NUMERIC(12,2) NOT NULL,
-  p25_ppm2      NUMERIC(12,2) NOT NULL,
-  p75_ppm2      NUMERIC(12,2) NOT NULL,
-  min_ppm2      NUMERIC(12,2) NOT NULL,
-  max_ppm2      NUMERIC(12,2) NOT NULL,
+  -- Nullable ONLY when range_kind = 'unavailable' (D69). A source such as GUS
+  -- publishes a central value and no spread. The CHECK below makes every other
+  -- combination unwritable, so nullability cannot be used to skip the spread.
+  p25_ppm2      NUMERIC(12,2),
+  p75_ppm2      NUMERIC(12,2),
+  min_ppm2      NUMERIC(12,2),
+  max_ppm2      NUMERIC(12,2),
   range_kind    range_kind NOT NULL,
   completeness  TEXT NOT NULL DEFAULT 'final',       -- final | partial (08 §4)
 
@@ -421,9 +424,22 @@ CREATE TABLE metric_unit_month (
                price_type, price_kind, series_kind, area_band, generation),
   CONSTRAINT flow_states_its_window
     CHECK ((series_kind = 'flow') = (flow_window_days IS NOT NULL)),
+  -- Rule 7 survives the D69 addition: a spread may be absent only when the
+  -- source publishes none, and then it must be absent completely.
+  CONSTRAINT spread_present_unless_unavailable
+    CHECK (
+      (range_kind = 'unavailable'
+        AND p25_ppm2 IS NULL AND p75_ppm2 IS NULL
+        AND min_ppm2 IS NULL AND max_ppm2 IS NULL)
+      OR
+      (range_kind IN ('iqr','min_max')
+        AND p25_ppm2 IS NOT NULL AND p75_ppm2 IS NOT NULL
+        AND min_ppm2 IS NOT NULL AND max_ppm2 IS NOT NULL)
+    ),
   CONSTRAINT range_bounds_ordered
-    CHECK (min_ppm2 <= p25_ppm2 AND p25_ppm2 <= median_ppm2
-           AND median_ppm2 <= p75_ppm2 AND p75_ppm2 <= max_ppm2)
+    CHECK (range_kind = 'unavailable'
+           OR (min_ppm2 <= p25_ppm2 AND p25_ppm2 <= median_ppm2
+               AND median_ppm2 <= p75_ppm2 AND p75_ppm2 <= max_ppm2))
 );
 
 -- D67: the IQR/min–max switch is a **configuration** value, not a literal in the
@@ -432,10 +448,17 @@ CREATE TABLE metric_unit_month (
 -- flow states its window); the application enforces the threshold and V4 tests it.
 ```
 
-Three product rules made structural here: `price_type` in the key (never mixed),
-`n`/percentiles `NOT NULL` (no aggregate without its spread — rule 7), and
-`range_kind_matches_n` (the IQR/min–max switch cannot be got wrong). `generation`
-means recomputation adds rows rather than rewriting history.
+Three product rules made structural here.
+
+`price_type` sits in the key, so no row mixes types. `n` is `NOT NULL` and
+`spread_present_unless_unavailable` allows a missing spread **only** when the
+source publishes none, so nullability cannot be used to skip rule 7. `generation`
+means a recomputation adds rows rather than rewriting history.
+
+The IQR versus min–max threshold is **not** in the schema. D67 moved it to
+configuration because it is unratified, and a provisional value must not need a
+migration to change. The database checks internal consistency; V4 checks the
+threshold.
 
 ```sql
 CREATE TABLE metric_index (        -- mix-adjusted (05 §7)

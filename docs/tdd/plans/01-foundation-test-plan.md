@@ -14,26 +14,40 @@ placeholder standing in for a real coordinate or a real TERYT code.
 
 ---
 
-## 0. Corrections carried from the gap analysis
+## 0. Names, and the decisions this plan now carries
 
-[`../00-gap-analysis.md`](../00-gap-analysis.md) closed four gaps **after** pass 1
-was written. Pass 1 therefore contains assertions that are now wrong. Type the
-corrected forms below, not the pass-1 forms.
+### 0.1 Names (D77, D112)
 
-| Pass-1 test | What pass 1 says | What to type instead | Because |
-|---|---|---|---|
-| R2.11 | PK is `["teryt_unit","month","asset_class","buildability","price_type","generation"]` | PK is `["teryt_unit","month","asset_class","buildability","price_type","price_kind","series_kind","area_band","generation"]` — note `unit_level` is **not** a key column | **D66** |
-| R2.18 | `range_kind_matches_n` CHECK with the literal 5 | The CHECK no longer exists. Split into R2.18a (`range_bounds_ordered`, database) and R2.18b (`range_kind_for(n)`, configuration, unit test) | **D67** |
-| R2.4 | `listing` shape without `price_kind` | `listing.price_kind` is `price_kind NOT NULL DEFAULT 'asking'` | **D65** |
-| R3.19 / R3.20 | Blocked on the ring-membership rule | Unblocked. `ST_DWithin(gmina.geom::geography, anchor.geom::geography, 25000)`, materialised into `admin_unit.in_ring TEXT[]` | **D64** |
-| §4.4 | `admin_unit` carries no provenance | `admin_unit.as_of DATE NOT NULL` and `admin_unit.source_id INT NOT NULL REFERENCES source(id)` now exist; add R3.24 | **A6 closed** |
-| §4.2 | `listing.parcel_id` FK ordering unresolved | Columns are plain `BIGINT` with **no** FK in migration `0002`; FKs land with items 9 and 14. Add R2.30 asserting the absence of the FK, so the later migration is forced to add it deliberately | **A5 closed** |
+The repository is `ile-za-dzialke`. The Python package is `dzialki`, and the source
+root is `src/dzialki/`. Environment variables use the `DZIALKI_` prefix:
+`DZIALKI_DATABASE_URL` for the application, `DZIALKI_TEST_DATABASE_URL` for the
+suite. D112 records `dzialki` as a deliberate exception to D15, so a later reader
+must not rename it back to English.
 
-Two consequences for migration ordering that the tests depend on:
+### 0.2 Decisions that change what to type
 
-1. `source` must be created **before** `admin_unit` (the new `source_id` FK).
-2. `admin_unit` must be created **before** `listing` (`teryt_gmina` FK),
-   `transaction` (`teryt_unit` FK) and `metric_unit_month` (`teryt_unit` FK).
+Batches 15, 17, 19 and 21 settled the schema after pass 1 was written. Pass 1 is
+now corrected, and both documents agree. The table records the state to type.
+
+| Area | What to type | Because |
+|---|---|---|
+| `price_kind` enum | Four labels, in order: `["asking","auction_start","tender","transaction"]` | **D65** names the three offering-side kinds; **D68** adds the sales-side one |
+| `range_kind` enum | Three labels: `["iqr","min_max","unavailable"]` | **D69** — a source that publishes a central value with no spread must be storable, not an error |
+| `series_kind` enum | `["stock","flow"]` | **D56**, **D66** |
+| `metric_unit_month` primary key | `["teryt_unit","month","asset_class","buildability","price_type","price_kind","series_kind","area_band","generation"]` — `unit_level` is **not** a key column | **D66** |
+| The n threshold | No `range_kind_matches_n` CHECK. R2.18a tests `range_bounds_ordered` in the database; R2.18b tests `range_kind_for(n)` against configuration | **D67** |
+| `listing.price_kind` | `price_kind NOT NULL DEFAULT 'asking'` | **D65** |
+| `transaction.price_kind` | `price_kind NOT NULL DEFAULT 'transaction' CHECK (price_kind = 'transaction')` | **D68** |
+| `notice` table | A separate table with `notice_date DATE NOT NULL`, a nullable `auction_at`, a nullable price and area, and `price_kind` restricted to `{auction_start, tender}` | **D91** |
+| Ring membership | `ST_DWithin(gmina.geom::geography, anchor.geom::geography, 25000)`, materialised into `admin_unit.in_ring TEXT[]` | **D64** |
+| `admin_unit` provenance | `as_of DATE NOT NULL` and `source_id INT NOT NULL REFERENCES source(id)` | rule 7 |
+| `listing.parcel_id`, `listing.plot_cluster_id` | Plain `BIGINT`, **no** foreign key in migration `0002`. R2.30 pins their absence so items 9 and 14 must add them on purpose | deferred by design |
+
+### 0.3 Migration order the tests depend on
+
+1. `source` before `admin_unit` — the `source_id` foreign key.
+2. `admin_unit` before `listing`, `notice`, `transaction` and `metric_unit_month` —
+   all four reference it.
 
 ---
 
@@ -317,7 +331,7 @@ the recording script, not by this document:
   "clip_bbox_4326": [ "⟨RECORD⟩", "⟨RECORD⟩", "⟨RECORD⟩", "⟨RECORD⟩" ],
   "clip_rule": "ST_DWithin(unit.geom::geography, anchor.geom::geography, 25000) for anchors A and B, plus all ancestors",
   "counts": {"voivodeship": "⟨RECORD⟩", "powiat": "⟨RECORD⟩", "gmina": "⟨RECORD⟩"},
-  "ring_counts": {"A": "⟨RECORD⟩", "B": "⟨RECORD⟩"},
+  "ring_gminas": {"A": ["⟨RECORD⟩", "…"], "B": ["⟨RECORD⟩", "…"]},
   "teryt": {
     "gmina_skierniewice_rural": "⟨RECORD⟩",
     "miasto_skierniewice":      "⟨RECORD⟩",
@@ -328,6 +342,10 @@ the recording script, not by this document:
   "duplicate_gmina_names": {"Skierniewice": ["⟨RECORD⟩", "⟨RECORD⟩"]}
 }
 ```
+
+`ring_gminas` holds two **exact TERYT lists**, not two counts. V6 no longer asserts
+an approximate gmina count, so R3.20 compares sets. A list also says *which* gmina
+went missing when the clip is re-recorded; a count says only that one did.
 
 `terc_2026-08-08.csv` — the TERYT **TERC** register, columns
 `WOJ;POW;GMI;RODZ;NAZWA;NAZWA_DOD`, semicolon-separated, covering at minimum every
@@ -400,11 +418,11 @@ Stated explicitly per `CLAUDE.md` rule 2 rather than guessed.
 
 | Value | Why it cannot be fixed here | What is needed |
 |---|---|---|
-| TERYT of rural gmina Skierniewice | **The repository contradicts itself.** [`docs/14-api-contract.md`](../../14-api-contract.md) line 119 says `1015042`; [`../01-foundation-and-schema.md`](../01-foundation-and-schema.md) R3.2 says `1015062`. One of them is wrong and neither is a source | The GUS TERYT **TERC** download (`TERC_Urzedowy_<date>.csv`). Resolve with the filter in §3.10. Determinable from the repo: `WOJ=10` (łódzkie), `POW=15` (skierniewicki), `RODZ=2` (gmina wiejska); only `GMI` is unknown |
-| TERYT of the city of Skierniewice | Cited once (`1062011`) and never corroborated. The city is a *miasto na prawach powiatu*, so `GMI=01`, `RODZ=1`, `WOJ=10` are structural — the `POW` digit pair is the unknown | Same TERC download |
+| TERYT of rural gmina Skierniewice | **The repository gave two different codes for this one gmina**, one in the API contract and one in the pass-1 specification. I invented the first. Both are now deleted, and I do not pick a replacement: picking one is what produced the error | The GUS TERYT **TERC** download (`TERC_Urzedowy_<date>.csv`). Resolve with the filter in §3.10. Determinable from the repository without guessing: `WOJ=10` (łódzkie), `POW=15` (skierniewicki), `RODZ=2` (gmina wiejska). The `GMI` pair is unknown |
+| TERYT of the city of Skierniewice | Cited once and never corroborated, so the citation is not evidence. The city is a *miasto na prawach powiatu*, so `GMI=01`, `RODZ=1` and `WOJ=10` are structural — the `POW` pair is the unknown | Same TERC download |
 | TERYT of m. Elbląg, powiat elbląski | Not stated anywhere in the repository | Same TERC download |
 | Budy Grabskie / Skierniewice / Elbląg coordinates | Real-world locations; any lon/lat written here would be fabricated | PRG PRNG localities layer (or the PRG city polygon centroid), recorded with its own provenance note |
-| PRG feature counts, ring counts `N_A` / `N_B` | Depend on the clip, which depends on the anchors in the gitignored `config/anchors.yml` | Run the clip script locally; the manifest is the oracle thereafter |
+| PRG feature counts, and the two `ring_gminas` lists | Depend on the clip, which depends on the anchors in the gitignored `config/anchors.yml` | Run the clip script locally; the manifest is the oracle thereafter |
 | The 400 m / 600 m boundary points | Depend on the recorded PRG geometry | Constructed by the recording script from the clip; see §3.7 |
 | EPSG:2180 coordinates of the distance pair | Require the PROJ transformation grids | `pyproj` ≥ 3.4 with bundled PROJ ≥ 9; see §4 |
 
@@ -423,16 +441,24 @@ Write both into `tests/fixtures/prg/manifest.json` under `teryt`, and write
 **neither into a test file as a literal** — tests read them from the manifest, so a
 re-record propagates automatically.
 
-Add one test that pins the documentation drift found above:
+One test guards the drift that produced the contradiction:
 
-#### R3.25 `test_repository_documents_cite_the_terc_codes`
-- **Input** `docs/14-api-contract.md` and `docs/tdd/01-foundation-and-schema.md`,
-  read as text; the manifest's `teryt.gmina_skierniewice_rural`.
-- **Expected** Every 7-digit string in either document that is adjacent to the
-  token `Skierniewice` equals the manifest value. Count of mismatches `== 0`;
-  failure message prints file, line and the offending code.
-- **Marker** `architecture`. **Discharges** none — it is the guard that stops the
-  known contradiction from being silently copied into a third place.
+#### R3.25 `test_repository_documents_cite_the_register_teryt_codes`
+- **Input** every tracked `docs/**/*.md` file, read as text, from
+  `git ls-files 'docs/**/*.md'`; and the manifest's
+  `teryt.gmina_skierniewice_rural` and `teryt.miasto_skierniewice`.
+- **Expected** Every 7-digit string within 80 characters of the token
+  `Skierniewice` equals one of the two manifest values. The count of mismatches
+  equals `0`. The failure message prints the file, the line and the offending code.
+- **Marker** `architecture`. **Discharges** none.
+- **Why it scans every document, not two.** The contradiction was found in two
+  files, but the failure mode is copying a code into a third. A test naming two
+  paths goes stale the moment somebody writes a fourth document. The scan is
+  cheap, so scan everything.
+- **What this test does not do.** It does not choose a code. It reports that a
+  document disagrees with the register and stops there. The register decides.
+- **Ordering.** This test is red until the TERC download fills the manifest. That
+  is correct: an empty manifest value must not let the guard pass.
 
 ---
 
@@ -567,13 +593,13 @@ means a line in that file, not a code comment.
 | Test | Exact query | Exact expected list |
 |---|---|---|
 | R2.1 | `enumlabel … typname='price_type' ORDER BY enumsortorder` | `["offering","sales"]` |
-| R2.1b **(new, D65)** | `… typname='price_kind'` | `["asking","auction_start","tender"]` |
+| R2.1b **(D65, D68)** | `… typname='price_kind'` | `["asking","auction_start","tender","transaction"]`, and `"offering" not in labels`, `"sales" not in labels` |
 | R2.2 | `… typname='buildability_source'` | `["plan_ogolny","mpzp","registry"]`, and `"advert" not in labels` |
 | R2.3a | `… typname='asset_class'` | `["land_building","land_recreational","land_agricultural","land_forest_other","house","flat"]` |
 | R2.3b | `… typname='buildability'` | `["buildable","conditional","agricultural","unknown"]` |
 | R2.3c | `… typname='unit_level'` | `["voivodeship","powiat","gmina","obreb"]` |
-| R2.3d | `… typname='range_kind'` | `["iqr","min_max"]` |
-| R2.3e **(new, D66)** | `… typname='series_kind'` | `["stock","flow"]` |
+| R2.3d **(D69)** | `… typname='range_kind'` | `["iqr","min_max","unavailable"]` |
+| R2.3e **(D56, D66)** | `… typname='series_kind'` | `["stock","flow"]` |
 
 ### 5.3 Item 2 — the canonical valid rows
 
@@ -600,7 +626,15 @@ LISTING = dict(source_id=SOURCE_ID, external_id="EXT-1",
 TRANSACTION = dict(source_id=SOURCE_ID, teryt_unit="9901011", unit_level="gmina",
                    transacted_at=date(2024, 6, 1), as_of=date(2024, 6, 1),
                    price_pln=Decimal("250000.00"), area_m2=Decimal("2500.00"),
-                   price_type="sales")
+                   price_type="sales", price_kind="transaction")   # D68
+
+NOTICE = dict(source_id=SOURCE_ID, external_id="NOT-1",            # D91
+              url="https://example.invalid/notice/1",
+              notice_date=date(2026, 7, 15),
+              auction_at=None,                                     # a plain sale notice
+              price_pln=None, area_m2=None,                        # a notice may state neither
+              price_type="offering", price_kind="auction_start",
+              teryt_gmina="9901011", as_of=date(2026, 8, 8))
 
 METRIC = dict(teryt_unit="9901011", unit_level="gmina", month=date(2026, 7, 1),
               asset_class="land_building", buildability="unknown",
@@ -620,20 +654,37 @@ depend on a loaded hierarchy. The hierarchy is item 3's subject.
 
 | Test | Mutation of the canonical row | Exact expected | Exception / diagnostic |
 |---|---|---|---|
-| R2.4 | none — introspection | exactly one `pg_constraint` row on `listing` with `contype='c'` whose `pg_get_constraintdef` contains `price_type = 'offering'::price_type`; `pg_attribute.attnotnull` for `listing.price_type` is `True` | — |
-| R2.5 | none — introspection | same shape on `transaction` with `'sales'::price_type`; `attnotnull True` | — |
-| R2.6 | none — catalogue scan | for every `public` table with a column matching `price%`, `%_ppm2`, `median%`, `p25%`, `p75%`: it has `price_type` of type `price_type`. Set difference `== set()`. **Second limb (D65):** every such table whose `price_type` CHECK does *not* pin `'sales'` also has `price_kind` of type `price_kind`. `transaction` is exempt **by its CHECK**, not by a hardcoded name | — |
+| R2.4 | none — introspection | exactly one `pg_constraint` row on `listing` with `contype='c'` whose `pg_get_constraintdef` contains `price_type = 'offering'::price_type`; `pg_attribute.attnotnull` for `listing.price_type` is `True`; `listing.price_kind` has type `price_kind`, `attnotnull True`, and its default renders as `'asking'::price_kind` | — |
+| R2.5 | none — introspection | same `price_type` shape on `transaction` with `'sales'::price_type`, `attnotnull True`. **D68 limb:** a second `contype='c'` row whose definition contains `price_kind = 'transaction'::price_kind`; `attnotnull True` on `transaction.price_kind` | — |
+| R2.5b **(D91)** | none — introspection on `notice` | a `contype='c'` row containing `price_type = 'offering'::price_type`; a second containing both `'auction_start'` and `'tender'`; `attnotnull True` on `price_type`, `price_kind` and `notice_date`; `attnotnull False` on `auction_at`, `price_pln` and `area_m2` | — |
+| R2.5c **(D91)** | insert `NOTICE` verbatim | **succeeds**; `SELECT price_per_m2` returns `None`, because the generated expression yields NULL when `price_pln` is NULL | — |
+| R2.5d **(D91)** | `NOTICE` with `price_kind='asking'` | rejected — a notice is never an asking price | `CheckViolation`, `diag.constraint_name == "notice_price_kind_check"` |
+| R2.5e **(D91)** | `NOTICE` with `notice_date=None` | rejected | `NotNullViolation`, `diag.column_name == "notice_date"` |
+| R2.6 | none — catalogue scan | for every `public` table with a column matching `price%`, `%_ppm2`, `median%`, `p25%`, `p75%`: **(a)** it has `price_type` of type `price_type`; **(b)** it has `price_kind` of type `price_kind`. Both set differences `== set()`, both failure messages list the offending tables. **No exemption list.** D68 gave `price_kind` a `transaction` label so the sales table satisfies limb (b) too, which is what removes the need for one | — |
 | R2.7 | `price_type=None` | rejected | `NotNullViolation`, `exc.diag.column_name == "price_type"` |
 | R2.8 | `price_type='sales'` | rejected | `CheckViolation`, `exc.diag.constraint_name == "listing_price_type_check"` |
 | R2.9 | `price_type='asking'` | rejected | `InvalidTextRepresentation` (SQLSTATE `22P02`); `"asking" in str(exc)` and `"price_type" in str(exc)` |
-| R2.9b **(new)** | `price_kind='sprzedaz'` | rejected | `InvalidTextRepresentation`; `"sprzedaz" in str(exc)` |
-| R2.9c **(new)** | `price_kind=None` | rejected | `NotNullViolation`, `diag.column_name == "price_kind"` |
-| R2.9d **(new)** | omit `price_kind` entirely | insert **succeeds**; `SELECT price_kind` returns `"asking"` — the fail-safe default | — |
+| R2.9b | `price_kind='sprzedaz'` | rejected | `InvalidTextRepresentation`; `"sprzedaz" in str(exc)` |
+| R2.9c | `price_kind=None` | rejected | `NotNullViolation`, `diag.column_name == "price_kind"` |
+| R2.9d | omit `price_kind` entirely | insert **succeeds**; `SELECT price_kind` returns `"asking"` — the fail-safe default | — |
+| R2.9e **(finding, see below)** | `listing.price_kind='transaction'` | **succeeds today** — and it should not | — |
 | R2.10a | `transaction.price_type='offering'` | rejected | `CheckViolation`, `diag.constraint_name == "transaction_price_type_check"` |
 | R2.10b | `transaction.price_type=None` | rejected | `NotNullViolation`, `diag.column_name == "price_type"` |
+| R2.10c **(D68)** | `transaction.price_kind='asking'` | rejected | `CheckViolation`, `diag.constraint_name == "transaction_price_kind_check"` |
 
 R2.9 uses `'asking'` deliberately: it is a valid `price_kind` label and an invalid
 `price_type` label, so the test also documents that the two axes are distinct.
+
+**R2.9e is a finding, not a passing test.** `15` §5 gives `listing.price_kind` a
+`NOT NULL` and a default, but no CHECK. D68 added the `transaction` label to the
+enum for the sales side. Nothing now stops a `listing` row carrying
+`price_kind = 'transaction'`, which says a portal advert is a recorded sale. The
+same hole exists on `notice`, but D91 closed it there with a CHECK.
+
+**Ask:** add `CHECK (price_kind = 'asking')` to `listing`, matching how `15` §1
+already pins `price_type` per table. I do not add it here, because it changes the
+schema. Write R2.9e and R2.10c now: R2.10c is green, R2.9e is red, and the pair
+shows exactly which table is missing its constraint.
 
 ### 5.5 Item 2 — `metric_unit_month`
 
@@ -641,14 +692,18 @@ R2.9 uses `'asking'` deliberately: it is a valid `price_kind` label and an inval
 |---|---|---|---|
 | R2.11 | read PK columns from `pg_index`/`pg_attribute` in key order | `["teryt_unit","month","asset_class","buildability","price_type","price_kind","series_kind","area_band","generation"]` — **exact list, D66**. Separately assert `"unit_level" not in pk_columns` | — |
 | R2.12 | insert `METRIC` with `median_ppm2=200.00`; insert a copy with `price_type='sales'`, `median_ppm2=100.00` | `count(*) == 2`; offering row `median_ppm2 == Decimal("200.00")`; sales row `== Decimal("100.00")`; `SELECT count(*) … WHERE median_ppm2 = 150.00` equals `0` | — |
-| R2.12b **(new, D65)** | insert the offering row again with `price_kind='auction_start'`, `median_ppm2=60.00` | `count(*) == 3`; `SELECT count(*) WHERE median_ppm2 = 130.00` equals `0` — kinds do not blend either (V46's storage limb) | — |
+| R2.12b **(D65)** | insert the offering row again with `price_kind='auction_start'`, `median_ppm2=60.00` | `count(*) == 3`; `SELECT count(*) WHERE median_ppm2 = 130.00` equals `0` — kinds do not blend either (V46's storage limb) | — |
+| R2.12c **(D66)** | insert the offering row again with `series_kind='flow'`, `flow_window_days=90`, `median_ppm2=90.00` | `count(*) == 4` — stock and flow are separate rows, not one row overwritten | — |
+| R2.12d **(D66)** | insert the offering row again with `area_band='3000-10000'`, `median_ppm2=70.00` | `count(*) == 5` — bands do not collide | — |
 | R2.13 | re-insert the R2.12 offering row verbatim | rejected | `UniqueViolation`, `diag.constraint_name == "metric_unit_month_pkey"` |
 | R2.18a-1 | `min_ppm2=200.00` (above `p25=100.00`) | rejected | `CheckViolation`, `diag.constraint_name == "range_bounds_ordered"` |
 | R2.18a-2 | `p75_ppm2=90.00` (below `median=120.00`) | rejected | `CheckViolation`, `range_bounds_ordered` |
 | R2.18a-3 | all five equal to `Decimal("120.00")`, `n=1`, `range_kind='min_max'` | **succeeds** — the degenerate n=1 row rule 7 requires | — |
-| R2.18c **(new)** | `series_kind='flow'`, `flow_window_days=None` | rejected | `CheckViolation`, `flow_states_its_window` |
-| R2.18d **(new)** | `series_kind='stock'`, `flow_window_days=90` | rejected | `CheckViolation`, `flow_states_its_window` |
-| R2.18e **(new)** | `series_kind='flow'`, `flow_window_days=90` | **succeeds** | — |
+| R2.18c-1 **(D69)** | `range_kind='unavailable'`, `n=1`, all five equal to `Decimal("120.00")` | **succeeds** | — |
+| R2.18c-2 **(D69)** | `range_kind='unavailable'`, `n=40`, the canonical spread | **succeeds** — no CHECK couples `unavailable` to a sample size | — |
+| R2.18d-1 **(D66)** | `series_kind='flow'`, `flow_window_days=None` | rejected | `CheckViolation`, `flow_states_its_window` |
+| R2.18d-2 **(D66)** | `series_kind='stock'`, `flow_window_days=90` | rejected | `CheckViolation`, `flow_states_its_window` |
+| R2.18d-3 **(D107)** | `series_kind='flow'`, `flow_window_days=90` | **succeeds** — 90 days is D107's window | — |
 | R2.19 | six inserts, each nulling exactly one of `n, median_ppm2, p25_ppm2, p75_ppm2, min_ppm2, max_ppm2` | each rejected | `NotNullViolation`, `diag.column_name` equal to that column, asserted per case |
 | R2.20a | `as_of=None` | rejected | `NotNullViolation`, `diag.column_name == "as_of"` |
 | R2.20b | `source_ids=[]` | rejected | `CheckViolation`, `diag.constraint_name == "metric_unit_month_source_ids_check"` |
@@ -674,6 +729,14 @@ red against the schema as literally printed in `15` §9, and that is the point.
   `ast.Constant` integers equal to `5` in any comparison against a name containing
   `n`. And a scan of `db/migrations/` for the string `range_kind_matches_n`,
   asserting `0` occurrences — D67 removed it and a re-introduction must fail.
+- **Third case, D69** `range_kind_for(n, spread_available=False)` returns
+  `"unavailable"` for every `n`, and the threshold never applies. GUS publishes a
+  central value with no spread. The threshold decides between IQR and min–max; it
+  cannot decide between a spread and no spread, because that is a property of the
+  source, not of the sample size.
+- **Configuration file** `config/metrics.yml`, committed, holding
+  `range_kind_min_n: 5`. The value stays 5 until O11 ratifies one, and it changes
+  by editing a file rather than by writing a migration. That is the whole of D67.
 
 ### 5.6 Item 2 — the other schema rules
 
@@ -696,7 +759,11 @@ red against the schema as literally printed in `15` §9, and that is the point.
 | R2.24a | `SELECT … FROM geometry_columns WHERE srid = 0` | zero rows | — |
 | R2.24b | `format_type` of `admin_unit.geom` / `anchor.geom` | `"geometry(MultiPolygon,4326)"` / `"geometry(Point,4326)"` | — |
 | R2.24c | `ST_Transform(<valid multipolygon>, 2180)` into `admin_unit.geom` | rejected; `"SRID" in str(exc)` | `psycopg.errors.InvalidParameterValue` (SQLSTATE `22023`) |
-| R2.30 **(new, A5)** | `pg_constraint` rows on `listing` with `contype='f'` | referenced tables equal exactly `{"source","admin_unit"}` — `parcel` and `plot_cluster` are **absent**, and their columns exist as plain `BIGINT`. Test docstring names items 9 and 14 as the migrations that must add them | — |
+| R2.30 | `pg_constraint` rows on `listing` with `contype='f'` | referenced tables equal exactly `{"source","admin_unit"}` — `parcel` and `plot_cluster` are **absent**, and their columns exist as plain `BIGINT`. Test docstring names items 9 and 14 as the migrations that must add them | — |
+| R2.31a | column introspection on `admin_unit` | `as_of` is `date` `NOT NULL`; `source_id` is `integer` `NOT NULL` with a foreign key to `source(id)`; `in_ring` is `text[]` `NOT NULL` with default `'{}'::text[]` | — |
+| R2.31b | `ADMIN_UNIT` with `as_of=None` | rejected | `NotNullViolation`, `diag.column_name == "as_of"` |
+| R2.31c | `ADMIN_UNIT` with `source_id=999999` | rejected | `ForeignKeyViolation`, `diag.constraint_name == "admin_unit_source_id_fkey"` |
+| R2.31d | `ADMIN_UNIT` with `in_ring` omitted | **succeeds**; `SELECT in_ring` returns `[]`, not `None` — a unit belongs to no ring until the assignment runs | — |
 
 R2.24c caveat: the class for a PostGIS typmod mismatch is pinned to the image in
 §7.1. If the pinned image reports a different SQLSTATE, pin the observed class in
@@ -768,7 +835,7 @@ must not open a database connection.
 | R3.18 | load `config/anchors.example.yml` into `anchor` | column set `== {"key","label","geom"}`; `count(*) == 2`; every `label` has `re.search(r"\d", label) is None`; `GeometryType(geom) == "POINT"`; `ST_SRID(geom) == 4326` | — | `integration`, `needs_db` |
 | R3.22 | run the loader twice | `count(*)` unchanged; `geometry_digest()` byte-identical | — | `integration`, `needs_db` |
 | R3.23 | load features shuffled with `random.Random(int(shuffled_seed.txt))` | `geometry_digest()` equals the file-order digest | — | `integration`, `needs_db` |
-| R3.24 **(new, A6)** | every loaded `admin_unit` row | `count(as_of IS NULL) == 0`; `count(source_id IS NULL) == 0`; every `as_of` equals `manifest["downloaded_at"]`; every `source_id` resolves to the `source` row named `prg` | — | `integration`, `needs_db` |
+| R3.24 | every loaded `admin_unit` row | `count(as_of IS NULL) == 0`; `count(source_id IS NULL) == 0`; every `as_of` equals `manifest["downloaded_at"]`; every `source_id` resolves to the `source` row named `prg` | — | `integration`, `needs_db` |
 
 ### 5.10 Item 3 — ring membership, now unblocked (D64)
 
@@ -792,12 +859,20 @@ be asserted in CI; the synthetic fixture can, exactly.
 - **Exception** none.
 - **Discharges** the D64 limb of V6.
 
-#### R3.20 `test_ring_membership_counts_match_the_manifest`
-- **Input** the same load.
-- **Expected** `len(members) == len(manifest["expected"]["in_ring_T"]) == 3`; and
-  for the recorded clip, `len(ring("A")) == manifest["ring_counts"]["A"]` and
-  likewise for `"B"` — the latter two marked `needs_local_secrets` and skipped in
-  CI with the reason `"ring counts depend on gitignored anchors"`.
+#### R3.20 `test_ring_membership_matches_the_manifest_gmina_list`
+- **Input** the same load, and separately the recorded clip.
+- **Expected**
+  - Synthetic limb: `set(members) == set(manifest["expected"]["in_ring_T"])` — set
+    equality, three gminas.
+  - Recorded limb: `set(ring("A")) == set(manifest["ring_gminas"]["A"])` and
+    `set(ring("B")) == set(manifest["ring_gminas"]["B"])` — **exact TERYT lists**,
+    for the two rings only.
+- **Markers** the synthetic limb `integration`, `needs_db`; the recorded limb adds
+  `needs_local_secrets` and skips with the reason
+  `"ring membership depends on gitignored anchors"`.
+- **Why a list and not a count.** V6 no longer asserts an approximate gmina count.
+  A count says a gmina went missing; a list says which one. The failure message
+  prints the symmetric difference.
 
 #### R3.21 `test_both_rings_are_non_empty_and_disjoint`
 - **Input** the recorded clip with both real anchors loaded.
@@ -940,12 +1015,14 @@ validation method is missing, which is a rule 5 violation, not a gap in this pla
 | Item | Status |
 |---|---|
 | §4.1 — item 1 has no validation method of its own | **Open.** Blocks R1.11–R1.15 under rule 5. Proposed V63 |
-| §4.2 — `listing` FKs to future tables | **Closed** by A5: plain `BIGINT`, FKs later, pinned by R2.30 |
-| §4.3 — `price_kind` | **Closed** by D65. Tests R2.1b, R2.9b–d, R2.12b, R2.6 second limb |
-| §4.4 — `admin_unit` provenance | **Closed** by A6. Test R3.24 |
+| §4.2 — `listing` foreign keys to future tables | **Closed.** Plain `BIGINT`, foreign keys later, pinned by R2.30 |
+| §4.3 — `price_kind` | **Closed by D65, D66, D68.** Tests R2.1b, R2.4, R2.5, R2.5b–e, R2.6, R2.9b–d, R2.11, R2.12b–d |
+| §4.4 — `admin_unit` provenance | **Closed.** Tests R2.31a–d and R3.24 |
 | §4.5 — V7(b) in CI | **Open.** Currently pre-push only (§7.2). The salted-hash option is unimplemented |
-| §4.6 — ring membership | **Closed** by D64. Tests R3.19, R3.19b, R3.20 |
-| §4.7 — import extent and V6's `~` counts | **Partly closed.** V6 now reads the ring extent with the manifest as oracle; the manifest integers are still `⟨RECORD⟩` |
-| The real TERYT codes | **Open**, and the repository contradicts itself. §3.9, §3.10, R3.25 |
+| §4.6 — ring membership | **Closed by D64.** Tests R3.19, R3.19b, R3.20 |
+| §4.7 — import extent and V6's approximate counts | **Closed.** The extent is the two rings; V6 asserts the exact gmina list from `manifest["ring_gminas"]`, which R3.20 checks. The list is `⟨RECORD⟩` until the clip is recorded — a recording step, not an open question |
+| The two Skierniewice TERYT codes | **Open** until the TERC register is downloaded. Both invented codes are deleted, no replacement is guessed, and R3.25 fails when any document disagrees with the register. §3.9, §3.10 |
+| `listing.price_kind` has no CHECK | **New finding, open.** A listing can be stored with `price_kind='transaction'`. R2.9e is written red; §5.4 states the proposed CHECK |
+| `notice` in migration `0002` | **Recorded assumption**, stated in `../01-foundation-and-schema.md` §2. Overturn it and R2.5b–e move to item 7 |
 | The 400 m / 600 m boundary points | **Open** until the PRG clip is recorded |
 | EPSG:2180 coordinates of the distance pair | **Open** until the recording script runs; the *separations* (600 m, 20 000 m) are fixed here and are not open |

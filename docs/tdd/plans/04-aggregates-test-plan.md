@@ -9,15 +9,29 @@ independent R-7 percentile implementation.
 Nothing here is approximate. If a value in this document disagrees with what the
 code produces, one of them is wrong and the disagreement is the finding.
 
-Reads with: [`00-gap-analysis.md`](../00-gap-analysis.md) **D66** (`metric_unit_month`
-keyed by `area_band`, `series_kind`, `price_kind`) and **D67** (n=5 in config, not in
-the CHECK); [`05-analytics-methodology.md`](../../05-analytics-methodology.md) §3, §5, §9;
+Reads with: [`00-decisions.md`](../../00-decisions.md) batches 15, 20 and 21;
+[`00-gap-analysis.md`](../00-gap-analysis.md);
+[`05-analytics-methodology.md`](../../05-analytics-methodology.md) §3, §5, §9;
 [`20-verification-strategy.md`](../../20-verification-strategy.md) §4.3, §4.4, §4.8, §5, §6.1;
 [`04-validation.md`](../../04-validation.md) V2, V4, V45, V47, V48, V51, V62.
 
+**Every parameter below is ratified.** No value in this plan is provisional.
+
+| Decision | What it settles |
+|---|---|
+| **D66** | `metric_unit_month` is keyed by `area_band`, `series_kind` and `price_kind` as well. Stock and flow are separate rows |
+| **D67** | The n=5 spread threshold lives in configuration. The database enforces internal consistency only |
+| **D68** | `price_kind` gains `transaction`, so a sales row has a legal kind |
+| **D69** | `range_kind` gains `unavailable`, for a source that publishes a central value and no spread |
+| **D107** | The flow window is **90 days**. Every flow figure states it |
+| **D108** | The comparable size band is **±50 %** |
+| **D109** | The search widens beyond the gmina below **three** comparables |
+| **D110** | Comparable recency is **12 months** |
+| **D113** | A thin map tile renders **faded**, with the count on the label |
+
 **§9 lists eleven arithmetic and definitional defects this pass found in pass 1.**
-Three of them change expected values that pass 1 states verbatim. Read §9 before
-typing anything.
+Pass 1 now carries the corrected values in place, so the two documents state one
+value per test. §9 remains as the record of what was wrong and why.
 
 ---
 
@@ -62,10 +76,21 @@ answers on the same fixture and both are needed.
 |---|---|---|
 | Used by | `metric_unit_month` rows (D66 key) | `select_comparables` |
 | Definition | `<800 / 800–1500 / 1500–3000 / 3000–10000 / >10000` m², lower-inclusive | `[0.5 · subject_area, 1.5 · subject_area]`, **both ends inclusive** |
-| Constant | `AREA_BANDS` | `AREA_BAND_TOLERANCE = 0.50` ‡ |
-| On the canonical fixture | **two** rows (see §1.3) | **one** set of five (see §1.4) |
+| Constant | `AREA_BANDS` (D48) | `AREA_BAND_TOLERANCE = 0.50` (**D108**) |
+| On the canonical fixture | **two** bands, four rows (see §1.3) | **one** set of five (see §1.4) |
 
 Wherever a number below could belong to either, the view is named.
+
+### 0.2b The widening threshold — three comparables (D109)
+
+`MIN_COMPARABLES_BEFORE_WIDENING = 3`. The ladder it drives ships after v0, so in
+v0 the constant has one visible effect: a set of one or two comparables still
+returns an `Estimate`, flagged `below_min_comparables`, and nothing widens.
+
+D109 records the cost in the owner's own terms. **The median of three plots is close
+to noise.** Rule 7 answers that with the `n` and the range beside every figure, and
+D113 answers it on the map with a faded tile carrying the count on its label. Nothing
+here suppresses a thin figure. §1.6's `SPREAD_N1` and `SPREAD_N3` are the fixtures.
 
 ### 0.3 Recency filters `observed_at`; flow filters `first_seen`
 
@@ -74,10 +99,11 @@ This is the whole stock/flow mechanism and it is why C5 (first seen 493 days bef
 window. Getting these two columns crossed produces a fixture that cannot be
 satisfied.
 
-- **Recency** (`RECENCY_MONTHS = 12` ‡): `observed_at >= as_of − 12 months`.
+- **Recency** (`RECENCY_MONTHS = 12`, **D110**): `observed_at >= as_of − 12 months`.
   Cutoff for `as_of = 2026-08-08` is **2025-08-08**.
-- **Flow** (`FLOW_WINDOW_DAYS = 90` ‡): `first_seen >= as_of − 90 days`.
-  Cutoff for `as_of = 2026-08-08` is **2026-05-10**, inclusive.
+- **Flow** (`FLOW_WINDOW_DAYS = 90`, **D107**): `first_seen >= as_of − 90 days`.
+  Cutoff for `as_of = 2026-08-08` is **2026-05-10**, inclusive. State the window
+  beside every flow figure — in this document, in the API and in the UI.
 - **Stock**: `active == True` at `as_of`, subject to recency.
 
 Verified day counts from `as_of = 2026-08-08`: 30 d → 2026-07-09, 60 d → 2026-06-09,
@@ -109,7 +135,9 @@ without the float trap: HALF_UP gives `1.13` / `0.13`, HALF_EVEN gives `1.12` /
 | Area bands are **lower-inclusive**: `[lower, upper)` | B2 |
 | The comparable window is **closed at both ends**: `[0.5a, 1.5a]` | E3 |
 | The flow window is **closed at its old end**: `first_seen >= cutoff` | S6 |
-| The spread switch is `n >= SPREAD_THRESHOLD_N` → `iqr` | D1/D2 |
+| The spread switch is `n >= SPREAD_THRESHOLD_N` → `iqr`, read from config (D67) | D1/D2, D3, D4 |
+| A source with no spread gives `range_kind = 'unavailable'`, never an error (D69) | D6 (§6.5) |
+| Below `MIN_COMPARABLES_BEFORE_WIDENING = 3` the estimate still ships (D109) | E4b |
 | A hit is `low <= actual <= high` — **both bounds inclusive** | K3, K6, B1, B2 (§7) |
 | The tail is `ratio > 2` — **strictly** greater; `ratio == 2` is not a tail | K1, K8 (§7) |
 | Ratios and rates are computed as `Fraction`, never float | §7.4 |
@@ -141,12 +169,12 @@ every downstream statistic is exact in `Decimal` and in binary float alike.
 
 **C5 is the stale overpriced listing** and it is deliberately the **maximum** of the
 set — that is the direction of the stock/flow bias described in `20` §5. It was first
-seen **493 days** before `as_of` (pass 1 says 494; see §9 defect **P1-2**), which puts
-it outside every flow window in this document while remaining inside the 12-month
-recency window on `observed_at`.
+seen **493 days** before `as_of` (see §9 defect **P1-2**), which puts it outside every
+flow window in this document while remaining inside the 12-month recency window
+(D110) on `observed_at`.
 
-`price_kind` is **`asking`**, matching the D65 enum `{asking, auction_start, tender}`.
-Pass 1 writes `ask`; see §9 defect **P1-4**.
+`price_kind` is **`asking`**, matching the enum `{asking, auction_start, tender,
+transaction}` — D65 plus D68. See §9 defect **P1-4**.
 
 ### 1.2 Membership of each filter, per row
 
@@ -166,8 +194,9 @@ drops it and the estimate falls to n=4, median 118.00.
 
 ### 1.3 Expected `metric_unit_month` rows — the D66-keyed view
 
-Key: `(teryt_unit, unit_level, month, asset_class, buildability, price_type,
-price_kind, area_band, series_kind, generation)`. Four rows, not one:
+Key (D66): `(teryt_unit, month, asset_class, buildability, price_type, price_kind,
+series_kind, area_band, generation)`, exactly as `15` §9 states it. `unit_level` is
+not in the key, because `teryt_unit` determines it. Four rows, not one:
 
 | area_band | series_kind | members | n | **median** | p25 | p75 | min | max | range_kind | displayed low | displayed high |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -194,9 +223,9 @@ Subject: 3 000 m², `buildable`, `budowlana`, `offering`, `asking`, `TERYT_GMINA
 **Comparable-set stock − flow gap = 126.00 − 118.00 = 8.00.**
 Arithmetic mean of C1–C5 = 622 / 5 = **124.40** (needed by M8; never displayed).
 
-Pass 1's §2.1 and §7 quote the 8.00 gap; it is the **estimator-view** gap. The
-D66-keyed rows give **7.00** in the `3000–10000` band and **0.00** in `1500–3000`.
-S1 must assert both, naming which is which. See §9 defect **P1-5**.
+The 8.00 gap is the **estimator-view** gap. The D66-keyed rows give **7.00** in the
+`3000–10000` band and **0.00** in `1500–3000`. S1 asserts all three, naming which is
+which. Pass 1 now says the same. See §9 defect **P1-5**.
 
 ### 1.5 The decoys, literally
 
@@ -209,7 +238,7 @@ and `first_seen = 2026-07-01` unless the row says otherwise.
 | D2 | 4 600 | 1 840 000 | **400.00** | buildable | offering | asking | 4 600 > 4 500 — above the window |
 | D3 | 3 000 | 36 000 | **12.00** | agricultural | offering | asking | wrong buildability |
 | D4 | 3 000 | 180 000 | **60.00** | unknown | offering | asking | wrong buildability |
-| D5 | 3 000 | 210 000 | **70.00** | buildable | **sales** | *(see §9 P1-6)* | wrong price type |
+| D5 | 3 000 | 210 000 | **70.00** | buildable | **sales** | **transaction** (D68) | wrong price type |
 | D6 | 3 000 | 1 200 000 | **400.00** | buildable | offering | asking | `first_seen` 2024-12-10, `observed_at` **2025-01-15**, inactive — outside recency |
 | D7 | 3 000 | 120 000 | **40.00** | buildable | offering | **auction_start** | wrong price kind |
 | D8 | 3 000 | 1 200 000 | **400.00** | buildable | offering | asking | gmina **B** |
@@ -244,9 +273,15 @@ symmetric leak leaves the median at 126.00 exactly. `n == 5`, `min == 96.00` and
 | `SPREAD_N10` | `[10,20,…,100]` | 10 | 32.50 | 55.00 | 77.50 | 10.00 | 100.00 | `iqr` | 32.50 | 77.50 |
 | `SPREAD_N100` | `[1, 2, …, 100]` | 100 | 25.75 | 50.50 | 75.25 | 1.00 | 100.00 | `iqr` | 25.75 | 75.25 |
 
+| `SPREAD_GUS` | central 130.00, **no spread published** | 37 | — | 130.00 | — | — | — | `unavailable` | `None` | `None` |
+
 `SPREAD_N4` is `CLAUDE.md` rule 7's own example: *median 118, range 61–240, n=4*.
 `SPREAD_N4` / `SPREAD_N5` are the exact-boundary pair for the `>=`→`>` mutant, and
-`SPREAD_N1`…`SPREAD_N100` are D5's no-suppression fixture.
+`SPREAD_N1`…`SPREAD_N100` are D5's no-suppression fixture. `SPREAD_N3` is also the
+D109 case: three comparables, shown with `n` and a 96.00–150.00 range, never as a
+bare 126.00.
+
+`SPREAD_GUS` is the D69 case and it is the odd one. §6.5 gives it in full.
 
 ---
 
@@ -465,8 +500,12 @@ in no displayed field.
 ## 3. Stock versus flow — the constructed gap
 
 `tests/unit/metrics/test_stock_vs_flow.py`. Fixture: the canonical five of §1.1,
-unchanged. `as_of = 2026-08-08`, `FLOW_WINDOW_DAYS = 90` ‡, **flow cutoff
+unchanged. `as_of = 2026-08-08`, `FLOW_WINDOW_DAYS = 90` (**D107**), **flow cutoff
 2026-05-10 (inclusive)**.
+
+Every flow figure in this section is a **90-day** figure and every assertion on one
+also asserts `flow_window_days == 90` (S7). A flow median without its window says
+nothing.
 
 ### 3.1 The two medians
 
@@ -508,12 +547,17 @@ Monkeypatching `FLOW_WINDOW_DAYS`:
 | 90 | 2026-05-10 | C1–C4 | 4 | 118.00 | 106.50 | 129.50 | 96.00 | 140.00 | `min_max` |
 | 180 | 2026-02-09 | C1–C4 | 4 | 118.00 | 106.50 | 129.50 | 96.00 | 140.00 | `min_max` |
 
-No call site contains a literal `90` (V62 (a)).
+No call site contains a literal `90` (V62 (a)). D107 fixes the value; the constant
+stays in configuration so the sensitivity report of §3.3 can vary it.
 
 ### 3.3 The sensitivity fixture (S8) — a separate, multi-month set
 
-The canonical five give only **two** distinct medians across 30/60/90/180 days, which
-cannot ratify O27. S8 needs its own fixture (§9 defect **P1-8**).
+The window is settled at 90 days (D107), so this report is evidence kept on the
+record rather than an input to a pending choice. It still runs, because a later
+change of window must be argued from measurements.
+
+The canonical five give only **two** distinct medians across 30/60/90/180 days, so
+they cannot exercise the report. S8 needs its own fixture (§9 defect **P1-8**).
 
 `tests/fixtures/synthetic/gmina_a_window_sensitivity.py`. All rows: gmina A,
 **3 000 m²**, buildable, budowlana, offering, asking, active, `observed_at`
@@ -679,20 +723,20 @@ Construction notes, each load-bearing:
 
 | fold | actual | comparable set (sorted ppm2) | n | p25 | **median** | p75 | **low** | **high** | hit? | APE | ratio | tail? |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **K1** | 60 | `[100, 110, 120, 120, 130, 140, 240]` | 7 | 115.00 | **120.00** | 135.00 | 115.00 | 135.00 | no (below) | **1** = 1.000000 | **2** | **no** ‡ |
+| **K1** | 60 | `[100, 110, 120, 120, 130, 140, 240]` | 7 | 115.00 | **120.00** | 135.00 | 115.00 | 135.00 | no (below) | **1** = 1.000000 | **2** | **no** † |
 | **K2** | 100 | `[60, 110, 120, 120, 130, 140, 240]` | 7 | 115.00 | **120.00** | 135.00 | 115.00 | 135.00 | no (below) | **1/5** = 0.200000 | 6/5 | no |
 | **K3** | 110 | `[60, 100, 120, 120, 130, 140, 240]` | 7 | 110.00 | **120.00** | 135.00 | **110.00** | 135.00 | **yes — `actual == low`** | **1/11** = 0.090909 | 12/11 | no |
 | **K4** | 120 | `[60, 100, 110, 120, 130, 140, 240]` | 7 | 105.00 | **120.00** | 135.00 | 105.00 | 135.00 | yes | **0** | 1 | no |
 | **K5** | 120 | `[60, 100, 110, 120, 130, 140, 240]` | 7 | 105.00 | **120.00** | 135.00 | 105.00 | 135.00 | yes | **0** | 1 | no |
 | **K6** | 130 | `[60, 100, 110, 120, 120, 140, 240]` | 7 | 105.00 | **120.00** | 130.00 | 105.00 | **130.00** | **yes — `actual == high`** | **1/13** = 0.076923 | 13/12 | no |
 | **K7** | 140 | `[60, 100, 110, 120, 120, 130, 240]` | 7 | 105.00 | **120.00** | 125.00 | 105.00 | 125.00 | no (above) | **1/7** = 0.142857 | 7/6 | no |
-| **K8** | 240 | `[60, 100, 110, 120, 120, 130, 140]` | 7 | 105.00 | **120.00** | 125.00 | 105.00 | 125.00 | no (above) | **1/2** = 0.500000 | **2** | **no** ‡ |
+| **K8** | 240 | `[60, 100, 110, 120, 120, 130, 140]` | 7 | 105.00 | **120.00** | 125.00 | 105.00 | 125.00 | no (above) | **1/2** = 0.500000 | **2** | **no** † |
 | **B1** | 100 | `[100, 500]` | 2 | 200.00 | **300.00** | 400.00 | **100.00** | 500.00 | **yes — `actual == low`** | **2** = 2.000000 | 3 | **yes** |
 | **B2** | 100 | `[100, 500]` | 2 | 200.00 | **300.00** | 400.00 | **100.00** | 500.00 | **yes — `actual == low`** | **2** = 2.000000 | 3 | **yes** |
 | **B3** | 500 | `[100, 100]` | 2 | 100.00 | **100.00** | 100.00 | 100.00 | 100.00 | no (above) | **4/5** = 0.800000 | 5 | **yes** |
 | **X1** | 480 | *(none — alone in gmina C)* | — | — | **`Absence`** | — | — | — | *not estimable* | — | — | — |
 
-‡ K1 and K8 sit **exactly** on the twofold threshold: `120/60 = 2` and `240/120 = 2`.
+† K1 and K8 sit **exactly** on the twofold threshold: `120/60 = 2` and `240/120 = 2`.
 Under `ratio > 2` neither counts. Under `ratio >= 2` both would, and `tail_over_2x`
 would read `5/11` instead of `3/11`.
 
@@ -827,10 +871,11 @@ still yields a plausible middling hit rate on L1's corpus.
 ### 5.7 The band-breakdown fixture (L7)
 
 `by_area_band` exists to expose size-correlated error that the aggregate hides
-(`05` §4, O6). Pass 1 asks for `by_area_band[">10000"].median_ape == 1.0`, which a
-leave-one-out **median** estimator cannot produce for a majority of folds in any band
-— see §9 defect **P1-9**. The realisable construction below produces a starker
-contrast and is exact.
+(`05` §4, O6). An earlier version of pass 1 asked for
+`by_area_band[">10000"].median_ape == 1.0`, which a leave-one-out **median**
+estimator cannot produce for a majority of folds in any band — see §9 defect
+**P1-9**. The realisable construction below produces a starker contrast and is
+exact. Pass 1 now states these values.
 
 Three gminas, each a self-contained pool, all `budowlana`/`buildable`/`offering`/`asking`:
 
@@ -877,7 +922,7 @@ point — and it is a cleaner demonstration than pass 1's unattainable 1.0.
 | id | area m² | price PLN | ppm2 | price_type | price_kind |
 |---|---|---|---|---|---|
 | O1..O5 | 1 600 / 1 700 / 1 800 / 1 900 / 2 000 | 320 000 / 340 000 / 360 000 / 380 000 / 400 000 | **200.00** each | offering | asking |
-| S1..S5 | 2 100 / 2 200 / 2 300 / 2 400 / 2 500 | 210 000 / 220 000 / 230 000 / 240 000 / 250 000 | **100.00** each | sales | *(see §9 P1-6)* |
+| S1..S5 | 2 100 / 2 200 / 2 300 / 2 400 / 2 500 | 210 000 / 220 000 / 230 000 / 240 000 / 250 000 | **100.00** each | sales | **transaction** (D68) |
 
 **Expected — two rows, nothing between:**
 
@@ -917,18 +962,54 @@ drags every median down and reads as a market move.
 
 ### 6.4 E8 · the recency window (new — see §9 defect **P1-10**)
 
-Pass 1's mutation table sends the dropped-recency-filter mutant to "§6.1 P2", which is
-the architecture test for the grouping key and cannot detect a recency leak. §9 lists
-this as a gap; the missing test:
+`tests/unit/valuation/test_comparable_selection.py`. Recency is 12 months (D110).
+
+An earlier mutation table sent the dropped-recency-filter mutant to "§6.1 P2", which
+is the architecture test for the grouping key and cannot detect a recency leak. Pass
+1 now names E8. The test:
 
 **`test_an_observation_outside_the_recency_window_is_excluded`.** Candidates C1–C5
-plus **D6** (`observed_at` 2025-01-15, ppm2 400.00, in-gmina, in-window, in-kind,
+plus **decoy D6** (`observed_at` 2025-01-15, ppm2 400.00, in-gmina, in-window, in-kind,
 in-buildability — recency is the *only* filter that excludes it). Expected: n **5**,
 median **126.00**, max **150.00**. Leak value: `[96, 110, 126, 140, 150, 400]` → n
 **6**, median **133.00**, max **400.00**. Companion: monkeypatch `RECENCY_MONTHS` to
-`24` (cutoff 2024-08-08) and assert D6 **is** admitted, giving exactly n 6 and median
+`24` (cutoff 2024-08-08) and assert decoy D6 **is** admitted, giving exactly n 6 and median
 133.00 — proving the exclusion is the recency rule and not an accident of some other
 filter.
+
+### 6.5 Test D6 · a source that publishes no spread (D69)
+
+`tests/unit/metrics/test_spread_switch.py`, fixture
+`synthetic/gus_sales_no_spread.py`. GUS publishes a central value for a gmina and no
+percentiles. Rule 7 says show the absence. D69 gives it a name.
+
+| field | value |
+|---|---|
+| `price_type` | `sales` |
+| `price_kind` | `transaction` (D68) |
+| `median_ppm2` | **130.00** |
+| `n` | **37** |
+| `range_kind` | **`unavailable`** |
+| displayed `low` / `high` | **`None`** / **`None`** |
+| rendered text | *"Nie znamy rozrzutu — GUS publikuje tylko średnią"* |
+
+Three assertions, each killing a different wrong behaviour:
+
+1. Building the aggregate **does not raise**. An error on correct data is the failure
+   D69 exists to stop.
+2. The `range` field is **present** with `kind == "unavailable"`, not dropped. A
+   missing field reads as a bug in the reader, not as an absent spread at the source.
+3. The rendered output contains the explicit sentence. A blank, a dash or `"—"` fails
+   — the same scan D5 runs.
+
+The 130.00 is deliberately **not** any value in §1.1, so a figure leaking from the
+offering fixture is visible.
+
+**One consequence to record rather than hide.** `metric_unit_month` declares
+`p25_ppm2`, `p75_ppm2`, `min_ppm2` and `max_ppm2` as `NOT NULL` (`15` §9). A D69 row
+has none of them, so it cannot be written to that table as the schema stands. The
+test above runs at the aggregate and render boundary, where the shape is decided.
+Storage is a schema question and it is open — see §9, question 7.
 
 ---
 
@@ -964,6 +1045,13 @@ mutant nobody has actually reasoned about.
 | 22 | Month bucketing in UTC, not Europe/Warsaw | §M7 Z1/Z2 | June n **2**, median **150.00**; July **absent** | **M7** | — |
 | 23 | Aggregate suppressed when `n < SPREAD_THRESHOLD_N` | `SPREAD_N1`…`SPREAD_N4` | `None` / `"brak danych"` | **D5** | C4 |
 | 24 | `Absence` replaced by the nearest gmina's estimate | §E4 / §5.2 X1 | **126.00** appears in gmina B's result | **E4** | §5.3 (`coverage` **1**) |
+| 25 | `range_kind = 'unavailable'` raises instead of storing | §6.5 | exception, no aggregate | **D6** | — |
+| 26 | `range` field dropped when there is no spread | §6.5 | `range` absent from the payload | **D6** | D5's no-suppression scan |
+| 27 | The n=5 threshold restored as a database CHECK | `SPREAD_N4` insert with `range_kind='iqr'` | the insert is rejected | **D4** | — |
+| 28 | Suppress the estimate below `MIN_COMPARABLES_BEFORE_WIDENING` | two comparables `[110, 140]` | `Absence` instead of median **125.00** | **E4b** | D5 |
+
+Mutants 25 to 28 come from the batch 15, 20 and 21 decisions and have no killer in
+the pass-1 suite as first written. D6, D4 and E4b are the tests that add one.
 
 Mutants 3, 11 and 21 are the ones that survive an obvious-looking suite:
 **3 and 11 leave the median unchanged**, and **21 is invisible at odd n**. Each is
@@ -982,6 +1070,8 @@ criterion 5).
 | `synthetic/gmina_a_buildable_offering.py` | C1–C5 | §1.3 four D66 rows and §1.4 both estimator views |
 | `synthetic/gmina_a_decoys.py` | D1–D8 | §1.5's leak table — every decoy's individual effect |
 | `synthetic/spread_switch.py` | `SPREAD_N1/3/4/5/10/100` | §1.6 |
+| `synthetic/gus_sales_no_spread.py` | `SPREAD_GUS` | §6.5 — median 130.00, n 37, `range_kind` `unavailable` |
+| `synthetic/thin_comparable_set.py` | two rows at 110.00 and 140.00 | §0.2b — E4b's median **125.00**, `min_max`, `below_min_comparables` |
 | `synthetic/gmina_a_window_sensitivity.py` | W1–W9 | §3.3's four windows |
 | `synthetic/month_boundary.py` | Z1, Z2 | §M7 — June 100.00, July 200.00, never 150.00 |
 | `synthetic/price_separation.py` | O1–O5, S1–S5 | §6.1 — 200.00, 100.00, never 150.00 |
@@ -998,7 +1088,11 @@ carry `as_of = 2026-08-08`.
 ## 9. Defects this pass found in pass 1
 
 Pass 2 is where the arithmetic gets checked. Eleven findings; **P1-1, P1-2 and P1-4
-change values that pass 1 states verbatim**, and P1-6 is a schema gap.
+changed values that pass 1 stated verbatim**, and P1-6 was a schema gap.
+
+**All eleven are now corrected in pass 1 itself.** The two documents state one value
+per test. This table stays as the record of what was wrong, so a later reader can see
+why a number changed rather than guess.
 
 | # | Where | Defect | Correction |
 |---|---|---|---|
@@ -1007,22 +1101,29 @@ change values that pass 1 states verbatim**, and P1-6 is a schema gap.
 | **P1-3** | §3 block A, test **A7** | Asserts input `[1.005, 1.005]` stores `Decimal("1.01")`. True only if the conversion goes through `str`; `Decimal(1.005)` is `1.00499999…` and `ROUND_HALF_UP` gives `1.00` | Keep the assertion, add the required conversion path to the surface contract, and add `[1.125, 1.125] → 1.13` to separate "wrong mode" from "wrong path". §0.4, §4.3 |
 | **P1-4** | §2.1 and throughout | Uses `price_kind = "ask"`. D65 defines the enum as `{asking, auction_start, tender}` | **`asking`** everywhere |
 | **P1-5** | §2.1, §7 | The 8.00 stock−flow gap is presented as a property of "the aggregate". It is the **comparable-set** gap. The D66-keyed rows give **7.00** in `3000–10000` and **0.00** in `1500–3000` | S1 asserts all three, each naming its view. §1.3, §1.4, §3.1 |
-| **P1-6** | §2.1, D5 decoy; D65 | **`price_kind` is `NOT NULL` with enum `{asking, auction_start, tender}` — all three are `price_type = 'offering'`. A sales row has no valid `price_kind`.** D5 and §6.1's S1–S5 cannot be written as stated | **Blocks Block C.** Either add a member (`transaction`) or make `price_kind` nullable for `price_type = 'sales'` with a CHECK tying the two. Added to §10's question list |
+| **P1-6** | §2.1, D5 decoy; D65 | **`price_kind` was `NOT NULL` with enum `{asking, auction_start, tender}` — all three are `price_type = 'offering'`. A sales row had no valid `price_kind`.** D5 and §6.1's S1–S5 could not be written as stated | **Closed by D68.** `price_kind` gains `transaction`, pinned by a CHECK on the `transaction` table. D5 and S1–S5 carry it. Nothing is blocked |
 | **P1-7** | §5, **M2** | "the assertion is made on the aggregate for the band the scaled observations now occupy" — the *scaled* set is single-band (`>10000`) but the *baseline* spans two bands, so there is no baseline row to compare against | Assert full equality in the **estimator** view with the subject scaled too; assert the band collapse separately. §M2 |
-| **P1-8** | §7, **S8** | "Pinned against a multi-month fixture with known medians per window" — no such fixture is given, and the canonical five yield only two distinct medians (30 d → 126.00; 60/90/180 d → 118.00), which cannot ratify O27 | New fixture in §3.3: four distinct monotone medians **140 / 100 / 80 / 60** |
+| **P1-8** | §7, **S8** | "Pinned against a multi-month fixture with known medians per window" — no such fixture is given, and the canonical five yield only two distinct medians (30 d → 126.00; 60/90/180 d → 118.00), which cannot exercise the report | New fixture in §3.3: four distinct monotone medians **140 / 100 / 80 / 60**. The window itself is now settled at 90 days by **D107** |
 | **P1-9** | §8, **L7** | Asserts `by_area_band[">10000"].median_ape == 1.0`. A leave-one-out **median** estimator produces APE 1.0 only when the estimate is exactly twice the actual, which cannot hold for a majority of folds drawn from one pool | Replaced with an exact, realisable contrast in §5.7: overall `median_ape` **0**, `>10000` **1/4**, hit rate `2/3` in that band. The contrast is what L7 needs |
-| **P1-10** | §5.1 mutation table | "Drop the recency filter → killed by §6.1 P2". P2 is the architecture test for the grouping key and cannot see a recency leak; §9's table likewise sends it to E2 and P4, neither of which admits D6 | New test **E8** in §6.4, with its non-vacuity companion |
+| **P1-10** | §5.1 mutation table | "Drop the recency filter → killed by §6.1 P2". P2 is the architecture test for the grouping key and cannot see a recency leak; §9's table likewise sends it to E2 and P4, neither of which admits decoy D6 | New test **E8** in §6.4, with its non-vacuity companion |
 | **P1-11** | §3 block B, test **B3** | Property test ranges over "areas 100..500 000 m² (V10's accepted band)". Gap analysis **B1** amended FR-12 and V10 to **300 – 200 000 m²** | Range over **300 – 200 000 m²** |
 
-### Questions still open after this pass
+### Questions after this pass
 
-Pass 1's §10 lists five. This pass closes two and adds one.
+Pass 1 carried five. Five are closed. Two remain, and neither blocks work item 10.
 
 | # | Status |
 |---|---|
 | 1 · Median APE denominator | **Closed by gap analysis B4** — the estimate **median**, in both documents. Used throughout §5 |
 | 2 · `metric_unit_month` primary key | **Closed by D66** — extended with `area_band`, `series_kind`, `price_kind`. §1.3 is written against the extended key; the migration remains a precondition of Block C |
-| 3 · Field name for stock/flow | **Open.** `series_kind` used throughout; must be fixed before the first test, since it appears in the schema, the API and the UI |
-| 4 · Flow window length | **Open (O27).** §3.3 produces the evidence. Every flow figure here is conditional on 90 days |
-| 5 · Rounding point | **Open.** This plan rounds once, on storage (§0.4). If the API rounds again, `stock − flow == 8.00` becomes fixture-dependent |
-| **6 · `price_kind` for sales rows** | **New, blocking** — see defect **P1-6**. The enum has no member a `sales` row can carry, and the column is `NOT NULL` |
+| 3 · Field name for stock and flow | **Closed by D66** — `series_kind`, in the schema, the API and the UI |
+| 4 · Flow window length | **Closed by D107** — 90 days. §3.3 keeps the sensitivity evidence on the record |
+| **6 · `price_kind` for sales rows** | **Closed by D68** — `transaction`. See P1-6 |
+| 5 · Rounding point | **Open.** This plan rounds once, on storage (§0.4). If the API rounds again, `stock − flow == 8.00` becomes fixture-dependent. `06-surface.md` owns the answer |
+| **7 · Storage of a D69 row** | **Open, new.** `metric_unit_month` declares `p25_ppm2`, `p75_ppm2`, `min_ppm2` and `max_ppm2` `NOT NULL` (`15` §9). An `unavailable` row has none of them, so it cannot be written as the schema stands. D69 settles the shape and the copy; it does not settle the columns. §6.5 tests the shape and does not touch storage |
+
+Question 7 is a contradiction between two ratified decisions, not a preference. I
+found it while writing §6.5 and I am recording it rather than choosing an answer.
+Making the four columns nullable and adding a CHECK tying nullability to
+`range_kind = 'unavailable'` would resolve it, and that is a schema decision the
+owner takes, not this document.

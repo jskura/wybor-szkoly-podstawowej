@@ -6,44 +6,58 @@ for [`03-normalization-and-dedup.md`](../03-normalization-and-dedup.md).
 Pass 1 named the tests and fixed their order. **This document is the data**: every
 input string, every expected value, every expected failure, every fixture row and
 the CI wiring that runs them. A developer should be able to type the tables in
-without a further decision — except where a table says ⛔, which means the decision
-is not ours to take (rule 2).
+without a further decision. Every question this plan raised is answered, so no
+table holds a proposal (rule 2).
 
 Read with, not instead of, the pass-1 spec: the red-green order (§3 there), the
 contracts (§2 there) and the mutation list (§14 there) are not repeated here.
 
 ---
 
-## 0. Decisions this plan needs before the blocked rows can be typed
+## 0. The decisions this plan carries
 
 The pass-1 spec left eight open questions, **O-N1..O-N8**. Writing the concrete
-data surfaced four more. All twelve are asked in one batch, before step 1 of the
-red-green sequence, and recorded in [`00-decisions.md`](../../00-decisions.md).
+data surfaced four more. The owner answered all twelve. Batches 18 and 19 of
+[`00-decisions.md`](../../00-decisions.md) record them.
 
-| # | Question | Proposed answer (**not adopted** — awaiting ratification) | Blocks |
+**No row in this plan is a proposal, and no row waits for ratification.** Every
+table below states a decided value.
+
+| # | Settled rule | Decision | Where the data lives |
 |---|---|---|---|
-| O-N1 | Dot in `"1.200 m²"` / `"0.12 ha"` | **Ambiguous → quarantine** `area_ambiguous_separator`, *except* where the dot is followed by exactly 4 digits and the unit is `ha` (`"1.2500 ha"`, the register's own format) → decimal point, confidence `low` | §1.5 rows |
-| O-N2 | Area range `"1200-1500 m²"` | **Quarantine** `area_not_single_valued`. A midpoint invents a number the advert never stated | §1.5 rows |
-| O-N3 | `"250 tys. zł"`, `"1,2 mln zł"` | **Parse the multiplier**, confidence `low`. These are frequent and unambiguous; quarantining them drops a segment (F12) | §2 rows |
-| O-N4 | Relative register-vs-advert difference that sets `conflict` | **> 2%**, and `conflict` is set against *any* lower-authority source, not only the advert's structured field | §3 threshold rows only — the pairwise rows below are chosen to be threshold-independent |
-| O-N5 | `"ok. 1200 m²"` | **Parse**, `is_approximate=True`, confidence `low`, marker reaches the UI | §1.4 rows |
-| O-N6 | The v0 cross-source exact-match key | **Triple + round-number guard** — see §5.3 | §5 |
-| O-N7 | Canonical record in a cluster | **Earliest `first_seen_at`, then lowest `source_id`, then lowest `external_id`** — a total order, so it is deterministic under permutation | §5.2 |
-| O-N8 | Out-of-band record in aggregates | **Excluded from aggregates, present in the corpus and on the plot page**, with the flag rendered. V47 requires that adding an out-of-band observation leaves the estimate unchanged, which forces exclusion; rule 7 forces visibility | §4 row B9 |
-| **O-N9** | Compound / multi-unit strings: `"1 ha 25 a"`, `"1200 m² (12 arów)"`, `"1200 m² (15 arów)"` | **Additive compound** (`1 ha 25 a`) → sum, confidence `low`. **Agreeing restatement** → the value, confidence `high`. **Disagreeing restatement** → quarantine `area_conflicting_statements` | §1.6 rows |
-| **O-N10** | The bare `a` abbreviation in free body prose — `"dojazd 12 a nawet 15 minut"` matches `12 a` | **Context-required**: `12a` / `12 a` is read as ares only in a structured field or title, or in body text within 40 characters of an area keyword (`powierzchnia`, `pow.`, `działka`, `grunt`). Otherwise no area | §1.3 rows `ar_abbrev_body_prose`, `ar_abbrev_body_far_from_keyword` |
-| **O-N11** | Does a `low`-confidence area enter aggregates, and how is it rendered? | **Enters**, flagged; rendered with the same "always show, always flag" treatment as a thin `n` (rule 7) | No parse test — blocks the surface test only |
-| **O-N12** | Does the band check read the exact `Decimal` quotient or the `NUMERIC(12,2)` value the generated column stores? | **The exact quotient**, so a record whose stored figure rounds back onto the edge is still flagged | §4 row B12 |
+| O-N1 | A dot in an area string quarantines the record as `area_ambiguous_separator`. **One carve-out:** a dot followed by **exactly four digits** with the unit `ha` (`"1.2500 ha"`, the register's own format) reads as a decimal point, confidence `low` | **D79** | §1.5 |
+| O-N2 | An area range quarantines the record as `area_not_single_valued` | **D82** | §1.5 |
+| O-N3 | `"250 tys. zł"` and `"1,2 mln zł"` parse the multiplier, confidence `low` | **D80** | §2 |
+| O-N4 | `conflict` is set at a relative difference of **more than 5%**, against any lower-authority source | **D81** | §3.2 |
+| O-N5 | `"ok. 1200 m²"` parses, `is_approximate=True`, confidence `low`, and the marker reaches the interface | **D83** | §1.4 |
+| O-N6 | The cross-source match key is **`(area_m2, price_pln, teryt_gmina, asset_class)`**. There is **no** round-number guard | **D78** | §5.3 |
+| O-N7 | The canonical record is the earliest `first_seen_at`, then the lowest `source_id`, then the lowest `external_id` | **D84** | §5.2 |
+| O-N8 | An out-of-band record stays in the corpus and on the plot page, with its flag. Aggregates exclude it | **D85** | §4.3 row B9 |
+| O-N9 | A compound area **sums**, confidence `low`. An agreeing restatement keeps confidence `high`. A disagreeing restatement quarantines as `area_conflicting_statements` | **D90** | §1.6 |
+| O-N10 | `12a` / `12 a` reads as ares in a structured field or a title, or in body text within 40 characters of an area keyword (`powierzchnia`, `pow.`, `działka`, `grunt`). Otherwise there is no area | **D86** | §1.3 |
+| O-N11 | A low-confidence area enters the aggregates, flagged, with the same "always show, always flag" treatment as a thin `n` (rule 7) | **D87** | §4.5 |
+| O-N12 | The band check reads the **exact `Decimal` quotient**, not the `NUMERIC(12,2)` value the generated column stores | **D88** | §4.3 row B12 |
 
-**O-N6 first, O-N12 second.** O-N6 is the one V56 says can falsify v0 dedup;
-O-N12 changes the answer for a whole thin class of records at the edge.
+**Two answers changed the numbers I had proposed.**
 
-`@pytest.mark.blocked("O-N4")` is a real marker with a real gate:
+- D81 set the conflict threshold at 5%, not the 2% I proposed. §3.2's boundary
+  rows are recomputed against 1260.00 and 1260.01.
+- D90 supersedes an earlier answer that took the first value of a compound. That
+  rule read `"1 ha 25 a"` as 10 000 m² instead of 12 500 m² — a 20% area error and
+  a 25% error in every zł/m² figure taken from it. I was wrong to propose it.
+
+D78 rejected the round-number guard I proposed and accepted a named cost. §5.3
+records the cost and asserts it as a test.
+
+`@pytest.mark.blocked("O-Nn")` stays as a mechanism, and its gate stays in CI:
 
 - `test_every_blocked_marker_names_an_open_question` — the string in each `blocked`
   marker must match an entry in `00-decisions.md` **that has no recorded answer**.
-  When a question is answered, CI fails until the marker is removed and the test
-  written. This is rule 2 made mechanical rather than remembered.
+  This is rule 2 made mechanical rather than remembered.
+
+That gate now requires **zero** `blocked` markers under `tests/unit/normalize` and
+`tests/unit/dedup`. Every question this work item raised has a recorded answer, so
+any surviving marker fails CI.
 
 ---
 
@@ -62,7 +76,7 @@ looks:
 - **`high`** — a supported unit token appears explicitly and adjacent to the number.
 - **`low`** — the value was recovered through an ambiguous or lossy route: the bare
   `a` abbreviation, an approximation marker, an additive compound, a magnitude
-  abbreviation, a dot resolved by O-N1's carve-out, or a value taken from the title.
+  abbreviation, a dot resolved by D79's carve-out, or a value taken from the title.
 - **`unknown`** — no value. Every failure row is `unknown`.
 
 Inputs are given as **Python literals with explicit escapes**. The pass-1 table
@@ -128,7 +142,9 @@ column is `NUMERIC(12,2)` and the scale is part of the value.
 ### 1.3 The `a` abbreviation — the ambiguous form
 
 `a` alone is also the Polish conjunction *and/but*, so this form carries
-confidence `low` even when it parses, and O-N10 governs when it parses at all.
+confidence `low` even when it parses. **D86 fixes when it parses at all:** in a
+structured field or a title always, in body text only within **40 characters** of
+an area keyword (`powierzchnia`, `pow.`, `działka`, `grunt`).
 
 | Case id | Input | Field | `m2` | `unit` | conf |
 |---|---|---|---|---|---|
@@ -137,12 +153,23 @@ confidence `low` even when it parses, and O-N10 governs when it parses at all.
 | `ar_abbrev_glued_decimal` | `"12,5a"` | structured | `1250` | `ar` | low |
 | `ar_abbrev_title` | `"Działka 12a Radzymin"` | title | `1200` | `ar` | low |
 | `ar_abbrev_body_near_keyword` | `"Ładna działka 12 a, media w drodze"` | body | `1200` | `ar` | low |
-| `ar_abbrev_body_prose` ⛔ O-N10 | `"Dojazd 12 a nawet 15 minut do centrum"` | body | `None` | `None` | unknown |
-| `ar_abbrev_body_far_from_keyword` ⛔ O-N10 | `"Powierzchnia opisana niżej. " + 60 chars + "12 a"` | body | `None` | `None` | unknown |
+| `ar_abbrev_body_prose` | `"Dojazd 12 a nawet 15 minut do centrum"` | body | `None` | `None` | unknown |
+| `ar_abbrev_body_far_from_keyword` | `"Powierzchnia opisana niżej. " + 60 chars + "12 a"` | body | `None` | `None` | unknown |
+
+The last two rows carry the D86 rule from both sides. `ar_abbrev_body_prose` has
+no area keyword at all. `ar_abbrev_body_far_from_keyword` has one, 60 characters
+away, which is outside the 40-character window.
+
+- `test_bare_a_window_is_exactly_forty_characters` — one input places the keyword
+  40 characters before the number and parses; one places it 41 characters before
+  and does not. The window is a named constant, `BARE_A_KEYWORD_WINDOW == 40`.
+- `test_bare_a_keyword_list_is_the_decided_list` — the lexicon is exactly
+  `powierzchnia`, `pow.`, `działka`, `grunt` (D86). Adding a keyword changes what
+  parses and needs its own decision.
 
 `parse_area` therefore takes the field it is parsing: `parse_area(text, field)` with
-`field ∈ {"structured","title","body"}`. **This is a contract change from pass 1**
-and is the reason O-N10 exists rather than being decided in a helper function.
+`field ∈ {"structured","title","body"}`. **This is a contract change from pass 1**,
+and D86 settles it: without the field the parser cannot apply the rule.
 
 - `test_parse_area_field_argument_is_required` — calling `parse_area(text)` without
   a field is a `TypeError`, not a defaulted `"body"`. A default here silently picks
@@ -164,54 +191,113 @@ and is the reason O-N10 exists rather than being decided in a helper function.
 | `ha_register_four_dp_large` | `"1,0374 ha"` | `10374` | `ha` | high |
 | `ha_above_band` | `"25 ha"` | `250000` | `ha` | high |
 | `ha_at_upper_band` | `"20 ha"` | `200000` | `ha` | high |
-| `approx_ok_m2` ⛔ O-N5 | `"ok. 1200 m²"` | `1200` | `m2` | low |
-| `approx_okolo_ar` ⛔ O-N5 | `"około 12 arów"` | `1200` | `ar` | low |
-| `approx_tilde` ⛔ O-N5 | `"~1200 m²"` | `1200` | `m2` | low |
-| `approx_ca` ⛔ O-N5 | `"ca 0,12 ha"` | `1200` | `ha` | low |
+| `approx_ok_m2` | `"ok. 1200 m²"` | `1200` | `m2` | low |
+| `approx_okolo_ar` | `"około 12 arów"` | `1200` | `ar` | low |
+| `approx_tilde` | `"~1200 m²"` | `1200` | `m2` | low |
+| `approx_ca` | `"ca 0,12 ha"` | `1200` | `ha` | low |
 
-Every O-N5 row also asserts `is_approximate is True`; every other row in §1 asserts
-`is_approximate is False`, which is the half a reviewer forgets.
+Every `approx_*` row also asserts `is_approximate is True`; every other row in §1
+asserts `is_approximate is False`, which is the half a reviewer forgets.
+
+D83 requires more than the parse. The marker must reach the interface:
+
+- `test_is_approximate_survives_normalization` — the `NormalizedListing` built from
+  `approx_ok_m2` carries `is_approximate is True`.
+- `test_is_approximate_reaches_the_render_tree` — the record the app renders
+  carries the marker, so the reader sees that the area is the seller's estimate
+  and not a measured figure. An approximate area is never displayed bare (rule 7).
 
 `ha_register_four_dp` matters more than it looks: the parcel register states area in
 hectares to four decimal places, so this is the *register* branch's own format, and
 it is the input to §3's authority resolution.
 
-### 1.5 Blocked separator and range forms
+### 1.5 Separator and range forms — settled
 
-Written as a decision matrix so that whichever answer comes back, the row is typed
-rather than re-argued.
+**The dot (D79).** A dot in an area string quarantines the record. The single
+carve-out is a dot followed by **exactly four digits** with the unit `ha`. That is
+the parcel register's own format, and it has one reading. Everything else has two
+readings 1000× apart, so ambiguity loses.
 
-| Case id | Input | If O-N1 = "thousands" | If O-N1 = "ambiguous" (proposed) | If O-N1 = "decimal" |
+| Case id | Input | `m2` | `unit` | conf | `failure` |
+|---|---|---|---|---|---|
+| `dot_1200_m2` | `"1.200 m²"` | `None` | `None` | unknown | `AMBIGUOUS_SEPARATOR` |
+| `dot_0_12_ha` | `"0.12 ha"` | `None` | `None` | unknown | `AMBIGUOUS_SEPARATOR` |
+| `dot_12_5_ara` | `"12.5 ara"` | `None` | `None` | unknown | `AMBIGUOUS_SEPARATOR` |
+| `dot_1_250_000_m2` | `"1.250.000 m²"` | `None` | `None` | unknown | `AMBIGUOUS_SEPARATOR` |
+| `dot_1_2500_ha` | `"1.2500 ha"` | `12500` | `ha` | low | — |
+| `dot_0_2500_ha` | `"0.2500 ha"` | `2500` | `ha` | low | — |
+| `dot_three_digit_ha` | `"1.250 ha"` | `None` | `None` | unknown | `AMBIGUOUS_SEPARATOR` |
+| `dot_five_digit_ha` | `"1.25000 ha"` | `None` | `None` | unknown | `AMBIGUOUS_SEPARATOR` |
+| `dot_four_digit_m2` | `"1.2500 m²"` | `None` | `None` | unknown | `AMBIGUOUS_SEPARATOR` |
+
+The last three rows pin both edges of the carve-out. Three digits fail, five
+digits fail, and four digits with a unit other than `ha` fail. A carve-out written
+loosely swallows the whole ambiguous class it was carved out of.
+
+- `test_dot_carve_out_requires_four_digits_and_ha` — asserts the three edge rows
+  together, so a widened carve-out fails in one place.
+- `test_dot_carve_out_confidence_is_low` — `"1.2500 ha"` parses at `low`, never
+  `high`. The route is a carve-out, not an explicit unambiguous token.
+
+**The range (D82).** An area range is not single-valued. The record is
+quarantined. A midpoint invents a number nobody wrote, and a lower bound reports a
+plot smaller than the one on sale.
+
+| Case id | Input | `m2` | conf | `failure` |
 |---|---|---|---|---|
-| `dot_1200_m2` | `"1.200 m²"` | `1200` m2 high | fail `AMBIGUOUS_SEPARATOR` | `1.200` m2 low |
-| `dot_0_12_ha` | `"0.12 ha"` | fail `AMBIGUOUS_SEPARATOR` (no thousands reading) | `1200` ha low *(carve-out: leading `0.`)* | `1200` ha low |
-| `dot_1_2500_ha` | `"1.2500 ha"` | fail | `12500` ha low *(4-digit ha carve-out)* | `12500` ha low |
-| `dot_12_5_ara` | `"12.5 ara"` | fail | `1250` ar low | `1250` ar low |
-| `dot_1_250_000_m2` | `"1.250.000 m²"` | `1250000` m2 high | `1250000` m2 low | fail |
+| `range_hyphen` | `"1200-1500 m²"` | `None` | unknown | `NOT_SINGLE_VALUED` |
+| `range_en_dash` | `"1200–1500 m²"` | `None` | unknown | `NOT_SINGLE_VALUED` |
+| `range_words` | `"od 1200 do 1500 m²"` | `None` | unknown | `NOT_SINGLE_VALUED` |
+| `range_od` | `"od 1200 m²"` | `None` | unknown | `NOT_SINGLE_VALUED` |
 
-| Case id | Input | If O-N2 = "quarantine" (proposed) | If O-N2 = "lower bound" | If O-N2 = "midpoint" |
-|---|---|---|---|---|
-| `range_hyphen` | `"1200-1500 m²"` | fail `NOT_SINGLE_VALUED` | `1200` m2 low | `1350` m2 low |
-| `range_en_dash` | `"1200–1500 m²"` | fail `NOT_SINGLE_VALUED` | `1200` m2 low | `1350` m2 low |
-| `range_words` | `"od 1200 do 1500 m²"` | fail `NOT_SINGLE_VALUED` | `1200` m2 low | `1350` m2 low |
-| `range_od` | `"od 1200 m²"` | fail `NOT_SINGLE_VALUED` | `1200` m2 low | fail |
+`range_hyphen` has a trap worth a comment in the test file: `"1200-1500"` reads as
+a range to a human and as two numbers to a regex. The parser must never return
+`1200` *and* `1500` as two separate parses of one field.
 
-`range_hyphen` has a trap worth a comment in the test file: `"1200-1500"` is also
-the shape of a Polish postal code (`12-345` is not, but `1200-1500` reads as a
-range to a human and as two numbers to a regex). Whichever answer O-N2 receives,
-the parser must never return `1200` *and* `1500` as two separate parses of one
-field.
+- `test_range_returns_one_failure_not_two_values` — asserts a single `AreaParse`
+  with `NOT_SINGLE_VALUED`, not a list.
 
-### 1.6 Compound and restated forms ⛔ O-N9
+### 1.6 Compound and restated forms — settled by D90
 
-| Case id | Input | Proposed `m2` | `unit` | conf |
+D90 fixes three rules, and they are three different rules:
+
+1. **A compound sums.** `"1 ha 25 a"` is 10 000 + 2 500 = 12 500 m².
+2. **An agreeing restatement keeps full confidence.** Two statements of one area
+   that match are corroboration, not ambiguity, so confidence stays `high`.
+3. **A disagreeing restatement quarantines.**
+
+| Case id | Input | `m2` | `unit` | conf |
 |---|---|---|---|---|
 | `compound_ha_ar` | `"1 ha 25 a"` | `12500` | `ha` | low |
 | `compound_ha_ar_m2` | `"1 ha 25 a 30 m²"` | `12530` | `ha` | low |
+| `compound_ar_m2` | `"12 a 30 m²"` | `1230` | `ar` | low |
 | `restated_agreeing` | `"1200 m² (12 arów)"` | `1200` | `m2` | high |
 | `restated_agreeing_reverse` | `"12 arów (1200 m²)"` | `1200` | `ar` | high |
 | `restated_disagreeing` | `"1200 m² (15 arów)"` | fail `CONFLICTING_STATEMENTS` | — | unknown |
 | `restated_disagreeing_100x` | `"1200 m² (12 ha)"` | fail `CONFLICTING_STATEMENTS` | — | unknown |
+
+**D90 supersedes the first answer, which took the first value.** Under that rule
+`"1 ha 25 a"` read as 10 000 m². The area was 20% low and every zł/m² figure taken
+from it was 25% high. The sum is the arithmetic the register itself uses.
+
+- `test_compound_sums_rather_than_taking_the_first_value` — `"1 ha 25 a"` asserts
+  `Decimal("12500")` and, in the same test, asserts the value is **not**
+  `Decimal("10000")`. The superseded reading is named so it cannot come back
+  quietly.
+- `test_compound_unit_is_the_largest_unit_present` — `unit == "ha"` for
+  `compound_ha_ar`. The unit records how the advert stated the area; `m2` carries
+  the value.
+- `test_agreeing_restatement_keeps_high_confidence` — `restated_agreeing` asserts
+  `confidence == "high"`. A restatement that agrees is evidence, so it must not be
+  demoted to `low` alongside the compound rows.
+
+**A compound and a restatement must not be confused.** `"1 ha 25 a"` sums to
+12 500 m². `"1200 m² (12 arów)"` is one area stated twice and equals 1200 m², not
+2400 m².
+
+- `test_restatement_is_not_summed` — `restated_agreeing` asserts `1200`, never
+  `2400`. This is the mirror of the test above and kills the mutant that sums
+  every multi-unit string.
 
 `restated_disagreeing_100x` is the F1 signature seen inside a single field. It must
 never resolve to either value by preference order — the field disagrees with itself
@@ -303,10 +389,19 @@ table are kept in sync mechanically rather than by review.
 | `negotiable_abbrev` | `"250 000 zł (do neg.)"` | `250000` | high |
 | `label_prefix` | `"Cena: 250 000 zł"` | `250000` | high |
 | `glued` | `"250000zł"` | `250000` | high |
-| `tys` ⛔ O-N3 | `"250 tys. zł"` | `250000` | low |
-| `tys_no_dot` ⛔ O-N3 | `"250 tys zł"` | `250000` | low |
-| `mln` ⛔ O-N3 | `"1,2 mln zł"` | `1200000` | low |
-| `mln_word` ⛔ O-N3 | `"1,2 miliona zł"` | `1200000` | low |
+| `tys` | `"250 tys. zł"` | `250000` | low |
+| `tys_no_dot` | `"250 tys zł"` | `250000` | low |
+| `mln` | `"1,2 mln zł"` | `1200000` | low |
+| `mln_word` | `"1,2 miliona zł"` | `1200000` | low |
+
+D80 parses the magnitude abbreviations at confidence `low`. They are frequent and
+unambiguous, and quarantining them drops a whole segment of the corpus (F12).
+
+- `test_magnitude_multipliers_are_named_constants` — `TYS_MULTIPLIER ==
+  Decimal("1000")`, `MLN_MULTIPLIER == Decimal("1000000")`.
+- `test_magnitude_abbreviation_is_never_high_confidence` — every `tys`/`mln` row
+  parses at `low`. The multiplier is inferred from an abbreviation, not read from
+  the digits.
 
 `no_currency` is confidence `low` deliberately: a bare number in a price field is
 almost certainly PLN and there is no other plausible currency in this corpus, but
@@ -314,7 +409,7 @@ almost certainly PLN and there is no other plausible currency in this corpus, bu
 **fails** — because there a bare number has two readings 100× apart, and here it
 has one.
 
-`grosze_dot` accepts a dot as the decimal separator for prices even though O-N1
+`grosze_dot` accepts a dot as the decimal separator for prices even though D79
 treats a dot in an *area* as ambiguous. The asymmetry is intentional and tested:
 
 - `test_price_dot_and_area_dot_are_treated_differently` — documents that a price is
@@ -365,8 +460,9 @@ carry it. `candidates` is the full `{source: m2 | None}` mapping, stored on the
 listing so the plot page can render *"ogłoszenie: 1200 m² · rejestr: 1450 m²"* the
 way `06` §1 renders the zoning disagreement.
 
-All values below are chosen to differ by **≫ 5%**, so the rows are valid under any
-answer to O-N4 and are **not blocked**. Only the threshold rows in §3.2 are.
+Most values below differ by far more than the 5% D81 fixed, so the winner and the
+`conflict` flag are both unambiguous. Two rows sit inside 5% and are marked; their
+expected `conflict` is **False**, recomputed against D81.
 
 ### 3.1 Every ordered pair
 
@@ -375,7 +471,8 @@ answer to O-N4 and are **not blocked**. Only the threshold rows in §3.2 are.
 | `test_register_beats_structured` | `1450` | `1200` | — | — | `1450` | `register` | True |
 | `test_register_beats_body` | `1450` | — | `1200` | — | `1450` | `register` | True |
 | `test_register_beats_title` | `1450` | — | — | `1200` | `1450` | `register` | True |
-| `test_structured_beats_body` | — | `1200` | `1150` | — | `1200` | `structured` | True |
+| `test_structured_beats_body` | — | `1200` | `1150` | — | `1200` | `structured` | **False** — 4.17%, inside the 5% threshold (D81) |
+| `test_structured_beats_body_conflicting` | — | `1200` | `1100` | — | `1200` | `structured` | True — 8.33% |
 | `test_structured_beats_title` | — | `1200` | — | `1000` | `1200` | `structured` | True |
 | `test_body_beats_title` | — | — | `1150` | `1000` | `1150` | `body` | True |
 | `test_all_four_disagree` | `1450` | `1200` | `1150` | `1000` | `1450` | `register` | True |
@@ -386,36 +483,63 @@ answer to O-N4 and are **not blocked**. Only the threshold rows in §3.2 are.
 | `test_title_only` | — | — | — | `1000` | `1000` | `title` | False |
 | `test_none_present` | — | — | — | — | — | — | raises → `AREA_MISSING` |
 | `test_lower_sources_agree_against_register` | `1450` | `1200` | `1200` | `1200` | `1450` | `register` | True |
-| `test_precision_is_not_authority` | `1450` | `1449.87` | — | — | `1450` | `register` | ⛔ O-N4 (0.009% apart) |
+| `test_precision_is_not_authority` | `1450` | `1449.87` | — | — | `1450` | `register` | **False** — 0.009%, far inside 5% (D81) |
 | `test_gap_between_present_sources` | `1450` | — | — | `1000` | `1450` | `register` | True |
 
 `test_lower_sources_agree_against_register` is the row a majority-vote
 implementation fails. Three sources say 1200 and one says 1450; the register still
 wins, because FR-15 is an authority rule and not a vote.
 
-`test_precision_is_not_authority` splits into two assertions: the **winner** is
-`1450` from `register` regardless of O-N4 (unblocked), while the **`conflict`
-flag** at 0.009% depends on the threshold (blocked).
+`test_precision_is_not_authority` splits into two assertions. The **winner** is
+`1450` from `register`, because precision is not authority. The **`conflict`
+flag** is `False`: 0.009% is far inside the 5% threshold, so a register value and
+a more precise advert value that agree do not raise a flag (D81).
 
-### 3.2 Threshold boundary ⛔ O-N4
+`test_structured_beats_body` and `test_structured_beats_body_conflicting` are a
+pair on purpose. The winner is `structured` in both. Only the flag differs, and it
+differs because of the threshold alone.
 
-Under the proposed 2%, with register `1200`:
+### 3.2 Threshold boundary — 5% (D81)
+
+**The threshold is more than 5%.** D81 chose it over the 2% I proposed. The
+boundary rows below are recomputed: 2% of 1200 is 24 m², 5% of 1200 is 60 m², so
+the edge moves from 1224 to 1260.
+
+The relative difference divides by the **register area**, the authoritative value.
+Every row states register `1200`.
 
 | Case | structured | relative Δ | `conflict` |
 |---|---|---|---|
 | `well_inside` | `1210.00` | 0.83% | False |
-| `just_inside` | `1223.99` | 1.999% | False |
-| `on_the_boundary` | `1224.00` | exactly 2% | False — inclusive |
-| `just_outside` | `1224.01` | 2.0008% | True |
+| `just_inside` | `1259.99` | 4.9992% | False |
+| `on_the_boundary` | `1260.00` | exactly 5% | False — inclusive |
+| `just_outside` | `1260.01` | 5.0008% | True |
 | `well_outside` | `1450.00` | 20.8% | True |
 | `exactly_equal` | `1200.00` | 0% | False |
 | `rounding_only` | `1199.99` | 0.0008% | False |
+| `below_by_more_than_five` | `1139.99` | 5.0008% | True |
 
-- `test_conflict_threshold_is_relative_not_absolute` — a 20 m² gap on a 1 000 m²
-  plot flags; the same 20 m² gap on a 200 000 m² plot does not. An absolute
+`below_by_more_than_five` is new. It checks the low side of the band. A threshold
+written as `(advert - register) / register > 0.05` passes every row above it and
+never flags an advert that understates the area.
+
+- `test_conflict_threshold_is_relative_not_absolute` — a 60 m² gap on a 1 200 m²
+  plot flags; the same 60 m² gap on a 200 000 m² plot does not. An absolute
   threshold makes every hectare-scale plot conflict.
-- `test_conflict_threshold_is_symmetric` — register `1200` vs structured `1224`
-  and register `1224` vs structured `1200` give the same `conflict`.
+- `test_conflict_threshold_is_five_percent_not_two` — asserts
+  `CONFLICT_THRESHOLD == Decimal("0.05")` **and** that structured `1224.00`
+  (exactly 2%) gives `conflict is False`. The superseded value is named so a
+  constant copied from an old draft fails at once.
+- `test_conflict_threshold_is_symmetric` — the check does not depend on argument
+  order. It uses `1200` against `1450` (both directions clear the threshold) and
+  `1200` against `1230` (both directions stay inside it), so the assertion holds
+  whichever value the implementation divides by.
+
+**The cost of 5%, recorded.** A real register-versus-advert mismatch below 5%
+passes unflagged. On a 1 200 m² plot that is a silent gap of up to 60 m², about
+5% of the price per m². The register value still wins the resolution (§3.1), so
+the stored area is right; only the `conflict` flag is absent, and with it the
+"ogłoszenie: … · rejestr: …" line the plot page would otherwise show.
 
 ### 3.3 What the resolution records
 
@@ -466,11 +590,29 @@ floating.
 
 | Row | Description | Input | Expected |
 |---|---|---|---|
-| B9 | The O12 case — 25 ha farmland at 3 zł/m² | area `250000.00`, price `750000.00` | `AREA_ABOVE_BAND`; `NormalizedListing`; appears in emitted rows; ⛔ O-N8 for aggregate membership |
-| B10 | Small plot below the band | area `250.00`, price `100000.00`, `400.00`/m² | `AREA_BELOW_BAND`; visible |
+| B9 | The O12 case — 25 ha farmland at 3 zł/m² | area `250000.00`, price `750000.00` | `AREA_ABOVE_BAND`; `NormalizedListing`; appears in emitted rows; **in the corpus and on the plot page, excluded from every aggregate** (D85) |
+| B10 | Small plot below the band | area `250.00`, price `100000.00`, `400.00`/m² | `AREA_BELOW_BAND`; visible; excluded from aggregates (D85) |
 | B11 | Both edges violated at once | area `200000.01`, price `100000.00`, `0.50`/m² | `{AREA_ABOVE_BAND, PRICE_BELOW_BAND}` — a `frozenset` of two, not the first one found |
-| B12 ⛔ O-N12 | Rounding at the price edge | area `3.00`, price `300000.01` → exact `100000.00333…`, stored `100000.00` | proposed: `PRICE_ABOVE_BAND` on the exact quotient, even though the displayed figure sits on the edge |
+| B12 | Rounding at the price edge | area `3.00`, price `300000.01` → exact `100000.00333…`, stored `100000.00` | `PRICE_ABOVE_BAND` on the **exact quotient** (D88), even though the displayed figure sits on the edge |
 | B13 | Zero-area guard | area `0` | never reaches `band_flags` — quarantined upstream as `area_non_positive`; `band_flags` raises on non-positive area rather than dividing |
+
+**D85 — out of band means visible, not counted.**
+
+| Test | Asserts |
+|---|---|
+| `test_out_of_band_record_is_excluded_from_aggregates` | a corpus of 10 in-band records plus B9 → the gmina aggregate's `n == 10`, and its median equals the median of the 10 |
+| `test_out_of_band_record_is_in_the_corpus_count` | the same corpus reports 11 records, so the exclusion is visible as a difference, not as a silent loss |
+| `test_out_of_band_record_renders_on_the_plot_page` | B9 renders with its flag (rule 7) |
+| `test_out_of_band_record_participates_in_dedup` | B9 and an identical second source collapse into one cluster; exclusion happens at the aggregate, not at the cluster |
+| `test_adding_an_out_of_band_record_leaves_the_estimate_unchanged` | the V47 construction: adding B9 to a corpus leaves the median and the `n` identical |
+
+**D88 — the band check reads the exact quotient.**
+
+| Test | Asserts |
+|---|---|
+| `test_band_check_reads_the_exact_quotient` | B12 → `PRICE_ABOVE_BAND`. `Decimal("300000.01") / Decimal("3.00")` is `100000.00333…`, which is above the edge |
+| `test_band_check_does_not_read_the_rounded_value` | the same input quantised to `NUMERIC(12,2)` gives `100000.00`, which is **in** band. The test asserts the flag is set anyway, so an implementation that reads the stored column fails |
+| `test_band_check_at_the_area_edge_uses_the_stated_area` | area is stored exactly, so no quotient is involved; B2 and B5 remain the area-edge cases |
 
 ### 4.4 The flag-not-quarantine assertions
 
@@ -490,6 +632,29 @@ floating.
 300–200 000 in its AC and its boundary prose; `test_superseded_band_values_…`
 remains, because the stale figures are still quoted in `docs/17-assumption-audit.md`
 and in this repository's history.
+
+### 4.5 Low confidence enters the aggregates, flagged (D87)
+
+A `low`-confidence area is a real observation recovered by a lossy route. D87
+keeps it in the aggregates and flags it, exactly as rule 7 treats a thin `n`.
+Three separate states must not be confused:
+
+| State | In the aggregate? | Visible? | Rule |
+|---|---|---|---|
+| Quarantined — no usable price or area | No | In the quarantine report | §6 |
+| Out of band — usable, outside the validity band | **No** | Yes, flagged | D85 |
+| Low confidence — usable, recovered by a lossy route | **Yes** | Yes, flagged | D87 |
+
+| Test | Setup | Asserts |
+|---|---|---|
+| `test_low_confidence_area_enters_the_aggregate` | 9 `high`-confidence records plus one `low` from `approx_ok_m2` | `n == 10` |
+| `test_low_confidence_area_carries_its_flag_to_the_surface` | the same record | the rendered row shows the confidence flag; the figure is never displayed bare |
+| `test_low_confidence_is_not_out_of_band` | one `low` record inside the band | no band flag, and the record is in the aggregate — the two flags are independent |
+| `test_every_low_confidence_route_is_represented` | one record per `low` route — D80 magnitude, D83 approximate, D86 bare `a`, D90 compound, D79 dot carve-out, title-sourced | all six enter the aggregate and all six carry the flag |
+
+`test_every_low_confidence_route_is_represented` is the guard against a partial
+implementation. Five of the six routes are easy to remember and the sixth is the
+one that ships unflagged.
 
 ---
 
@@ -511,18 +676,20 @@ All rows share `price_type = 'offering'`, `price_kind = 'asking'` unless stated.
 | Test | Expected |
 |---|---|
 | `test_same_source_same_external_id_is_one_listing` | D1 + D1′ → **one** `listing` row (upsert on `UNIQUE (source_id, external_id)`), `last_seen_at` advanced to 2026-03-09, `first_seen_at` unchanged, one `listing_snapshot` per observation |
-| `test_cross_source_exact_triple_collapses` | D1 + D2 → **one** cluster, `duplicate_count == 2`, both listings carry its `plot_cluster_id` |
+| `test_cross_source_exact_key_collapses` | D1 + D2 → **one** cluster, `duplicate_count == 2`, both listings carry its `plot_cluster_id` |
 | `test_duplicate_count_reflects_cluster_size` | D1 + D2 + D3 → one cluster, `duplicate_count == 3` |
 | `test_singleton_gets_duplicate_count_one` | D1 alone → one cluster, `duplicate_count == 1` |
 | `test_n_before_and_after_dedup_are_both_reported` | D1, D2, D3 + 7 unrelated singletons → `n_before == 10`, `n_after == 8`, both on `DedupResult` |
 
-`1234.00 m² / 247 000.00 zł` is deliberately **not** round: these rows must merge
-under every candidate answer to O-N6, so they are unblocked.
+`1234.00 m² / 247 000.00 zł` is deliberately **not** round. These rows share all
+four fields of the D78 key — area, price, gmina and `asset_class` — so they merge.
+The test name says *key*, not *triple*: D78 made the key a quadruple.
 
-### 5.2 Canonical selection ⛔ O-N7
+### 5.2 Canonical selection (D84)
 
-Under the proposed order (earliest `first_seen_at`, then lowest `source_id`, then
-lowest `external_id`), the canonical of {D1, D2, D3} is **D1**.
+The order is settled: **earliest `first_seen_at`, then lowest `source_id`, then
+lowest `external_id`.** It is a total order, so the result does not change when
+the input is permuted. The canonical of {D1, D2, D3} is **D1**.
 
 | Test | Setup | Expected |
 |---|---|---|
@@ -530,11 +697,17 @@ lowest `external_id`), the canonical of {D1, D2, D3} is **D1**.
 | `test_canonical_tie_broken_by_source_then_external_id` | D2 and D3 given identical `first_seen_at` 2026-03-04 | canonical is D2 (`s2 < s3`) |
 | `test_canonical_tie_broken_by_external_id_last` | two rows, same date, same source, ids `AG-0071` / `AG-0072` | canonical is `AG-0071` |
 | `test_canonical_selection_is_a_total_order` | generated clusters (property-based) | the comparator is irreflexive, antisymmetric and transitive — a partial order re-introduces order dependence |
+| `test_canonical_key_is_the_three_named_fields_in_order` | — | the sort key is `(first_seen_at, source_id, external_id)` (D84). A "richest record" rule is not the decision and fails this test |
 
-### 5.3 The round-number collision — O-N6
+### 5.3 The match key, and the false merge it accepts (D78)
 
-Two genuinely different plots, both `1000.00 m²` at `100 000.00 zł`, both in gm-B.
-This is the pair the pass-1 spec flagged, given concretely.
+**The key is `(area_m2, price_pln, teryt_gmina, asset_class)`.** Four fields, no
+more. `zoning_claim` is not in it. `seller_contact_hash` is not in it. There is no
+round-number guard.
+
+The rows below are two genuinely different plots, both `1000.00 m²` at
+`100 000.00 zł`, both in gm-B. This is the collision the pass-1 spec flagged,
+given concretely.
 
 | id | src | external_id | `area_m2` | `price_pln` | teryt | asset_class | zoning_claim | locality | seller hash | first_seen |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -545,36 +718,55 @@ This is the pair the pass-1 spec flagged, given concretely.
 | R5 | s1 | `OD-6301` | `1000.00` | `100000.00` | gm-B | land_building | działka budowlana | Nadma | `h:ee5` | 2026-04-20 |
 | R6 | s2 | `OL-83110` | `1000.00` | `100000.00` | gm-B | land_building | działka budowlana | Nadma | `h:ee5` | 2026-04-22 |
 
-Each candidate answer's outcome, so the decision is taken against consequences
-rather than against a principle:
+What the decided key does with each pair:
 
-| Pair | Truth | (a) naive `(area, price, gmina)` | (b) + `asset_class` + `zoning_claim` | (c) **+ round-number guard** (proposed) |
-|---|---|---|---|---|
-| R1/R2 | different plots | **1 cluster — false merge** | 2 clusters ✅ | 2 clusters ✅ |
-| R3/R4 | different plots | **1 cluster — false merge** | **1 cluster — false merge** | 2 clusters ✅ |
-| R5/R6 | same plot, two agencies | 1 cluster ✅ | 1 cluster ✅ | 1 cluster ✅ |
-| D1/D2 (§5.1) | same plot | 1 cluster ✅ | 1 cluster ✅ | 1 cluster ✅ |
+**Each test below feeds only the rows it names.** R3, R4, R5 and R6 share all four
+key fields, so a run given all four returns one cluster of four. The pairs are
+separate fixture sets, and `test_round_rows_given_together_form_one_cluster`
+asserts that outcome so the effect is written down rather than discovered.
 
-**The proposed round-number guard, stated precisely.** A cross-source match on the
-triple is accepted outright unless the pair is *round* — `area_m2 % 100 == 0`
-**and** `price_pln % 10000 == 0`. For a round pair, the merge additionally requires
-a non-null `seller_contact_hash` equal on both sides. Null hashes never match each
-other.
+| Pair | Truth | Key result | Verdict |
+|---|---|---|---|
+| R1/R2 | different plots | 2 clusters — `asset_class` differs | Correct |
+| R3/R4 | different plots | **1 cluster** — every key field is identical | **Wrong, and accepted** |
+| R5/R6 | same plot, two agencies | 1 cluster | Correct |
+| R3+R4+R5+R6 | three plots | **1 cluster of four** | The same error at scale |
+| D1/D2 (§5.1) | same plot | 1 cluster | Correct |
 
-R3/R4 is the row that decides between (b) and (c): identical in every structured
-field, distinguishable only by a locality string v0's key does not carry. Under (b)
-they merge, which is precisely what V56 names as falsifying — *a near-duplicate
-being merged; v0 must not over-merge*.
+**The residual risk D78 accepts, stated plainly.** R3 and R4 are two different
+building plots in Nadma and Słupno. They share an area, a price, a gmina and an
+asset class. v0 merges them. The corpus then holds one observation where the truth
+is two, and reports `duplicate_count == 2` where the truth is two separate plots.
+Round areas and round prices are common in this market, so this is not a rare
+shape. **V56's false-merge monitoring is the only detector.**
 
-| Test | Expected under (c) |
+I proposed a round-number guard — a merge on a round pair would have required an
+equal, non-null `seller_contact_hash`. The owner rejected it and took the simpler
+key with the named cost. That guard is **not** in the plan. No test refers to it.
+
+| Test | Expected |
 |---|---|
-| `test_round_pair_without_seller_hash_does_not_merge` | R3, R4 → 2 clusters, `duplicate_count == 1` each |
-| `test_round_pair_with_equal_seller_hash_merges` | R5, R6 → 1 cluster, `duplicate_count == 2` |
-| `test_round_pair_with_null_hashes_does_not_merge` | R3, R4 — null equals null is **not** a match |
-| `test_non_round_pair_merges_without_a_hash` | D1, D2 → 1 cluster although hashes differ |
-| `test_round_guard_thresholds_are_named_constants` | `ROUND_AREA_M2 == Decimal("100")`, `ROUND_PRICE_PLN == Decimal("10000")` — a magic number here is unauditable |
-| `test_round_guard_is_recorded_in_the_run_report` | the count of pairs the guard blocked is reported, so a guard that never fires (or fires constantly) is visible |
-| `test_differing_asset_class_never_merges` | R1, R2 → 2 clusters — holds under (b) and (c) alike, so it is written either way |
+| `test_match_key_is_exactly_the_four_named_fields` | the key tuple is `(area_m2, price_pln, teryt_gmina, asset_class)`, in that order |
+| `test_differing_asset_class_never_merges` | R1, R2 → 2 clusters, `duplicate_count == 1` each — this is the field D78 added |
+| `test_same_plot_two_agencies_merges` | R5, R6 → 1 cluster, `duplicate_count == 2` |
+| `test_identical_round_pair_merges_and_is_a_known_false_merge` | R3, R4 → **1 cluster**, `duplicate_count == 2` |
+| `test_round_rows_given_together_form_one_cluster` | R3, R4, R5, R6 → **1 cluster**, `duplicate_count == 4`, where the truth is three plots |
+| `test_seller_contact_hash_is_not_in_the_match_key` | R5 and R6 merge, and so would the same pair with null hashes. A hash added to the key changes these results and fails here |
+| `test_zoning_claim_is_not_in_the_match_key` | two records identical on the four key fields but with different `zoning_claim` strings still merge |
+| `test_run_report_states_the_accepted_false_merge_risk` | the run report and the coverage page carry the caveat: round pairs can merge, and the residual false-merge rate is **unknown, not measured** |
+
+`test_identical_round_pair_merges_and_is_a_known_false_merge` carries this comment
+verbatim in the test file:
+
+> This asserts a **known false merge**, not a success. R3 and R4 are two different
+> plots. D78 chose the four-field key and accepted this cost: two building plots
+> of 1000 m² at 100 000 zł in one gmina merge. A future FR-13 matcher flips this
+> test deliberately, in the same commit that adds the labelled set.
+
+R3/R4 are identical in every structured field and distinguishable only by a
+locality string the v0 key does not carry. This is the case V56 names as
+falsifying — *a near-duplicate being merged; v0 must not over-merge*. The product
+ships with it, in the open, monitored.
 
 ### 5.4 Near misses that must not merge
 
@@ -636,15 +828,20 @@ member is the Python-side name.
 | `PRICE_NON_POSITIVE` | `price_non_positive` | `"0 zł"`, `"0,00 zł"`, `"-1000 zł"` | `PriceFailure.NON_POSITIVE` |
 | `PRICE_NOT_A_TOTAL` | `price_not_a_total` | `"200 zł/m²"`, `"2 500 zł/mies."` in the total-price field | `PriceFailure.NOT_A_TOTAL` |
 | `PRICE_UNSUPPORTED_CURRENCY` | `price_unsupported_currency` | `"60 000 EUR"` | `PriceFailure.UNSUPPORTED_CURRENCY` |
-| `PRICE_AMBIGUOUS_MAGNITUDE` ⛔ O-N3 | `price_ambiguous_magnitude` | `"250 tys. zł"` **only if O-N3 answers "quarantine"** | `PriceFailure.AMBIGUOUS_MAGNITUDE` |
 | `AREA_MISSING` | `area_missing` | no area in register, structured, body or title | `resolve_area` → `AREA_MISSING` |
 | `AREA_NO_UNIT` | `area_no_unit` | `"1200"`, `"1200,50"` | `AreaFailure.NO_UNIT` |
 | `AREA_NO_VALUE` | `area_no_value` | `"m²"`, `"arów"` | `AreaFailure.NO_VALUE` |
 | `AREA_UNIT_UNKNOWN` | `area_unit_unknown` | `"12 morgów"`, `"3 akry"`, `"12000 sq ft"` | `AreaFailure.UNKNOWN_UNIT` |
 | `AREA_NON_POSITIVE` | `area_non_positive` | `"0 m²"`, `"-500 m²"` | `AreaFailure.NON_POSITIVE` |
-| `AREA_AMBIGUOUS_SEPARATOR` ⛔ O-N1 | `area_ambiguous_separator` | `"1.200 m²"` **only if O-N1 answers "ambiguous"** | `AreaFailure.AMBIGUOUS_SEPARATOR` |
-| `AREA_NOT_SINGLE_VALUED` ⛔ O-N2 | `area_not_single_valued` | `"1200-1500 m²"` **only if O-N2 answers "quarantine"** | `AreaFailure.NOT_SINGLE_VALUED` |
-| `AREA_CONFLICTING_STATEMENTS` ⛔ O-N9 | `area_conflicting_statements` | `"1200 m² (15 arów)"` | `AreaFailure.CONFLICTING_STATEMENTS` |
+| `AREA_AMBIGUOUS_SEPARATOR` | `area_ambiguous_separator` | `"1.200 m²"`, `"0.12 ha"`, `"12.5 ara"`, `"1.250.000 m²"` (D79) | `AreaFailure.AMBIGUOUS_SEPARATOR` |
+| `AREA_NOT_SINGLE_VALUED` | `area_not_single_valued` | `"1200-1500 m²"`, `"od 1200 do 1500 m²"` (D82) | `AreaFailure.NOT_SINGLE_VALUED` |
+| `AREA_CONFLICTING_STATEMENTS` | `area_conflicting_statements` | `"1200 m² (15 arów)"` (D90) | `AreaFailure.CONFLICTING_STATEMENTS` |
+
+**Thirteen members, none conditional.** The decisions closed every "only if" in
+this table. D79, D82 and D90 each make a reason unconditional. D80 does the
+opposite: it parses the magnitude abbreviations, so `PRICE_AMBIGUOUS_MAGNITUDE` has
+no producing input and is **removed**. A member no input can produce is dead code
+in a closed enum, and `test_every_reason_has_a_producing_fixture` deletes it.
 
 **Not in the vocabulary, deliberately:** there is no `out_of_band`, no
 `implausible`, no `suspicious` and no `other`. Out-of-band records are flagged and
@@ -689,10 +886,16 @@ inputs the tables cannot enumerate.
 
 ### 7.1 Property-based (Hypothesis)
 
+Every `parse_area` call below passes `field="structured"`. D86 makes the field
+argument required, and the bare `a` forms parse only in a structured field, a
+title, or near a keyword.
+
 | Test | Strategy | Property |
 |---|---|---|
 | `test_cross_unit_equivalence_generated` | `integers(1, 2000)` ares | `parse_area(f"{n} arów") == parse_area(f"{n*100} m²") == parse_area(ha_form(n))` |
 | `test_ha_ar_m2_ladder` | `decimals(0.01, 20, places=4)` | `parse_area(f"{h} ha").m2 == 100 * parse_area(f"{h} a").m2` |
+| `test_compound_equals_the_sum_of_its_parts` | `integers(1, 20)` ha × `integers(1, 99)` ares | `parse_area(f"{h} ha {a} a").m2 == parse_area(f"{h} ha").m2 + parse_area(f"{a} a").m2` — D90 as a property |
+| `test_agreeing_restatement_equals_the_single_statement` | generated `m2` divisible by 100 | `parse_area(f"{m} m² ({m//100} arów)").m2 == parse_area(f"{m} m²").m2`, and the confidence is `high` in both |
 | `test_decimal_comma_and_thousands_space_are_equivalent` | generated values ≥ 1000 | with and without the group separator, identical |
 | `test_separator_characters_are_equivalent` | `sampled_from([" ", "\u00a0", "\u202f", "\u2009", ""])` | all five give the same `m2` |
 | `test_round_trip_canonical_form` | `decimals(1, 10**7, places=2)` | `parse_area(format_area(m2), "structured").m2 == m2` |
@@ -720,6 +923,7 @@ stub and asserts the property **fails**:
 | `test_order_invariance_fails_against_a_first_wins_dedup` | canonical = first in input order |
 | `test_scaling_property_fails_against_a_wrong_multiplier` | `AR_IN_M2 = 10` |
 | `test_band_monotonicity_fails_against_a_one_sided_check` | only the lower edge checked |
+| `test_compound_sum_property_fails_against_a_first_value_parser` | the superseded rule D90 replaced: a parser that returns the first value of a compound |
 
 Without these, "adding a duplicate changes nothing" passes trivially against a
 dedup that ignores its arguments — which is exactly the failure `20` §4.3 warns
@@ -744,10 +948,10 @@ scrubbed of seller names, phone numbers and addresses at capture (FR-23).
 | `portal/prices/` | one per §2 case id, all placeholder phrasings | §2 |
 | `portal/conflict/` | one advert whose title, body and structured field disagree, plus its register area | §3 |
 | `portal/both_prices/` | one agreeing, one 100× off | F2 cross-check |
-| `bands/` | B2, B5, B9, B10, B11 as complete records | §4 |
-| `quarantine/` | one record per `QuarantineReason` member | §6 |
+| `bands/` | B2, B5, B9, B10, B11, B12 as complete records | §4 |
+| `quarantine/` | one record per `QuarantineReason` member — 13 files | §6 |
 | `dedup/exact/` | D1, D1′, D2, D3 | §5.1 |
-| `dedup/round/` | R1–R6 | §5.3 |
+| `dedup/round/` | R1–R6, including the R3/R4 known false merge | §5.3 |
 | `dedup/near/` | N1a–N5b | §5.4 |
 | `price_kind/` | one portal, one bailiff, one KOWR record with divergent values | F9 |
 
@@ -802,17 +1006,17 @@ and not before.
 
 ## 10. Traceability of this plan
 
-| Pass-1 section | Detailed in | New contract change |
+| Pass-1 section | Detailed in | Contract change |
 |---|---|---|
-| §4.1 area table | §1 | `confidence` field; `field` argument (O-N10) |
+| §4.1 area table | §1 | `confidence` field; required `field` argument (D86) |
 | §4.2 price table | §2 | `confidence` field; `NOT_A_TOTAL`, `UNSUPPORTED_CURRENCY` failures |
-| §4.3 authority | §3 | `candidates` mapping replaces a bare `conflict` bool |
-| §5 bands | §4 | band check operates on the exact quotient (⛔ O-N12) |
-| §6 quarantine | §6 | reason vocabulary fixed as 14 members, 4 conditional |
+| §4.3 authority | §3 | `candidates` mapping replaces a bare `conflict` bool; threshold 5% (D81) |
+| §5 bands | §4 | the band check reads the exact quotient (D88); aggregates exclude an out-of-band record (D85) |
+| §6 quarantine | §6 | reason vocabulary fixed at **13 members, none conditional**; `PRICE_AMBIGUOUS_MAGNITUDE` removed (D80) |
 | §7 properties | §7 | non-vacuity companions added |
-| §13 dedup | §5 | round-number guard (⛔ O-N6) |
+| §13 dedup | §5 | match key `(area, price, gmina, asset_class)` (D78); no round-number guard |
 | §10 fixtures | §8 | `dedup/round/` added |
 | — | §9 | CI wiring, absent from pass 1 |
 
-Four contract changes land in the pass-1 spec's §2 table before the first test is
-written: `confidence`, `field`, `candidates`, and the two new price failures.
+The four contract changes are already in the pass-1 spec's §2 table:
+`confidence`, `field`, `candidates`, and the two new price failures.

@@ -351,7 +351,15 @@ quarantine rate looked healthy in aggregate.
 | `test_unparseable_area_unit_is_quarantined_with_reason` | `"12 morgów"` → `reason == AREA_UNIT_UNKNOWN` |
 | `test_bare_number_area_is_quarantined_not_assumed_m2` | `"1200"` with no unit → `reason == AREA_NO_UNIT` |
 | `test_non_positive_price_is_quarantined_with_reason` | `"0 zł"` → `reason == PRICE_NON_POSITIVE` |
+| `test_ambiguous_dot_is_quarantined_with_reason` | `"1.200 m²"` → `reason == AREA_AMBIGUOUS_SEPARATOR` (D79) |
+| `test_area_range_is_quarantined_with_reason` | `"1200-1500 m²"` → `reason == AREA_NOT_SINGLE_VALUED` (D82) |
+| `test_disagreeing_restatement_is_quarantined_with_reason` | `"1200 m² (15 arów)"` → `reason == AREA_CONFLICTING_STATEMENTS` (D90) |
 | `test_out_of_band_is_not_quarantined` | the 25 ha case → **not** a `QuarantinedRecord` (mirrors §5, asserted from both sides deliberately) |
+
+D80 parses the magnitude abbreviations, so there is **no**
+`PRICE_AMBIGUOUS_MAGNITUDE` reason. A reason that no input can produce is dead
+code in a closed enum, and §6.2's `test_every_reason_has_a_producing_fixture`
+deletes it.
 
 ### 6.2 Reason is structurally guaranteed
 
@@ -389,9 +397,13 @@ Hypothesis over generated inputs, not fixed examples.
 
 ### 7.1 Area (`tests/property/test_area_equivalence.py`)
 
+Every call below passes `field="structured"` unless the row says otherwise. D86
+makes the field a required argument, so a property test states it too.
+
 | Test | Property |
 |---|---|
-| `test_cross_unit_equivalence_fixed` | `parse_area("12 arów").m2 == parse_area("1 200 m²").m2 == parse_area("0,12 ha").m2 == Decimal("1200")` — the exact triple named in `20` §4.2, asserted as one statement |
+| `test_cross_unit_equivalence_fixed` | `parse_area("12 arów").m2 == parse_area("1 200 m²").m2 == parse_area("0,12 ha").m2 == Decimal("1200")` — the three unit forms named in `20` §4.2, asserted as one statement |
+| `test_ha_ar_ladder_sums_a_compound` | for generated `h` and `a`: `parse_area(f"{h} ha {a} a").m2 == parse_area(f"{h} ha").m2 + parse_area(f"{a} a").m2` — the D90 sum rule as a property, not one example |
 | `test_cross_unit_equivalence_generated` | for generated `n` in `[1, 2000]` ares: `parse_area(f"{n} arów").m2 == parse_area(f"{n*100} m²").m2 == parse_area(format_ha(n/100)).m2` |
 | `test_ha_ar_m2_ladder` | for generated `h`: `parse_area(f"{h} ha").m2 == 100 * parse_area(f"{h} a").m2` — pins the two multipliers' *ratio*, killing a mutant that scales both |
 | `test_decimal_comma_and_thousands_space_are_equivalent` | `parse_area("1 200,50 m²") == parse_area("1200,50 m²")` for generated values |
@@ -468,8 +480,9 @@ layout §1.
 | `fixtures/portal/both_prices/` | Adverts stating total **and** per-m² price, one agreeing and one 100× off (§4.4) |
 | `fixtures/quarantine/` | One record per `QuarantineReason` member, so §6.2 iterates the whole enum |
 | `fixtures/bands/` | The 25 ha farmland record; the 250 m² record; records at exactly 300 and exactly 200 000 |
-| `fixtures/dedup/exact/` | Same listing from one source twice; the same plot from two sources with identical (area, price, gmina) |
-| `fixtures/dedup/near/` | The four near-miss pairs of §13.2 — **v0 must not merge these** |
+| `fixtures/dedup/exact/` | Same listing from one source twice; the same plot from two sources with an identical (area, price, gmina, asset_class) key |
+| `fixtures/dedup/round/` | The round pairs of §12.1 — one that merges falsely, one separated by `asset_class` |
+| `fixtures/dedup/near/` | The five near-miss pairs of §13.2 — **v0 must not merge these**. The `asset_class` pair lives in `dedup/round/` |
 | `fixtures/price_kind/` | One portal, one bailiff, one KOWR record with deliberately divergent values |
 
 Every fixture file records its capture date. Seller names, phone numbers and
@@ -482,6 +495,7 @@ addresses are scrubbed at capture, not later (FR-23).
 | F1 | Area unit mis-parsed | §4.1 exhaustive table; §7.1 equivalence properties; §5 band flags; `scripts/audit_unit_conversion.py` over 20 ar/ha listings, zero errors; Δ distribution check for a spike at 100× the mode |
 | F2 | Price is for something else | §4.4 cross-check — flag, never choose |
 | F3 | Duplicates inflate `n` | §13.1 `n_before` / `n_after` reported side by side; §7.2 median-unchanged property |
+| F3 (reverse) | A false merge deflates `n` | §12.1 records the risk D78 accepts; §13.2 asserts the known false merge; the run report carries the caveat. V56's monitoring is the only detector |
 | F9 | Auction/tender blended with asking | §9 — distinct kind, aggregation key, unchanged-median test |
 | F12 | Quarantine swallows a class | §6.3 per-reason rates; §5's flag-not-quarantine rule keeps out-of-band records in the corpus |
 
@@ -564,12 +578,25 @@ each.
 | `test_price_differing_by_two_percent_does_not_merge` | same plot, two agencies, `250 000` vs `255 000 zł` — genuinely the same plot, and v0 correctly **misses** it |
 | `test_reworded_title_does_not_merge` | identical area and gmina, different price, reworded title |
 | `test_rounded_area_does_not_merge` | `1200 m²` vs `1205 m²` |
-| `test_adjacent_plots_same_area_same_street_do_not_merge` | two genuinely different neighbouring plots, identical area, different prices — the false-merge case that matters most |
+| `test_adjacent_plots_same_area_same_street_do_not_merge` | two genuinely different neighbouring plots, identical area, **different prices** |
 | `test_same_area_and_price_in_different_gminas_do_not_merge` | identical `(area, price)`, different TERYT |
+| `test_differing_asset_class_never_merges` | identical `(area, price, gmina)`, one `land_building` and one `land_agricultural`. D78 added `asset_class` to the key for this pair |
 
 `test_price_differing_by_two_percent_does_not_merge` deserves a comment in the
 test file: it asserts a **known miss**, not a success. It is here so that a future
 FR-13 matcher flips it deliberately rather than by accident.
+
+**The known false merge (D78).** One pair goes the other way, and it gets its own
+test so the loss is recorded rather than discovered later:
+
+| Test | The pair | Asserts |
+|---|---|---|
+| `test_identical_round_pair_merges_and_is_a_known_false_merge` | two genuinely different building plots, both `1000 m²` at `100 000 zł`, both in one gmina, both `land_building` | **one** cluster, `duplicate_count == 2` — the merge D78 accepts (§12.1) |
+| `test_run_report_states_the_accepted_false_merge_risk` | any run | the report carries the caveat: round pairs can merge, and the residual false-merge rate is unknown |
+
+The first test asserts a **wrong answer that the product accepts**. It carries
+that sentence verbatim as a comment, in the same form as the known-miss test
+above. A later FR-13 matcher flips it deliberately.
 
 ### 13.3 No measured duplicate rate may be claimed (`test_no_measured_duplicate_rate.py`)
 
@@ -609,6 +636,10 @@ rather than only against a surviving-mutant percentage:
 | `price_kind` dropped from the aggregation key | §9 `test_aggregation_key_includes_price_kind` |
 | Dedup equality loosened to `abs(a - b) < ε` | §13.2 near-duplicate tests |
 | `duplicate_count` incremented on the wrong cluster | §13.1 |
+| `asset_class` dropped from the match key | §13.2 `test_differing_asset_class_never_merges`; §13.1 `test_match_key_is_exactly_the_four_named_fields` |
+| Compound area takes the first value instead of the sum | §4.1 `test_parse_area_sums_a_compound` (D90) |
+| Conflict threshold 5% → 2% | §4.3 `test_conflict_threshold_boundary` |
+| Band check reads the rounded stored quotient | §5 `test_band_check_reads_the_exact_quotient` (D88) |
 
 A surviving mutant in this list is a missing test, and the test is added before
 the work item is called done.
@@ -629,8 +660,8 @@ the work item is called done.
 ## 16. Definition of done
 
 1. Every test in §3 written, seen failing, then passing — in that order.
-2. The eight questions in §12 answered and recorded in `00-decisions.md`; the
-   blocked tests written.
+2. Every test that §12 governs is written. No `blocked` marker remains in
+   `tests/unit/normalize` or `tests/unit/dedup`.
 3. Fixtures committed, dated, scrubbed.
 4. The 20-listing ar/ha hand audit run with **zero** errors (`18` §7).
 5. The mutation run in §14 leaves none of the listed mutants alive.
