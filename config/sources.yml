@@ -1,0 +1,12 @@
+# Every source the pipeline may fetch. Defaults fail closed: a source is disabled,
+# its robots evidence is absent, and its rate limit is the slowest, until each is
+# stated here on purpose (R1.10).
+sources:
+  - name: minimal_registry
+    kind: registry
+  - name: gus_bdl
+    kind: api
+    base_url: https://bdl.stat.gov.pl/api/v1/
+    enabled: true
+    robots_ok: true
+    rate_limit_rpm: 30

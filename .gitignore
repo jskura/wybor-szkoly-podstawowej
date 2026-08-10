@@ -1,0 +1,17 @@
+# Real anchor addresses. Never committed (FR-23, V7).
+# The placeholders live in config/anchors.example.yml.
+config/anchors.yml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
+# Local environment
+.env

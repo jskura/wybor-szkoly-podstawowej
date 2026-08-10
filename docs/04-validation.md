@@ -1017,7 +1017,13 @@ valuation is actually right — which no v0 method can reach.
   badge rather than per regime; **a second regime appearing after the first with no
   prompt of its own**; a prompt that does not name what to check.
 
-### V65 — Configuration loading and the parameter file (FR-75, D124)
+### V65 — Environment, migrations and the parameter file (FR-75, D124)
+
+Two limbs. Both belong to the same thing: the foundation is reproducible, and no
+ratified value hides inside it. `01-foundation-and-schema.md` §4.1 raised the
+first; FR-75 raised the second.
+
+**(A) The parameter file.**
 
 - **AC** Every ratified parameter loads from `config/params.yml`, and none appears
   as a literal in code or in a migration. A file that is missing, malformed, or
@@ -1037,6 +1043,27 @@ valuation is actually right — which no v0 method can reach.
 - **Falsified by** A ratified value found in code; a start that succeeds with a
   key missing; an error that says only "config error"; a key with no decision
   number.
+
+**(B) Environment and migration reproducibility.** This limb discharges R1.11–R1.15,
+which had no validation method at all.
+
+- **AC** The database engine is the pinned version with the pinned PostGIS major
+  version. Migrations apply to an empty database and leave exactly one head. A
+  second `upgrade head` changes nothing. `downgrade base` removes every project
+  table. Upgrading, downgrading to base and upgrading again restores a
+  byte-identical schema.
+- **How** (a) Engine and extension assertions against the running container;
+  (b) a migration-head count test, which catches a branched history before it
+  reaches production; (c) an idempotence test comparing the normalized
+  `pg_dump --schema-only` digest across two runs; (d) a downgrade test asserting
+  the public schema is empty except for PostGIS-owned relations; (e) the
+  metamorphic up-down-up test asserting exact digest equality.
+- **Against** A throwaway database built only from the migrations, never from
+  model metadata. A schema built by a test helper would let a migration bug pass
+  every constraint test that runs on top of it.
+- **Falsified by** Two heads; a digest that differs across two upgrades; a table
+  surviving `downgrade base`; a digest that differs after a round trip — which is
+  what a `downgrade` dropping a column but not its index produces.
 
 ### V66 — The public-road proxy is visible as a proxy (FR-76, D114, O39)
 

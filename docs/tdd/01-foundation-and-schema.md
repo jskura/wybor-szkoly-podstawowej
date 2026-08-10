@@ -88,12 +88,16 @@ later item's tests run inside.
   that V21, V25, V29 and V30 rely on — those tests can only assert an absent import
   edge if the modules exist.
 
-#### R1.3 `test_git_tracks_exactly_two_config_files`
+#### R1.3 `test_git_tracks_exactly_the_expected_config_files`
 - **Asserts** `git ls-files config/` returns **exactly**
-  `["config/anchors.example.yml", "config/sources.yml"]` — a sorted list equality.
-- **Green by** Committing those two files and nothing else under `config/`.
+  `["config/anchors.example.yml", "config/params.yml", "config/sources.yml"]` — a
+  sorted list equality.
+- **Green by** Committing those three files and nothing else under `config/`.
 - **Discharges** **V7(a)**, and it is the strongest form: containment tests pass
-  when a third file sneaks in; equality does not.
+  when a fourth file sneaks in; equality does not.
+- **Later stages amend it on purpose.** S4 adds `teryt_bdl.yml` (D97) and S15 adds
+  `register_classes.yml` (D117). Each must edit this list, which is the point: a
+  new file under `config/` is a decision, not a side effect.
 
 #### R1.4 `test_anchors_yml_is_gitignored`
 - **Asserts** two things: (a) `git check-ignore -q config/anchors.yml` exits `0`;
@@ -979,9 +983,11 @@ by V1's constraint-existence test". But R1.11–R1.15 — engine version, migrat
 head, idempotence, reversibility, schema-digest symmetry — were discharged by **no
 V entry**, and rule 5 says a validation method precedes implementation.
 
-**V65 now covers configuration loading and the parameter file** (FR-75). It carries
-the four failure modes R1.11–R1.15 exercise, plus the static scan that catches a
-ratified value copied into code. R1.11–R1.15 are writable.
+**V65 now covers both halves.** Limb (A) is the parameter file and the loaders
+(FR-75), including the static scan that catches a ratified value copied into code.
+Limb (B) is environment and migration reproducibility, which is exactly what
+R1.11–R1.15 assert: the pinned engine, one migration head, idempotence,
+reversibility and digest symmetry. All five are writable.
 
 ### 4.2 `listing.parcel_id` and `listing.plot_cluster_id` — **closed**
 The columns exist in migration `0002` as plain `BIGINT` with no foreign key. Items

@@ -1,0 +1,39 @@
+# Every ratified parameter, with the decision that ratified it.
+#
+# No value in this file may also appear as a literal in src/ or in a migration
+# (FR-75, V65). The loader is the only reader. A missing key is a startup error,
+# never a silent default.
+#
+# Values marked "arbitrated" are configurable because the evidence has not arrived
+# yet, not because anyone may want to change them. Each names what decides it.
+
+comparables:
+  area_band_pct: 50          # D108
+  recency_months: 12         # D110
+  min_before_widening: 3     # D109 — a median of 3 is close to noise
+  widening_ladder: [gmina, radius_10km, radius_25km, powiat]
+
+aggregates:
+  flow_window_days: 90       # D107
+  iqr_switch_n: 5            # D67 — configuration, never a database CHECK
+
+validation:
+  area_min_m2: 300           # O12
+  area_max_m2: 200000        # O12
+  conflict_threshold_pct: 5  # D81
+  conflict_threshold_base: register   # D120 — the register area is the denominator
+
+crawl:
+  fraction_tolerance_pln: 1  # D94
+  count_tolerance:           # D95 — the larger of the two
+    abs: 3
+    pct: 2
+  retry_after_max_s: 3600    # D93
+
+feasibility:
+  good_neighbour_radius_m: 100      # D102 — arbitrated by the 20-parcel labelled set
+  coverage_probe_radius_m: 500      # D103 — arbitrated by the same set
+  coverage_probe_min_buildings: 3   # D103
+
+surface:
+  thousands_sep: " "    # D125 — U+00A0, so a number never breaks across lines

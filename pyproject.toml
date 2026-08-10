@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dzialki"
+version = "0.0.0"
+description = "Land price comparison for two 25 km anchor rings in Poland"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "psycopg[binary]>=3.1",
+    "geoalchemy2>=0.15",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "hypothesis>=6.100",
+    "ruff>=0.5",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dzialki"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers -p no:cacheprovider"
+markers = [
+    "unit: no database, no network, no git history",
+    "integration: touches Postgres",
+    "architecture: parses src/ with ast, or shells out to git",
+    "property: hypothesis-driven",
+    "needs_db: requires the Postgres and PostGIS container",
+    "needs_git_history: requires a non-shallow clone with all refs",
+    "needs_local_secrets: requires the gitignored config/anchors.yml",
+    "slow: takes more than five seconds",
+]
+
+[tool.ruff]
+line-length = 88
+src = ["src", "tests"]

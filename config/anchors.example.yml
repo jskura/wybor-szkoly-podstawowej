@@ -1,0 +1,11 @@
+# Placeholder anchors. Copy to config/anchors.yml and fill in real values.
+# config/anchors.yml is gitignored and must never be committed (FR-23, V7).
+anchors:
+  A:
+    label: PLACEHOLDER_ANCHOR_A
+    lat: 0.0
+    lon: 0.0
+  B:
+    label: PLACEHOLDER_ANCHOR_B
+    lat: 0.0
+    lon: 0.0

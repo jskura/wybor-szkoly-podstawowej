@@ -1008,10 +1008,10 @@ only in the `history` and `local-only` jobs.
 
 ### 7.4 Coverage of the item-1 preconditions (§4.1 of pass 1)
 
-R1.11–R1.15 are discharged by no V entry. Either add **V63 — environment and
-migration reproducibility** to `04-validation.md`, or record them as rule-4-exempt
-preconditions. Until one of those is done these five tests are written but their
-validation method is missing, which is a rule 5 violation, not a gap in this plan.
+R1.11–R1.15 are discharged by **V65(B) — environment and migration
+reproducibility** (D124). R1.9, R1.10 and the parameter-file tests are discharged
+by **V65(A)**. The rule 5 gap is closed: every item-1 test now names the validation
+method it discharges.
 
 ---
 
@@ -1019,7 +1019,7 @@ validation method is missing, which is a rule 5 violation, not a gap in this pla
 
 | Item | Status |
 |---|---|
-| §4.1 — item 1 has no validation method of its own | **Closed by D124.** V65 covers configuration loading and the parameter file. R1.11–R1.15 are writable |
+| §4.1 — item 1 has no validation method of its own | **Closed by D124.** V65(A) covers the parameter file and the loaders; V65(B) covers environment and migration reproducibility, which is what R1.11–R1.15 assert |
 | §4.2 — `listing` foreign keys to future tables | **Closed.** Plain `BIGINT`, foreign keys later, pinned by R2.30 |
 | §4.3 — `price_kind` | **Closed by D65, D66, D68, D115.** Tests R2.1b, R2.4, R2.5, R2.5b–e, R2.6, R2.9b–e, R2.11, R2.12b–d |
 | §4.4 — `admin_unit` provenance | **Closed.** Tests R2.31a–d and R3.24 |
