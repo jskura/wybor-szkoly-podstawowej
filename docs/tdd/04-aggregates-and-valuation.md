@@ -16,10 +16,24 @@ it feeds in item 11.
   §6.1 leave-one-out cross-validation
 - **Rules**: `CLAUDE.md` 3 (TDD), 4 (validation first), 5 (two price types),
   6 (always show, always flag)
+- **Decisions applied**: D56, D65, **D66**, **D67**, **D68**, **D69**, **D107**,
+  **D108**, **D109**, **D110**, **D113**
 
 This document specifies **tests only**. No implementation code appears here, and
 none is written until the test named in each step exists and fails for the stated
 reason.
+
+**Where the numbers live.** Pass 2 —
+[`plans/04-aggregates-test-plan.md`](./plans/04-aggregates-test-plan.md) — holds every
+fixture row, every expected statistic and every LOOCV fold. Pass 2 found eleven
+arithmetic defects in this document. All eleven are corrected here, so the two
+documents state one value per test. Where a reader wants a value this document does
+not give, the plan gives it.
+
+**No parameter in this spec is open.** The valuation parameters are ratified: the
+comparable size band is ±50 % (D108), comparable recency is 12 months (D110), the
+flow window is 90 days (D107) and the search widens beyond the gmina below three
+comparables (D109). The spread threshold lives in configuration (D67).
 
 ---
 
@@ -42,6 +56,13 @@ ladder, mix adjustment, size adjustment and the hedonic model (`18` §4).
 with no same-gmina comparables returns an **absence**, never a widened set. The
 field exists from the start (FR-35, V19) so the ladder is additive later.
 
+**The widening threshold is three comparables (D109).** The ladder that acts on it
+ships after v0. In v0 the number has one visible effect: a set of one or two
+comparables still produces an estimate, and `MIN_COMPARABLES_BEFORE_WIDENING`
+records why it was not widened. D109 also records the cost plainly. **A median of
+three plots is close to noise.** Rule 7 makes that honest rather than strong — the
+figure always ships with its `n` and its range, and never as a bare number.
+
 ## 2. Surface under test
 
 Names the tests import. Signatures only — no bodies, no behaviour beyond what a
@@ -57,10 +78,11 @@ src/lpc/metrics/aggregate.py
     Aggregate                                 # frozen dataclass, no defaults
     aggregate(observations, *, as_of, flow_window_days) -> list[Aggregate]
 src/lpc/metrics/config.py
-    SPREAD_THRESHOLD_N                        # 5 ‡ — O11, unratified
-    FLOW_WINDOW_DAYS                          # 90 ‡ — O27, unratified
-    AREA_BAND_TOLERANCE                       # 0.50 ‡ — O11, unratified
-    RECENCY_MONTHS                            # 12 ‡ — O11, unratified
+    SPREAD_THRESHOLD_N                        # 5  — configuration, not a CHECK (D67)
+    FLOW_WINDOW_DAYS                          # 90 — D107
+    AREA_BAND_TOLERANCE                       # 0.50 — D108
+    RECENCY_MONTHS                            # 12 — D110
+    MIN_COMPARABLES_BEFORE_WIDENING           # 3  — D109
 src/lpc/valuation/comparables.py
     select_comparables(subject, candidates, *, as_of) -> ComparableSet
 src/lpc/valuation/estimator.py

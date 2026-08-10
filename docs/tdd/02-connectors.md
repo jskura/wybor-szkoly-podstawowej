@@ -59,10 +59,11 @@ prevent.
 | **Disallowed** | §4 is **deleted**. Items 4, 7, 8, 13 stand alone; V43, V44, V58 and V12's portal case become moot; V16 loses its offering side and the whole cross-source check with it. That is the smaller product `03` describes, and the decision to accept it is the owner's |
 | **Partially allowed** (list yes, detail no) | §4.4–§4.7 survive in `list_only` mode. §4.6's reconciliation is **unrunnable** — there are no detail pages to reconcile against — and is replaced by `test_list_only_mode_marks_attributes_unavailable`, asserting that every attribute that would have come from a detail page is `unknown` and flagged, never inferred from the list page |
 
-### 0.4 The gate generalises to every host
+### 0.4 The gate generalises to every host — still blocking
 
-Item 0 named the portals, but KOWR, the auction service and ~50 BIP hosts are
-also hosts we fetch from. The same rule applies, and it is testable rather than
+Item 0 named the portals. The same gate covers three more source families: KOWR,
+the two auction sources (D111) and the ~50 BIP hosts. A connector may not fetch
+from a host whose `robots.txt` nobody recorded. The gate is testable rather than
 remembered — `source.robots_ok` defaults to `FALSE` in
 [`15-database-schema.md`](../15-database-schema.md) §4:
 
@@ -83,15 +84,31 @@ tests/architecture/test_robots_evidence.py
 This is the gate made structural: a connector cannot be run for a host whose
 `robots.txt` nobody recorded.
 
+**Two robots rules, stated separately (D92).**
+
+1. A **missing** `robots.txt` is not permission. The runner stops. This is our
+   own rule, and it is stricter than the RFC.
+2. A **served** `robots.txt` that parses to **no matching group** is an allow.
+   RFC 9309 says so.
+
+The asymmetry is deliberate. The tests state each rule on its own, and no test
+derives one rule from the other. Test 2.4 covers rule 1. Test 2.4b covers
+rule 2.
+
 ---
 
-## 1. The connector contract — tests that apply to all five
+## 1. The connector contract — tests that apply to all six
 
 [`16-repository-layout.md`](../16-repository-layout.md) §2 states three stages and
 four rules. Each rule gets a test, parametrised over the connector registry so a
-sixth connector added later inherits them automatically. **These are written
+seventh connector added later inherits them automatically. **These are written
 first, before any individual connector**, because they are what makes the drift
 alarm generic.
+
+D111 builds both auction sources, so the registry holds **six** connectors. The
+central e-auction service and the bankruptcy gazette are separate hosts with
+separate documents, so each one is a connector and each one needs its own robots
+evidence under §0.4.
 
 Location: `tests/architecture/test_connector_contract.py`,
 `tests/unit/ingest/test_contract_parametrised.py`.
@@ -100,7 +117,7 @@ Location: `tests/architecture/test_connector_contract.py`,
 
 | # | Test | Assertion | Discharges |
 |---|---|---|---|
-| 1.1 | `test_registry_lists_every_connector` | `set(registry) == {"gus_bdl","portal","kowr","auction","gmina_bip"}` — a new connector must be registered or this fails, which is what keeps 1.2–1.9 exhaustive | contract |
+| 1.1 | `test_registry_lists_every_connector` | `set(registry) == {"gus_bdl","portal","kowr","auction_central","auction_gazette","gmina_bip"}` (D111) — a new connector must be registered or this fails, which is what keeps 1.2–1.9 exhaustive | contract |
 | 1.2 | `test_connector_satisfies_protocol[<name>]` | The class has `name`, `kind ∈ {portal,registry,api}`, and `fetch`/`parse`/`emit` with the signatures in `16` §2 | contract |
 | 1.3 | `test_parse_performs_no_io[<name>]` | Under the `no_network` autouse fixture (patches `socket.socket` to raise `AssertionError`) **and** a DB session double whose every attribute access raises, `parse(fixture_doc)` returns the expected item count. No exception ⇒ no I/O | V57, `16` §2 rule 2 |
 | 1.4 | `test_parse_is_deterministic_and_clock_free[<name>]` | `parse(doc)` called twice, under two different frozen clocks (`2026-01-01` and `2027-06-30`), returns **equal** item lists. Catches a `datetime.now()` inside `parse`, which would make re-parsing (V42/V57) irreproducible | V57 |
@@ -123,6 +140,7 @@ tests/unit/ingest/test_source_health.py
     assert runner.publish_called is False
     assert count(metric_unit_month rows written) == 0
     assert count(listing rows written) == 0
+    assert count(notice rows written) == 0          # D91: the second target table
     assert assertion_run row exists with passed=False, blocked_publication=True
 
   test_zero_items_on_a_first_ever_run_does_not_alarm
@@ -183,7 +201,8 @@ one lives in `docs/evidence/robots/`).
 | 2.1 | `test_robots_is_fetched_before_any_content_request` | `transport.calls[0].path == "/robots.txt"` and `len(transport.calls) == 1` before any yield | V14 |
 | 2.2 | `test_disallowed_path_is_never_requested` | Fixture `disallow-oferta.txt` (`Disallow: /oferta/`): `policy.allows("/oferta/123") is False`, `policy.allows("/szukaj?...") is True`; after a full `fetch()`, `[c.path for c in transport.calls if c.path.startswith("/oferta/")] == []` | V14 |
 | 2.3 | `test_user_agent_specific_rules_win_over_wildcard` | Fixture with `User-agent: *  Disallow: /` and a named-agent block allowing `/szukaj`: with our configured agent, `allows("/szukaj") is True`; with agent `"other"`, `False` | V14 |
-| 2.4 | `test_missing_robots_is_not_permission` | Transport returns 404 for `/robots.txt` → `policy.state == "unknown"`; the runner raises `RobotsEvidenceMissing` unless `source.robots_ok` was set from recorded evidence. Assert `transport.calls == ["/robots.txt"]` | V14, §0.4 |
+| 2.4 | `test_missing_robots_is_not_permission` | **Our own rule, D92 part 1.** Transport returns 404 for `/robots.txt` → `policy.state == "unknown"`; the runner raises `RobotsEvidenceMissing` unless `source.robots_ok` was set from recorded evidence. Assert `transport.calls == ["/robots.txt"]` | V14, §0.4 |
+| 2.4b | `test_a_served_file_with_no_matching_group_allows` | **RFC 9309, D92 part 2.** Fixture `unparseable.txt` (a served 200 with zero recognisable groups) → `allows("/szukaj?q=x") is True`, `allows("/oferta/1") is True`, and `"robots_no_matching_group" in policy.warnings`. The test states this rule on its own and never reads it off test 2.4 | V14, §0.4 |
 | 2.5 | `test_robots_5xx_is_treated_as_disallow` | 503 on `/robots.txt` → zero content requests, alarm `robots_unavailable`. A failing robots endpoint must not read as an open door | V14 |
 | 2.6 | `test_crawl_delay_overrides_config_when_stricter` | `Crawl-delay: 20` with `rate_limit_rpm: 9` (6.67 s) → `effective_interval_s == 20.0`; with `Crawl-delay: 2` → `effective_interval_s == pytest.approx(6.667, abs=1e-3)` (ours is stricter, ours wins) | V14 |
 | 2.7 | `test_partial_permission_yields_list_only_mode` | List path allowed, detail path disallowed → `connector.mode == "list_only"`, and every emitted item has `detail_fetched is False` | V14, §0.3 |

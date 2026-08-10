@@ -313,11 +313,20 @@ Outside → **flagged, kept, visible**. Never dropped. Never quarantined.
 | `test_price_per_m2_above_band_is_flagged` | `100000.01` | `Flag.PRICE_ABOVE_BAND` |
 | `test_out_of_band_record_is_flagged_not_dropped_and_not_quarantined` | 25 ha farmland at `3 zł/m²` | result is a `NormalizedListing`, **not** a `QuarantinedRecord`; `Flag.AREA_ABOVE_BAND` present; the record appears in the emitted rows |
 | `test_out_of_band_record_carries_its_flag_to_the_surface` | as above | the flag survives to the record the app renders — an out-of-band figure is never displayed bare |
+| `test_out_of_band_record_is_excluded_from_aggregates` | 10 in-band records plus the 25 ha record | the aggregate's `n == 10` (D85) |
+| `test_out_of_band_record_stays_in_the_corpus_and_in_dedup` | as above | the record keeps its cluster and appears in the corpus count. D85 excludes it from aggregates only |
+| `test_low_confidence_area_enters_aggregates_flagged` | a `low`-confidence area from D80, D83, D86 or D90 | the record is in the aggregate's input set and carries its confidence flag (D87) |
+| `test_band_check_reads_the_exact_quotient` | area `3.00`, price `300000.01`; exact quotient `100000.00333…`, stored `100000.00` | `Flag.PRICE_ABOVE_BAND` (D88). The check reads the exact quotient, not the rounded stored value |
 | `test_superseded_band_values_are_not_in_band_constants` | — | asserts `Decimal("100")` and `Decimal("500000")` are **not** the area band edges; fails loudly if V10's stale numbers are copied in |
 
 The 25 ha case is the one O12 was closed for. If it is quarantined or dropped, a
 whole legitimate segment — rural farmland, the product's subject — disappears, and
 that is F12 by another route.
+
+**Flagged, out-of-band and low-confidence are three different states.** D85 keeps
+an out-of-band record visible and takes it out of the aggregates. D87 keeps a
+low-confidence area in the aggregates and flags it. Both follow rule 7: always
+show, always flag.
 
 ## 6. Quarantine (`test_quarantine.py`, V10, V50, F12)
 
@@ -478,25 +487,47 @@ addresses are scrubbed at capture, not later (FR-23).
 
 Not addressed here, by design: F4–F8, F10, F11, F13 belong to other work items.
 
-## 12. Ambiguities — asked, not assumed (rule 2)
+## 12. The settled rules (rule 2)
 
-Each blocks the named test. These are asked in one batch before step 1 of §3, and
-the answers are recorded in `00-decisions.md` before the blocked tests are written.
+The owner answered all twelve questions this work item raised. Batches 18 and 19
+of [`00-decisions.md`](../00-decisions.md) record them. Nothing here is a
+proposal. Nothing here waits for ratification.
 
-| # | Question | Blocks |
-|---|---|---|
-| **O-N1** | A dot in `"1.200 m²"` / `"0.12 ha"`: decimal point, thousands separator, or ambiguous-and-quarantined? Polish convention says thousands, but scraped payloads are inconsistent, and reading `1.200` as `1.2` is a 1000× error | `test_parse_area_dot_separator` |
-| **O-N2** | An area range, `"1200-1500 m²"`: quarantine as not single-valued, take the lower bound, or take the midpoint? | `test_parse_area_range` |
-| **O-N3** | `"250 tys. zł"` and `"1,2 mln zł"`: parse the multiplier or quarantine? | `test_parse_price_abbreviated_magnitude` |
-| **O-N4** | The relative difference between register and advert area at which `conflict` is set — 1%, 5%, any difference at all? Registry and advert routinely differ by rounding | `test_conflict_threshold_boundary` |
-| **O-N5** | `"ok. 1200 m²"` / `"około 12 arów"`: keep with an `is_approximate` marker, or treat as exact? If marked, does the marker reach the UI? | `test_parse_area_marks_approximate` |
-| **O-N6** | The v0 cross-source exact-match key. `(area, price, gmina)` per V56 — but round numbers are common (`1000 m²`, `100 000 zł`), so two genuinely different plots can collide. Add `asset_class`? Require identical `zoning_claim`? Restrict cross-source matching to same-`seller_contact_hash`? | `test_cross_source_exact_triple_collapses` and the false-merge risk in §13.2 |
-| **O-N7** | Canonical record within a cluster: earliest `first_seen_at`, richest record, or lowest source id as tie-break? Determinism requires a total order | `test_canonical_record_selection_is_deterministic` |
-| **O-N8** | Does an out-of-band record participate in dedup and in the corpus count, or is it excluded from aggregates while remaining visible? §5 fixes *visible*; its aggregate membership is unstated | `test_out_of_band_record_in_aggregates` |
+| # | Rule | Decision | Governs |
+|---|---|---|---|
+| O-N1 | A dot in an area string is ambiguous and the record is quarantined. The one carve-out is a dot followed by exactly four digits with the unit `ha`, which is the parcel register's own format | **D79** | `test_parse_area_dot_separator`; plan §1.5 |
+| O-N2 | An area range is not single-valued and the record is quarantined | **D82** | `test_parse_area_quarantines_a_range`; plan §1.5 |
+| O-N3 | `"250 tys. zł"` and `"1,2 mln zł"` parse, confidence `low` | **D80** | `test_parse_price_abbreviated_magnitude`; plan §2 |
+| O-N4 | `conflict` is set when the register and a lower-authority area differ by **more than 5%** | **D81** | `test_conflict_threshold_boundary`; plan §3.2 |
+| O-N5 | `"ok. 1200 m²"` parses, marks `is_approximate`, confidence `low`, and the marker reaches the interface | **D83** | `test_parse_area_marks_approximate`; plan §1.4 |
+| O-N6 | The cross-source match key is **(area, price, gmina, asset_class)** | **D78** | §13.1, §13.2; plan §5.3 |
+| O-N7 | The canonical record is the earliest `first_seen_at`, then the lowest `source_id`, then the lowest `external_id` | **D84** | `test_canonical_record_selection_is_deterministic`; plan §5.2 |
+| O-N8 | An out-of-band record stays visible and stays in the corpus. Aggregates exclude it | **D85** | §5; plan §4.3 |
+| O-N9 | A compound area **sums**. An agreeing restatement keeps `high` confidence. A disagreeing restatement is quarantined | **D90** | `test_parse_area_sums_a_compound`; plan §1.6 |
+| O-N10 | The bare `a` abbreviation reads as ares in a structured field or a title, or in body text within 40 characters of an area keyword | **D86** | `test_bare_a_needs_a_field_or_a_nearby_keyword`; plan §1.3 |
+| O-N11 | A low-confidence area enters the aggregates, flagged | **D87** | `test_low_confidence_area_enters_aggregates_flagged` |
+| O-N12 | The band check reads the exact quotient, not the stored rounded value | **D88** | `test_band_check_reads_the_exact_quotient`; plan §4.3 |
 
-**O-N6 is the one to answer first.** V56 says a false merge falsifies v0 dedup,
-and a naive `(area, price, gmina)` triple is exactly where a false merge comes
-from.
+**D90 supersedes an earlier answer.** Batch 18 first took the first value of a
+compound, which read `"1 ha 25 a"` as 10 000 m² instead of 12 500 m². That is a
+20% area error and a 25% error in every zł/m² figure derived from it. Batch 19
+re-asked and chose the sum. I was wrong to propose the first-value rule.
+
+### 12.1 The residual risk D78 accepts
+
+D78 chose the four-part key over the round-number guard I proposed. The owner
+accepted a named cost, and it is written here because a reader of this document
+must see it:
+
+> **Two building plots of 1000 m² at 100 000 zł in one gmina still merge.** The
+> key cannot tell them apart. The corpus loses one real observation and reports a
+> `duplicate_count` of 2 where the truth is two separate plots.
+
+Round areas and round prices are common in this market, so the case is not
+hypothetical. §13.2 asserts the merge as a **known false merge**, not as a
+success. V56's false-merge monitoring is the only detector for it. The run report
+states the accepted risk, so no reader takes the `duplicate_count` as measured
+truth.
 
 ## 13. Dedup at v0 strength only (FR-70, V56)
 
@@ -508,12 +539,17 @@ requirement that comes with it.
 
 ### 13.1 Exact matches collapse (`test_exact_match.py`)
 
+**The match key is `(area_m2, price_pln, teryt_gmina, asset_class)`** (D78). It is
+a quadruple, not the triple V56 first named. `zoning_claim` and
+`seller_contact_hash` are **not** in the key.
+
 | Test | Setup | Asserts |
 |---|---|---|
 | `test_same_source_same_external_id_is_one_listing` | the same listing ingested twice | one row; `UNIQUE (source_id, external_id)` upserts rather than inserting ([`15`](../15-database-schema.md) §5) |
-| `test_cross_source_exact_triple_collapses` | two sources, identical `(area_m2, price_pln, teryt_gmina)` | one `plot_cluster`, `duplicate_count == 2`, both listings reference it. **Partly blocked by O-N6** |
+| `test_cross_source_exact_key_collapses` | two sources, identical `(area_m2, price_pln, teryt_gmina, asset_class)` | one `plot_cluster`, `duplicate_count == 2`, both listings reference it |
+| `test_match_key_is_exactly_the_four_named_fields` | — | the key tuple is the four fields of D78, in that order. A fifth field added without a decision fails this test |
 | `test_duplicate_count_reflects_cluster_size` | three exact matches | `duplicate_count == 3` |
-| `test_canonical_record_selection_is_deterministic` | three exact matches in six different input orders | the same canonical listing every time. **Blocked by O-N7** |
+| `test_canonical_record_selection_is_deterministic` | three exact matches in six different input orders | the same canonical listing every time — earliest `first_seen_at`, then lowest `source_id`, then lowest `external_id` (D84) |
 | `test_n_before_and_after_dedup_are_both_reported` | 10 listings, 3 of them one plot | the result carries `n_before == 10` and `n_after == 8`, both surfaced. F3's detector: *more data looks like better data*, so both numbers are shown side by side |
 | `test_singleton_gets_duplicate_count_one` | one listing | `duplicate_count == 1`, and it still gets a cluster — no special-casing that later code must remember |
 

@@ -12,6 +12,11 @@ validation method before implementation), and per
 design: the sequences below are meant to be executable as written, in order, each
 one red before the change that makes it green.
 
+**Names (D77, D112).** The repository is `ile-za-dzialke`. The Python package is
+`dzialki`, and the source root is `src/dzialki/`. D112 records `dzialki` as a
+deliberate exception to D15 (Polish user interface, English code), so a later
+reader must not rename it back. Environment variables use the `DZIALKI_` prefix.
+
 ---
 
 ## 0. How to read this
@@ -33,13 +38,15 @@ Every test below states four things:
 | 1. PRD / work-plan entry | `18` §6 item 1; FR-22, FR-23 | `18` §6 item 2; FR-7, FR-8, FR-64 | `18` §6 item 3; FR-14, FR-54, FR-55 |
 | 2. Validation method exists | V7; migrations under V1 (`04` coverage table) — **partial gap, §4.1** | V1, V2 | V6, V30, V31 |
 | 3. Verification tier (`20` §2) | **A** — exact; a gitignore rule either matches or does not | **A** — exact; a constraint either exists and rejects, or does not | **A** for TERYT assignment and projections; **B** for PRG content (TERC register is the second source) |
-| 4. Silent-failure detectors (`20` §3) | none of F1–F13 touched | F9 (price kinds) touched — **blocked, §4.3** | **F4 (wrong gmina)** — detectors are R3.9, R3.10, R3.12, R3.14 |
+| 4. Silent-failure detectors (`20` §3) | none of F1–F13 touched | F9 (price kinds) — detectors are R2.1b, R2.9b–d, R2.12b | **F4 (wrong gmina)** — detectors are R3.9, R3.10, R3.12, R3.14 |
 | 5. Fixtures exist, dated, scrubbed | §3.1 | §3.2 | §3.3 |
 | 6. Metamorphic properties listed | §5.1 | §5.2 | §5.3 |
 
-Entry criterion 2 is **not fully met for item 1** and criterion 4 is **not met for
-item 2** until the open items in §4 are answered. Per rule 3 and rule 5 those are
-resolved before the first test is written, not during.
+Entry criterion 2 is **not fully met for item 1**: R1.11–R1.15 still have no V
+entry (§4.1). Criterion 4 is now met for item 2, because D65 to D69 put
+`price_kind`, `series_kind` and the range rule into `15-database-schema.md`. Per
+rule 3 and rule 5 the remaining open item is resolved before the first test is
+written, not during.
 
 ### 0.2 Test layout
 
@@ -220,11 +227,24 @@ yet. Item 1's only complete validation method is **V7**.
 **1 day.** Verification tier A. Discharges **V1** fully (all three limbs),
 **V2(c)**, and the database-level limbs of V4, V5, V12, V25, V31, V32, V57.
 
-Tables in scope for the minimal schema (from `15`): the enum types, `admin_unit`,
-`anchor`, `source`, `raw_document`, `listing`, `listing_snapshot` (partitioned),
-`plot_cluster`, `listing_quarantine`, `transaction`, `metric_unit_month`,
-`coverage_snapshot`, `assertion_run`, and the three roles. **Blocked items §4.2,
-§4.3 and §4.4 must be resolved before migration `0002` is written.**
+Tables in scope for the minimal schema (from `15`): the enum types, `source`,
+`admin_unit`, `anchor`, `raw_document`, `listing`, `listing_snapshot`
+(partitioned), `notice`, `plot_cluster`, `listing_quarantine`, `transaction`,
+`metric_unit_month`, `coverage_snapshot`, `assertion_run`, and the three roles.
+
+**Migration order.** `source` comes before `admin_unit`, because `admin_unit` now
+carries `source_id`. `admin_unit` comes before `listing`, `notice`, `transaction`
+and `metric_unit_month`, because all four reference it.
+
+**`notice` is in migration `0002`. This is a recorded assumption.** D91 created
+the table for KOWR, auction and BIP records, which items 7, 8 and 13 write. The
+table carries `price_type` and `price_kind`, and `18` §5 says a price type cannot
+be retrofitted cheaply. Creating it now costs one `CREATE TABLE` and keeps `15`
+§13's rule true: a `price_type`-bearing table ships with its CHECK in the same
+migration. Overturn this and R2.31 moves to item 7.
+
+**Blocked item:** only §4.1 remains. D64 to D69 and D91 close §4.2 to §4.4 and
+§4.6.
 
 ### 2.1 Red–green sequence — enums
 
@@ -242,16 +262,29 @@ Tables in scope for the minimal schema (from `15`): the enum types, `admin_unit`
 - **Discharges** **V25** at its structural limb — FR-48's violation is made
   unrepresentable rather than merely tested.
 
+#### R2.1b `test_price_kind_enum_has_exactly_four_labels_in_order`
+- **Asserts** the label list of `price_kind` equals exactly
+  `["asking","auction_start","tender","transaction"]` — list equality, in
+  `enumsortorder`. And `"offering" not in labels`, `"sales" not in labels`, so the
+  two axes cannot be confused for one another.
+- **Green by** `CREATE TYPE price_kind AS ENUM (...)` of `15` §2.
+- **Discharges** **V46**'s storage limb. D65 defines the three offering-side kinds;
+  D68 adds `transaction` for the sales side, which is what lets `transaction` pin
+  its own kind by CHECK.
+
 #### R2.3 `test_remaining_enums_match_the_schema_document`
-- **Asserts** four exact list equalities: `asset_class` ==
+- **Asserts** five exact list equalities: `asset_class` ==
   `["land_building","land_recreational","land_agricultural","land_forest_other","house","flat"]`;
   `buildability` == `["buildable","conditional","agricultural","unknown"]`;
   `unit_level` == `["voivodeship","powiat","gmina","obreb"]`; `range_kind` ==
-  `["iqr","min_max"]`.
+  `["iqr","min_max","unavailable"]` (D69); `series_kind` == `["stock","flow"]`
+  (D56, D66).
 - **Green by** The `CREATE TYPE` statements of `15` §2.
 - **Discharges** none individually; they are the domains V1, V4 and V18 later
   depend on. A drifted label set would make those tests assert against the wrong
-  vocabulary.
+  vocabulary. `range_kind`'s third label is load-bearing: D69 says a source that
+  publishes a central value with no spread renders as explicit copy, so the schema
+  must be able to store that state rather than raise on it.
 
 ### 2.2 Red–green sequence — `price_type` constraints (V1)
 
