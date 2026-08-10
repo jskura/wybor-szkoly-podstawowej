@@ -132,13 +132,18 @@ produce, and the plan above did not say which.
 
 | Needs | Stages | State |
 |---|---|---|
-| Nothing external | S1, S2, S5, S6, S7, S8, S9, S10 | Buildable now, and testable in full against synthetic data |
+| Nothing external | S1, S2, S5, S6, S7, S8, S9, S10, S11 | **Built.** 1 521 tests pass, one skips outside CI by design |
 | The national boundary register, clipped to the two rings | S3, S4 | **Blocked.** The clip gives the gmina and powiat lists every later stage keys off |
 | The BDL unit register | S4 | **Blocked.** Recorded as data (D97); the committed map is empty and refuses to load |
 | The portal `robots.txt` reading (O10) | S12 | **Blocked on you** |
 | The KOWR, auction and BIP `robots.txt` readings (Q9) | S13 | **Blocked on you** |
 | County building data, or OSM as the fallback | S14 | **Blocked** |
 | The two acts read against their consolidated text (O40) | S15 | **Blocked on you** |
+
+**Where the eleven built stages stand.** Every one of them runs against synthetic
+data, recorded fixtures or the database, and none needs a network. The four that
+remain need something no code can produce, which is why they are listed above
+rather than scheduled below.
 
 **A stage split by its data is recorded as split, never as done.** S3 and S4 each
 have a half that runs on synthetic geometry and a half that waits on a download.

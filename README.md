@@ -9,7 +9,12 @@ a plot's asking price can be judged against what comparable land actually costs.
 
 ## Status
 
-**Planning complete. The tests are specified. No code yet.**
+**Eleven of fifteen stages are built. 1 521 tests pass.**
+
+The four that remain need data no code can produce: two register downloads, three
+`robots.txt` readings, county building data, and two acts read against their
+consolidated text. [`docs/23-implementation-plan.md`](docs/23-implementation-plan.md)
+§3a says which stage waits on what.
 
 Twelve TDD documents cover every part of the application — six specifications and
 six concrete test plans — and every open question they raised has an answer. The
@@ -177,10 +182,19 @@ concrete cases, fixtures and expected values.
 
 ## Next step
 
-Stage **S1** of [`docs/23-implementation-plan.md`](docs/23-implementation-plan.md):
-repository, Docker, Postgres with PostGIS, the migration harness and configuration
-loading. It depends on nothing external, so it runs before the `robots.txt`
-reading. Only S12, the portal connector, waits on that.
+Everything that can be built without external data is built. What is left needs
+you, and none of it is code:
+
+1. **`robots.txt` for the portals (O10)** — minutes, and it decides whether the
+   offering-price half exists at all.
+2. **`robots.txt` for the KOWR, auction and BIP hosts (Q9)** — the same
+   procedure, three more source families.
+3. **The two acts (O40)** — the farmland and forest claims in
+   [`docs/19-legal-and-feasibility.md`](docs/19-legal-and-feasibility.md) are
+   written and marked unverified. The purchasability badges wait on your reading.
+4. **The boundary and unit registers** — blocked by this environment's network
+   policy, not by you. Run the clip on a machine with access and the ring and
+   powiat lists follow.
 
 Each stage follows the rule-4 cycle: validation method → failing test →
 implementation → passing test. Definition of done is in
